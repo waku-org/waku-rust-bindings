@@ -1,0 +1,3 @@
+[submodule "waku-sys/vendor"]
+	path = waku-sys/vendor
+	url = https://github.com/status-im/go-waku.git
