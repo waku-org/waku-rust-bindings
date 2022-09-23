@@ -5,8 +5,10 @@ use std::path::PathBuf;
 use std::process::Command;
 
 fn main() {
+    // Build go-waku static lib
+    // build command taken from waku make file:
+    // https://github.com/status-im/go-waku/blob/eafbc4c01f94f3096c3201fb1e44f17f907b3068/Makefile#L115
     let output_lib = "libgowaku.a";
-
     set_current_dir("./vendor").unwrap();
     Command::new("go")
         .arg("build")
@@ -18,7 +20,6 @@ fn main() {
         .map_err(|e| println!("cargo:warning={}", e))
         .unwrap();
     set_current_dir("../").unwrap();
-
     let mut lib_dir = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap());
     lib_dir.push("vendor");
     lib_dir.push("build");
@@ -27,9 +28,8 @@ fn main() {
     println!("cargo:rustc-link-search={}", lib_dir.display());
     println!("cargo:rustc-link-lib=static=gowaku");
     println!("cargo:rerun-if-changed=libgowaku.h");
-    // The bindgen::Builder is the main entry point
-    // to bindgen, and lets you build up options for
-    // the resulting bindings.
+
+    // Generate waku bindings with bindgen
     let bindings = bindgen::Builder::default()
         // The input header we would like to generate
         // bindings for.
