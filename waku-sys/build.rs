@@ -1,3 +1,5 @@
+extern crate core;
+
 use std::env;
 use std::env::set_current_dir;
 use std::path::PathBuf;
@@ -5,12 +7,21 @@ use std::process::Command;
 
 
 fn main() {
+    // TODO: well, there are a lot of things to consider here, including architechture target. A better aware system should be used.
+    // For now this will have to do
+    let go_bin = if cfg!(target_family = "unix") {
+        "/usr/local/go/bin/go"
+    } else if cfg!(target_family = "windows") {
+        "go"
+    } else {
+        panic!("OS not supported!");
+    };
     // Build go-waku static lib
     // build command taken from waku make file:
     // https://github.com/status-im/go-waku/blob/eafbc4c01f94f3096c3201fb1e44f17f907b3068/Makefile#L115
     let output_lib = "libgowaku.a";
     set_current_dir("./vendor").unwrap();
-    Command::new("/usr/local/go/bin/go")
+    Command::new(go_bin)
         .env("CGO_ENABLED","1")
         .arg("build")
         .arg("-buildmode=c-archive")
