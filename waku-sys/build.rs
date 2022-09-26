@@ -3,20 +3,22 @@ use std::env::set_current_dir;
 use std::path::PathBuf;
 use std::process::Command;
 
+
 fn main() {
     // Build go-waku static lib
     // build command taken from waku make file:
     // https://github.com/status-im/go-waku/blob/eafbc4c01f94f3096c3201fb1e44f17f907b3068/Makefile#L115
     let output_lib = "libgowaku.a";
     set_current_dir("./vendor").unwrap();
-    Command::new("go")
+    Command::new("/usr/local/go/bin/go")
+        .env("CGO_ENABLED","1")
         .arg("build")
         .arg("-buildmode=c-archive")
         .arg("-o")
         .arg(format!("./build/lib/{output_lib}"))
-        .arg("./library/")
+        .arg("./library")
         .status()
-        .map_err(|e| println!("cargo:warning={}", e))
+        .map_err(|e| println!("cargo:warning=go build failed due to: {}", e))
         .unwrap();
     set_current_dir("../").unwrap();
     let mut lib_dir = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap());
