@@ -1,5 +1,10 @@
 # copy of https://github.com/actions-rs/meta/blob/master/recipes/quickstart.md
-on: [push, pull_request]
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches:
+      - "*"
 
 name: CI
 
@@ -13,7 +18,11 @@ jobs:
     steps:
       - uses: actions/checkout@v3
         with:
-          submodules: recursive
+          submodules: true
+      - name: Checkout submodules
+        uses: srt32/git-actions@v0.0.3
+        with:
+          args: git submodule update --init --recursive
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
@@ -33,7 +42,11 @@ jobs:
     steps:
       - uses: actions/checkout@v3
         with:
-          submodules: recursive
+          submodules: true
+      - name: Checkout submodules
+        uses: srt32/git-actions@v0.0.3
+        with:
+          args: git submodule update --init --recursive
       - uses: actions/setup-go@v3 # we need go to build go-waku
         with:
           go-version: '1.19'
@@ -58,7 +71,11 @@ jobs:
     steps:
       - uses: actions/checkout@v3
         with:
-          submodules: recursive
+          submodules: true
+      - name: Checkout submodules
+        uses: srt32/git-actions@v0.0.3
+        with:
+          args: git submodule update --init --recursive
       - uses: actions/setup-go@v3 # we need go to build go-waku
         with:
           go-version: '1.19'
