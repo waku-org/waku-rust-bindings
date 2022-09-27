@@ -32,6 +32,7 @@ jobs:
           profile: minimal
           toolchain: stable
           target: ${{ matrix.target }}
+          default: true
           override: true
       - uses: actions-rs/cargo@v1
         continue-on-error: false
@@ -64,6 +65,7 @@ jobs:
           profile: minimal
           toolchain: stable
           target: ${{ matrix.target }}
+          default: true
           override: true
       - uses: actions-rs/cargo@v1
         continue-on-error: false
