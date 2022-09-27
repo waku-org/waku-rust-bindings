@@ -20,9 +20,7 @@ jobs:
         with:
           submodules: true
       - name: Checkout submodules
-        uses: srt32/git-actions@v0.0.3
-        with:
-          args: git submodule update --init --recursive
+        run: git submodule update --init --recursive
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
@@ -44,9 +42,7 @@ jobs:
         with:
           submodules: true
       - name: Checkout submodules
-        uses: srt32/git-actions@v0.0.3
-        with:
-          args: git submodule update --init --recursive
+        run: git submodule update --init --recursive
       - uses: actions/setup-go@v3 # we need go to build go-waku
         with:
           go-version: '1.19'
@@ -73,9 +69,7 @@ jobs:
         with:
           submodules: true
       - name: Checkout submodules
-        uses: srt32/git-actions@v0.0.3
-        with:
-          args: git submodule update --init --recursive
+        run: git submodule update --init --recursive
       - uses: actions/setup-go@v3 # we need go to build go-waku
         with:
           go-version: '1.19'
