@@ -1,23 +1,47 @@
-use bindgen;
 use std::env;
 use std::env::set_current_dir;
 use std::path::PathBuf;
 use std::process::Command;
 
+fn get_go_bin() -> String {
+    if cfg!(target_family = "unix") {
+        let output = String::from_utf8(
+            Command::new("which")
+                .arg("go")
+                .output()
+                .expect("`which` command not found")
+                .stdout,
+        )
+        .expect("which output couldnt be parsed");
+        if output.is_empty() {
+            println!("cargo:warning={}", "Couldn't find go binary installed, please ensure that it is installed and/or withing the system paths");
+            panic!("Couldn't find `go` binary installed");
+        }
+        output
+    } else if cfg!(target_family = "windows") {
+        "go".into()
+    } else {
+        panic!("OS not supported!");
+    }
+}
+
 fn main() {
+    let go_bin = get_go_bin();
+
     // Build go-waku static lib
     // build command taken from waku make file:
     // https://github.com/status-im/go-waku/blob/eafbc4c01f94f3096c3201fb1e44f17f907b3068/Makefile#L115
     let output_lib = "libgowaku.a";
     set_current_dir("./vendor").unwrap();
-    Command::new("go")
+    Command::new(go_bin)
+        .env("CGO_ENABLED", "1")
         .arg("build")
         .arg("-buildmode=c-archive")
         .arg("-o")
         .arg(format!("./build/lib/{output_lib}"))
-        .arg("./library/")
+        .arg("./library")
         .status()
-        .map_err(|e| println!("cargo:warning={}", e))
+        .map_err(|e| println!("cargo:warning=go build failed due to: {}", e))
         .unwrap();
     set_current_dir("../").unwrap();
     let mut lib_dir = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap());
