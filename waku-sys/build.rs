@@ -8,7 +8,7 @@ fn get_go_bin() -> String {
             Command::new("/usr/bin/which")
                 .arg("go")
                 .output()
-                .map_err(|e| println!("cargo:warning=Coudling find which command: {}", e))
+                .map_err(|e| println!("cargo:warning=Couldn't find `which` command: {}", e))
                 .expect("`which` command not found")
                 .stdout,
         )
