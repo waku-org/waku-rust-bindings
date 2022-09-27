@@ -5,18 +5,20 @@ use std::process::Command;
 fn get_go_bin() -> String {
     if cfg!(target_family = "unix") {
         let output = String::from_utf8(
-            Command::new("which")
+            Command::new("/usr/bin/which")
                 .arg("go")
                 .output()
+                .map_err(|e| println!("cargo:warning=Coudling find which command: {}", e))
                 .expect("`which` command not found")
                 .stdout,
         )
         .expect("which output couldnt be parsed");
+
         if output.is_empty() {
             println!("cargo:warning=Couldn't find go binary installed, please ensure that it is installed and/or withing the system paths");
             panic!("Couldn't find `go` binary installed");
         }
-        output
+        output.trim().to_string()
     } else if cfg!(target_family = "windows") {
         "go".into()
     } else {
@@ -28,8 +30,8 @@ fn build_go_waku_lib(go_bin: &str, project_dir: &Path) {
     // Build go-waku static lib
     // build command taken from waku make file:
     // https://github.com/status-im/go-waku/blob/eafbc4c01f94f3096c3201fb1e44f17f907b3068/Makefile#L115
-    let output_lib = project_dir.join("./vendor/build/lib/libgowaku.a");
-    let library_path = project_dir.join("./vendor/library");
+    let output_lib = project_dir.join("vendor/build/lib/libgowaku.a");
+    let library_path = project_dir.join("vendor/library");
     Command::new(go_bin)
         .env("CGO_ENABLED", "1")
         .arg("build")
