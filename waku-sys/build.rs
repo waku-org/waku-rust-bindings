@@ -3,16 +3,31 @@ use std::env::set_current_dir;
 use std::path::PathBuf;
 use std::process::Command;
 
-fn main() {
-    // TODO: well, there are a lot of things to consider here, including architechture target. A better aware system should be used.
-    // For now this will have to do
-    let go_bin = if cfg!(target_family = "unix") {
-        "/usr/local/go/bin/go"
+fn get_go_bin() -> String {
+    if cfg!(target_family = "unix") {
+        let output = String::from_utf8(
+            Command::new("which")
+                .arg("go")
+                .output()
+                .expect("`which` command not found")
+                .stdout,
+        )
+        .expect("which output couldnt be parsed");
+        if output.is_empty() {
+            println!("cargo:warning={}", "Couldn't find go binary installed, please ensure that it is installed and/or withing the system paths");
+            panic!("Couldn't find `go` binary installed");
+        }
+        output
     } else if cfg!(target_family = "windows") {
-        "go"
+        "go".into()
     } else {
         panic!("OS not supported!");
-    };
+    }
+}
+
+fn main() {
+    let go_bin = get_go_bin();
+
     // Build go-waku static lib
     // build command taken from waku make file:
     // https://github.com/status-im/go-waku/blob/eafbc4c01f94f3096c3201fb1e44f17f907b3068/Makefile#L115
