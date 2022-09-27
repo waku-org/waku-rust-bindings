@@ -45,7 +45,7 @@ fn build_go_waku_lib(go_bin: &str, project_dir: &Path) {
 }
 
 fn generate_bindgen_code(project_dir: &Path) {
-    let lib_dir = project_dir.join("./vendor/build/lib");
+    let lib_dir = project_dir.join("vendor/build/lib");
 
     println!("cargo:rustc-link-search={}", lib_dir.display());
     println!("cargo:rustc-link-lib=static=gowaku");
