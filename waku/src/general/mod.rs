@@ -107,8 +107,8 @@ pub struct PagingOptions {
     /// Number of messages to retrieve per page
     page_size: usize,
     /// Message Index from which to perform pagination.
-    /// If not included and forward is set to true, paging will be performed from the beginning of the list.
-    /// If not included and forward is set to false, paging will be performed from the end of the list
+    /// If not included and forward is set to `true`, paging will be performed from the beginning of the list.
+    /// If not included and forward is set to `false`, paging will be performed from the end of the list
     cursor: Option<MessageIndex>,
     /// `true` if paging forward, `false` if paging backward
     forward: bool,
