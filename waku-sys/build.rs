@@ -1,6 +1,5 @@
 use std::env;
-use std::env::set_current_dir;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::Command;
 
 fn get_go_bin() -> String {
@@ -14,7 +13,7 @@ fn get_go_bin() -> String {
         )
         .expect("which output couldnt be parsed");
         if output.is_empty() {
-            println!("cargo:warning={}", "Couldn't find go binary installed, please ensure that it is installed and/or withing the system paths");
+            println!("cargo:warning=Couldn't find go binary installed, please ensure that it is installed and/or withing the system paths");
             panic!("Couldn't find `go` binary installed");
         }
         output
@@ -25,29 +24,26 @@ fn get_go_bin() -> String {
     }
 }
 
-fn main() {
-    let go_bin = get_go_bin();
-
+fn build_go_waku_lib(go_bin: &str, project_dir: &Path) {
     // Build go-waku static lib
     // build command taken from waku make file:
     // https://github.com/status-im/go-waku/blob/eafbc4c01f94f3096c3201fb1e44f17f907b3068/Makefile#L115
-    let output_lib = "libgowaku.a";
-    set_current_dir("./vendor").unwrap();
+    let output_lib = project_dir.join("./vendor/build/lib/libgowaku.a");
+    let library_path = project_dir.join("./vendor/library");
     Command::new(go_bin)
         .env("CGO_ENABLED", "1")
         .arg("build")
         .arg("-buildmode=c-archive")
         .arg("-o")
-        .arg(format!("./build/lib/{output_lib}"))
-        .arg("./library")
+        .arg(output_lib.display().to_string())
+        .arg(library_path.display().to_string())
         .status()
         .map_err(|e| println!("cargo:warning=go build failed due to: {}", e))
         .unwrap();
-    set_current_dir("../").unwrap();
-    let mut lib_dir = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap());
-    lib_dir.push("vendor");
-    lib_dir.push("build");
-    lib_dir.push("lib");
+}
+
+fn generate_bindgen_code(project_dir: &Path) {
+    let lib_dir = project_dir.join("./vendor/build/lib");
 
     println!("cargo:rustc-link-search={}", lib_dir.display());
     println!("cargo:rustc-link-lib=static=gowaku");
@@ -71,4 +67,13 @@ fn main() {
     bindings
         .write_to_file(out_path.join("bindings.rs"))
         .expect("Couldn't write bindings!");
+}
+
+fn main() {
+    let go_bin = get_go_bin();
+
+    let project_dir = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap());
+
+    build_go_waku_lib(&go_bin, &project_dir);
+    generate_bindgen_code(&project_dir);
 }
