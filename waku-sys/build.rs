@@ -3,7 +3,6 @@ use std::env::set_current_dir;
 use std::path::PathBuf;
 use std::process::Command;
 
-
 fn main() {
     // TODO: well, there are a lot of things to consider here, including architechture target. A better aware system should be used.
     // For now this will have to do
@@ -20,7 +19,7 @@ fn main() {
     let output_lib = "libgowaku.a";
     set_current_dir("./vendor").unwrap();
     Command::new(go_bin)
-        .env("CGO_ENABLED","1")
+        .env("CGO_ENABLED", "1")
         .arg("build")
         .arg("-buildmode=c-archive")
         .arg("-o")
