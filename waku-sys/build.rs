@@ -1,5 +1,3 @@
-extern crate core;
-
 use std::env;
 use std::env::set_current_dir;
 use std::path::PathBuf;
