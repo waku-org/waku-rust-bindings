@@ -1,0 +1,109 @@
+# copy of https://github.com/actions-rs/meta/blob/master/recipes/quickstart.md
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches:
+      - "*"
+
+name: CI
+
+jobs:
+  check:
+    name: Check
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            toolchain: stable-x86_64-unknown-linux-gnu
+          - os: windows-latest
+            toolchain: stable-x86_64-pc-windows-gnu
+          - os: macos-latest
+            toolchain: stable-x86_64-apple-darwin
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: true
+      - name: Checkout submodules
+        run: git submodule update --init --recursive
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: ${{ matrix.toolchain }}
+          default: true
+          override: true
+      - uses: actions-rs/cargo@v1
+        continue-on-error: false
+        with:
+          command: check
+
+  test:
+    name: Test Suite
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            toolchain: stable-x86_64-unknown-linux-gnu
+          - os: windows-latest
+            toolchain: stable-x86_64-pc-windows-gnu
+          - os: macos-latest
+            toolchain: stable-x86_64-apple-darwin
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: true
+      - name: Checkout submodules
+        run: git submodule update --init --recursive
+      - uses: actions/setup-go@v3 # we need go to build go-waku
+        with:
+          go-version: '1.19'
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: ${{ matrix.toolchain }}
+          default: true
+          override: true
+      - uses: actions-rs/cargo@v1
+        continue-on-error: false
+        with:
+          command: build
+      - uses: actions-rs/cargo@v1
+        continue-on-error: false
+        with:
+          command: test
+
+
+  lints:
+    name: Rust lints
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: true
+      - name: Checkout submodules
+        run: git submodule update --init --recursive
+      - uses: actions/setup-go@v3 # we need go to build go-waku
+        with:
+          go-version: '1.19'
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+          components: rustfmt, clippy
+
+      - name: Run cargo fmt
+        uses: actions-rs/cargo@v1
+        continue-on-error: false
+        with:
+          command: fmt
+          args: --all -- --check
+
+      - name: Run cargo clippy
+        uses: actions-rs/cargo@v1
+        continue-on-error: false
+        with:
+          command: clippy
+          args: -- --deny warnings
