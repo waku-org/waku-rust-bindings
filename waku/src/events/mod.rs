@@ -30,6 +30,20 @@ pub struct WakuMessageEvent {
     waku_message: WakuMessage,
 }
 
+impl WakuMessageEvent {
+    pub fn pubsub_topic(&self) -> &PubsubTopic {
+        &self.pubsub_topic
+    }
+
+    pub fn message_id(&self) -> &String {
+        &self.message_id
+    }
+
+    pub fn waku_message(&self) -> &WakuMessage {
+        &self.waku_message
+    }
+}
+
 pub fn waku_set_event_callback<F: FnMut(Signal)>(mut callback: F) {
     let mut callback = move |data: *const c_char| {
         let raw_response = unsafe { CStr::from_ptr(data) }
