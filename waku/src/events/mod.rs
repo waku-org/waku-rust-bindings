@@ -52,5 +52,19 @@ pub fn waku_set_event_callback<F: FnMut(Signal)>(mut callback: F) {
         let data: Signal = serde_json::from_str(raw_response).expect("Parsing signal to succeed");
         callback(data);
     };
-    unsafe { waku_sys::waku_set_event_callback(&mut callback as *mut _ as *mut std::ffi::c_void) };
+    let mut callback_ptr: &mut dyn FnMut(*const c_char) = &mut callback;
+    unsafe {
+        waku_sys::waku_set_event_callback(&mut callback_ptr as *mut &mut _ as *mut std::ffi::c_void)
+    };
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::events::waku_set_event_callback;
+
+    // TODO: how to actually send a signal and check if the callback is run?
+    #[test]
+    fn set_event_callback() {
+        waku_set_event_callback(|signal| {});
+    }
 }
