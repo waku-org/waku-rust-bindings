@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 
 pub type PubsubTopic = String;
 pub type ContentTopic = String;
+pub type WakuMessageVersion = usize;
 
 /// JsonResponse wrapper.
 /// `go-waku` ffi returns this type as a `char *` as per the [specification](https://rfc.vac.dev/spec/36/#jsonresponse-type)
@@ -38,7 +39,7 @@ pub struct WakuMessage {
     /// The content topic to be set on the message
     content_topic: ContentTopic,
     /// The Waku Message version number
-    version: usize,
+    version: WakuMessageVersion,
     /// Unix timestamp in nanoseconds
     timestamp: usize,
 }
