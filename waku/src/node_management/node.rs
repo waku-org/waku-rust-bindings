@@ -23,7 +23,7 @@ pub fn waku_new(config: Option<NodeConfig>) -> Result<bool> {
     .expect("Response should always succeed to load to a &str");
     let json_response: JsonResponse<bool> = serde_json::from_str(result)
         .map_err(|e| {
-            dbg!(&e);
+            dbg!(&e, result);
             e
         })
         .expect("JsonResponse should always succeed to deserialize");
