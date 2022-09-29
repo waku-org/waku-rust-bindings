@@ -5,7 +5,7 @@ use multiaddr::Multiaddr;
 use serde::{Deserialize, Serialize};
 // internal
 
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Clone, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct NodeConfig {
     host: Option<std::net::IpAddr>,

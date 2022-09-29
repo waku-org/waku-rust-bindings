@@ -8,8 +8,9 @@ use crate::general::{JsonResponse, Result};
 
 /// Instantiates a Waku node
 /// as per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_newchar-jsonconfig)
-pub fn waku_new(config: &NodeConfig) -> Result<bool> {
-    let s_config = serde_json::to_string(config)
+pub fn waku_new(config: Option<NodeConfig>) -> Result<bool> {
+    let config = config.unwrap_or_default();
+    let s_config = serde_json::to_string(&config)
         .expect("Serialization from properly built NodeConfig should never fail");
     let result: &str = unsafe {
         CStr::from_ptr(waku_sys::waku_new(
