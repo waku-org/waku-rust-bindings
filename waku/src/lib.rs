@@ -1,5 +1,6 @@
 mod events;
 mod general;
+mod node_management;
 
 #[cfg(test)]
 mod tests {
