@@ -18,10 +18,10 @@ pub(crate) enum JsonResponse<T> {
 }
 
 /// Waku response, just a `Result` with an `String` error.
-/// Convenient we can transform a [`JsonResponse`] into a [`Response`] (`Result`)
-type Response<T> = Result<T, String>;
+/// Convenient we can transform a [`JsonResponse`] into a [`std::result::Result`]
+pub type Result<T> = std::result::Result<T, String>;
 
-impl<T> From<JsonResponse<T>> for Response<T> {
+impl<T> From<JsonResponse<T>> for Result<T> {
     fn from(response: JsonResponse<T>) -> Self {
         match response {
             JsonResponse::Result(t) => Ok(t),
