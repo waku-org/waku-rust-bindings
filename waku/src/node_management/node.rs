@@ -85,22 +85,19 @@ mod test {
 
     #[test]
     fn waku_new_default() {
-        let config = Default::default();
-        assert!(waku_new(&config).unwrap());
+        assert!(waku_new(None).unwrap());
     }
 
     #[test]
     fn waku_flow() {
-        let config = Default::default();
-        waku_new(&config).unwrap();
+        waku_new(None).unwrap();
         waku_start().unwrap();
         waku_stop().unwrap();
     }
 
     #[test]
     fn waku_id() {
-        let config = Default::default();
-        waku_new(&config).unwrap();
+        waku_new(None).unwrap();
         let id = waku_peer_id().unwrap();
         dbg!(&id);
         assert!(!id.is_empty());
@@ -108,8 +105,7 @@ mod test {
 
     #[test]
     fn waku_address() {
-        let config = Default::default();
-        waku_new(&config).unwrap();
+        waku_new(None).unwrap();
         let addresses = waku_listen_addressses().unwrap();
         dbg!(&addresses);
         assert!(!addresses.is_empty());
