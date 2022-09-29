@@ -1,5 +1,5 @@
-mod general;
 mod events;
+mod general;
 
 #[cfg(test)]
 mod tests {
