@@ -64,3 +64,17 @@ impl WakuNodeHandle<Running> {
 pub fn waku_new(config: Option<WakuNodeConfig>) -> Result<WakuNodeHandle<Initialized>> {
     node::waku_new(config).map(|_| WakuNodeHandle(Default::default()))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::waku_new;
+
+    #[test]
+    fn exclusive_running() {
+        let handle1 = waku_new(None).unwrap();
+        let handle2 = waku_new(None).unwrap();
+        let stop_handle1 = handle1.start().unwrap();
+        assert!(handle2.start().is_err());
+        stop_handle1.stop().unwrap();
+    }
+}
