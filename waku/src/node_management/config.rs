@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 /// Waku node configuration
 #[derive(Clone, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct NodeConfig {
+pub struct WakuNodeConfig {
     /// Listening IP address. Default `0.0.0.0`
     host: Option<std::net::IpAddr>,
     /// Libp2p TCP listening port. Default `60000`. Use `0` for **random**
