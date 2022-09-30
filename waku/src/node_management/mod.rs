@@ -12,7 +12,7 @@ use crate::general::Result;
 pub use config::WakuNodeConfig;
 
 /// Shared flag to check if a waku node is already running in the current process
-static WAKU_NODE_RUNNING: Mutex<bool> = Mutex::new(false);
+static WAKU_NODE_INITIALIZED: Mutex<bool> = Mutex::new(false);
 
 /// Marker trait to disallow undesired waku node states in the handle
 pub trait WakuNodeState {}
@@ -37,32 +37,38 @@ impl<State: WakuNodeState> WakuNodeHandle<State> {
         node::waku_listen_addressses()
     }
 }
+fn stop_node() -> Result<()> {
+    let mut node_initialized = WAKU_NODE_INITIALIZED
+        .lock()
+        .expect("Access to the mutex at some point");
+    *node_initialized = false;
+    node::waku_stop().map(|_| ())
+}
 
 impl WakuNodeHandle<Initialized> {
     pub fn start(self) -> Result<WakuNodeHandle<Running>> {
-        let mut node_running = WAKU_NODE_RUNNING
-            .lock()
-            .expect("Access to the mutex at some point");
-        if *node_running {
-            return Err("Waku node is already running".into());
-        }
-        match node::waku_start() {
-            Ok(_) => {
-                *node_running = true;
-                Ok(WakuNodeHandle(Default::default()))
-            }
-            Err(e) => Err(e),
-        }
+        node::waku_start().map(|_| WakuNodeHandle(Default::default()))
+    }
+
+    pub fn stop(self) -> Result<()> {
+        stop_node()
     }
 }
 
 impl WakuNodeHandle<Running> {
     pub fn stop(self) -> Result<()> {
-        node::waku_stop().map(|_| ())
+        stop_node()
     }
 }
 
 pub fn waku_new(config: Option<WakuNodeConfig>) -> Result<WakuNodeHandle<Initialized>> {
+    let mut node_initialized = WAKU_NODE_INITIALIZED
+        .lock()
+        .expect("Access to the mutex at some point");
+    if *node_initialized {
+        return Err("Waku node is already initialized".into());
+    }
+    *node_initialized = true;
     node::waku_new(config).map(|_| WakuNodeHandle(Default::default()))
 }
 
@@ -73,9 +79,9 @@ mod tests {
     #[test]
     fn exclusive_running() {
         let handle1 = waku_new(None).unwrap();
-        let handle2 = waku_new(None).unwrap();
-        let stop_handle1 = handle1.start().unwrap();
-        assert!(handle2.start().is_err());
-        stop_handle1.stop().unwrap();
+        let handle2 = waku_new(None);
+        assert!(handle2.is_err());
+        let stop_handle = handle1.start().unwrap();
+        stop_handle.stop().unwrap();
     }
 }

@@ -96,6 +96,7 @@ mod test {
         let id = waku_peer_id().unwrap();
         dbg!(&id);
         assert!(!id.is_empty());
+        waku_stop().unwrap();
     }
 
     #[test]
@@ -104,5 +105,6 @@ mod test {
         let addresses = waku_listen_addressses().unwrap();
         dbg!(&addresses);
         assert!(!addresses.is_empty());
+        waku_stop().unwrap();
     }
 }
