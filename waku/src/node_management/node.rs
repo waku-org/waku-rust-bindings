@@ -87,24 +87,16 @@ mod test {
     fn waku_flow() {
         waku_new(None).unwrap();
         waku_start().unwrap();
-        waku_stop().unwrap();
-    }
-
-    #[test]
-    fn waku_id() {
-        waku_new(None).unwrap();
+        // test peer id call, since we cannot start different instances of the node
         let id = waku_peer_id().unwrap();
         dbg!(&id);
         assert!(!id.is_empty());
-        waku_stop().unwrap();
-    }
 
-    #[test]
-    fn waku_address() {
-        waku_new(None).unwrap();
+        // test addresses, since we cannot start different instances of the node
         let addresses = waku_listen_addressses().unwrap();
         dbg!(&addresses);
         assert!(!addresses.is_empty());
+
         waku_stop().unwrap();
     }
 }
