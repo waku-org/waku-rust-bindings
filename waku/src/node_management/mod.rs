@@ -12,7 +12,7 @@ use crate::general::Result;
 pub use config::WakuNodeConfig;
 
 /// Shared flag to check if a waku node is already running in the current process
-const WAKU_NODE_RUNNING: Mutex<bool> = Mutex::new(false);
+static WAKU_NODE_RUNNING: Mutex<bool> = Mutex::new(false);
 
 /// Marker trait to disallow undesired waku node states in the handle
 pub trait WakuNodeState {}
@@ -40,8 +40,9 @@ impl<State: WakuNodeState> WakuNodeHandle<State> {
 
 impl WakuNodeHandle<Initialized> {
     pub fn start(self) -> Result<WakuNodeHandle<Running>> {
-        let flag = WAKU_NODE_RUNNING;
-        let mut node_running = flag.lock().expect("Access to the mutex at some point");
+        let mut node_running = WAKU_NODE_RUNNING
+            .lock()
+            .expect("Access to the mutex at some point");
         if *node_running {
             return Err("Waku node is already running".into());
         }
