@@ -3,12 +3,12 @@ use multiaddr::Multiaddr;
 use std::ffi::{CStr, CString};
 // crates
 // internal
-use super::config::NodeConfig;
+use super::config::WakuNodeConfig;
 use crate::general::{JsonResponse, Result};
 
 /// Instantiates a Waku node
 /// as per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_newchar-jsonconfig)
-pub fn waku_new(config: Option<NodeConfig>) -> Result<bool> {
+pub fn waku_new(config: Option<WakuNodeConfig>) -> Result<bool> {
     let config = config.unwrap_or_default();
     let s_config = serde_json::to_string(&config)
         .expect("Serialization from properly built NodeConfig should never fail");
@@ -82,11 +82,6 @@ mod test {
     use crate::node_management::node::{
         waku_listen_addressses, waku_peer_id, waku_start, waku_stop,
     };
-
-    #[test]
-    fn waku_new_default() {
-        assert!(waku_new(None).unwrap());
-    }
 
     #[test]
     fn waku_flow() {
