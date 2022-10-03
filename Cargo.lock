@@ -829,6 +829,7 @@ dependencies = [
  "hex",
  "libsecp256k1",
  "multiaddr",
+ "once_cell",
  "serde",
  "serde_json",
  "waku-sys",

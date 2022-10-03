@@ -1,6 +1,9 @@
 // std
 use std::ffi::{c_char, CStr};
+use std::ops::Deref;
+use std::sync::RwLock;
 // crates
+use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 // internal
 use crate::general::{PubsubTopic, WakuMessage};
@@ -44,20 +47,35 @@ impl WakuMessageEvent {
     }
 }
 
+/// Shared callback slot. Callbacks are registered here so they can be accessed by the extern "C"
+#[allow(clippy::type_complexity)]
+static CALLBACK: Lazy<RwLock<Box<dyn FnMut(Signal) + Send + Sync>>> =
+    Lazy::new(|| RwLock::new(Box::new(|_| {})));
+
+/// Register global callback
+fn set_callback<F: FnMut(Signal) + Send + Sync + 'static>(f: F) {
+    *CALLBACK.write().unwrap() = Box::new(f);
+}
+
+/// Wrapper callback, it transformst the `*const c_char` into a [`Signal`]
+/// and executes the [`CALLBACK`] funtion with it
+extern "C" fn callback(data: *const c_char) {
+    let raw_response = unsafe { CStr::from_ptr(data) }
+        .to_str()
+        .expect("Not null ptr");
+    let data: Signal = serde_json::from_str(raw_response).expect("Parsing signal to succeed");
+    (CALLBACK
+        .deref()
+        .write()
+        .expect("Access to the shared callback")
+        .as_mut())(data)
+}
+
 /// Register callback to act as event handler and receive application signals,
 /// which are used to react to asynchronous events in Waku
-pub fn waku_set_event_callback<F: FnMut(Signal)>(mut callback: F) {
-    let mut callback_wrapper = move |data: *const c_char| {
-        let raw_response = unsafe { CStr::from_ptr(data) }
-            .to_str()
-            .expect("Not null ptr");
-        let data: Signal = serde_json::from_str(raw_response).expect("Parsing signal to succeed");
-        callback(data);
-    };
-    let mut callback_ptr: &mut dyn FnMut(*const c_char) = &mut callback_wrapper;
-    unsafe {
-        waku_sys::waku_set_event_callback(&mut callback_ptr as *mut &mut _ as *mut std::ffi::c_void)
-    };
+pub fn waku_set_event_callback<F: FnMut(Signal) + Send + Sync + 'static>(f: F) {
+    set_callback(f);
+    unsafe { waku_sys::waku_set_event_callback(&mut callback as *mut _ as *mut std::ffi::c_void) };
 }
 
 #[cfg(test)]
