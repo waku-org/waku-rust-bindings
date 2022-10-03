@@ -79,9 +79,7 @@ pub fn waku_listen_addressses() -> Result<Vec<Multiaddr>> {
 #[cfg(test)]
 mod test {
     use super::waku_new;
-    use crate::node_management::node::{
-        waku_listen_addressses, waku_peer_id, waku_start, waku_stop,
-    };
+    use crate::node::management::{waku_listen_addressses, waku_peer_id, waku_start, waku_stop};
 
     #[test]
     fn waku_flow() {

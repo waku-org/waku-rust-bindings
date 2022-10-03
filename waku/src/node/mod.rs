@@ -1,5 +1,6 @@
 mod config;
-mod node;
+mod management;
+mod peers;
 
 // std
 use multiaddr::Multiaddr;
@@ -30,11 +31,11 @@ pub struct WakuNodeHandle<State: WakuNodeState>(PhantomData<State>);
 
 impl<State: WakuNodeState> WakuNodeHandle<State> {
     pub fn peer_id(&self) -> Result<String> {
-        node::waku_peer_id()
+        management::waku_peer_id()
     }
 
     pub fn listen_addresses(&self) -> Result<Vec<Multiaddr>> {
-        node::waku_listen_addressses()
+        management::waku_listen_addressses()
     }
 }
 fn stop_node() -> Result<()> {
@@ -42,12 +43,12 @@ fn stop_node() -> Result<()> {
         .lock()
         .expect("Access to the mutex at some point");
     *node_initialized = false;
-    node::waku_stop().map(|_| ())
+    management::waku_stop().map(|_| ())
 }
 
 impl WakuNodeHandle<Initialized> {
     pub fn start(self) -> Result<WakuNodeHandle<Running>> {
-        node::waku_start().map(|_| WakuNodeHandle(Default::default()))
+        management::waku_start().map(|_| WakuNodeHandle(Default::default()))
     }
 
     pub fn stop(self) -> Result<()> {
@@ -69,7 +70,7 @@ pub fn waku_new(config: Option<WakuNodeConfig>) -> Result<WakuNodeHandle<Initial
         return Err("Waku node is already initialized".into());
     }
     *node_initialized = true;
-    node::waku_new(config).map(|_| WakuNodeHandle(Default::default()))
+    management::waku_new(config).map(|_| WakuNodeHandle(Default::default()))
 }
 
 #[cfg(test)]
