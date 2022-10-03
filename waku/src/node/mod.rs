@@ -6,13 +6,11 @@ mod peers;
 use multiaddr::Multiaddr;
 use std::marker::PhantomData;
 use std::sync::Mutex;
-use std::time::Duration;
 // crates
 // internal
-use crate::general::{PeerId, Result};
+use crate::general::Result;
 
 pub use config::WakuNodeConfig;
-pub use peers::{Protocol, WakuPeerData, WakuPeers};
 
 /// Shared flag to check if a waku node is already running in the current process
 static WAKU_NODE_INITIALIZED: Mutex<bool> = Mutex::new(false);
@@ -39,10 +37,6 @@ impl<State: WakuNodeState> WakuNodeHandle<State> {
     pub fn listen_addresses(&self) -> Result<Vec<Multiaddr>> {
         management::waku_listen_addressses()
     }
-
-    pub fn add_peer(&mut self, address: Multiaddr, protocol_id: usize) -> Result<PeerId> {
-        peers::waku_add_peers(address, protocol_id)
-    }
 }
 fn stop_node() -> Result<()> {
     let mut node_initialized = WAKU_NODE_INITIALIZED
@@ -65,34 +59,6 @@ impl WakuNodeHandle<Initialized> {
 impl WakuNodeHandle<Running> {
     pub fn stop(self) -> Result<()> {
         stop_node()
-    }
-
-    pub fn connect_peer_with_address(
-        &mut self,
-        address: Multiaddr,
-        timeout: Option<Duration>,
-    ) -> Result<()> {
-        peers::waku_connect_peer_with_address(address, timeout)
-    }
-
-    pub fn connect_peer_with_id(
-        &mut self,
-        peer_id: PeerId,
-        timeout: Option<Duration>,
-    ) -> Result<()> {
-        peers::waku_connect_peer_with_id(peer_id, timeout)
-    }
-
-    pub fn disconnect_peer_with_id(&mut self, peer_id: PeerId) -> Result<()> {
-        peers::waku_disconnect_peer_with_id(peer_id)
-    }
-
-    pub fn peer_count(&self) -> Result<usize> {
-        peers::waku_peer_count()
-    }
-
-    pub fn peers(&self) -> Result<WakuPeers> {
-        peers::waku_peers()
     }
 }
 
