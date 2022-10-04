@@ -1,6 +1,9 @@
 // std
+use std::fmt::{Display, Formatter};
+use std::str::FromStr;
 // crates
 use serde::{Deserialize, Serialize};
+use sscanf::{scanf, RegexRepresentation};
 // internal
 
 pub type PubsubTopic = String;
@@ -131,4 +134,69 @@ pub struct MessageIndex {
     sender_time: usize,
     /// The pubsub topic of the message at this [`MessageIndex`]
     pubsub_topic: PubsubTopic,
+}
+
+pub enum Encoding {
+    Proto,
+    Rlp,
+    Rfc26,
+}
+
+impl Display for Encoding {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let s = match self {
+            Encoding::Proto => "proto",
+            Encoding::Rlp => "rlp",
+            Encoding::Rfc26 => "rfc26",
+        };
+        f.write_str(s)
+    }
+}
+
+impl FromStr for Encoding {
+    type Err = String;
+
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        match s.to_lowercase().as_str() {
+            "proto" => Ok(Self::Proto),
+            "rlp" => Ok(Self::Rlp),
+            "rfc26" => Ok(Self::Rfc26),
+            encoding => Err(format!("Unrecognized encoding: {}", encoding)),
+        }
+    }
+}
+
+impl RegexRepresentation for Encoding {
+    const REGEX: &'static str = r"\w";
+}
+
+pub struct WakuPubsubTopic {
+    application_name: String,
+    version: usize,
+    content_topic_name: String,
+    encoding: Encoding,
+}
+
+impl FromStr for WakuPubsubTopic {
+    type Err = String;
+
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        if let Ok((application_name, version, content_topic_name, encoding)) =
+            scanf!(s, "{}/{}/{}/{}", String, usize, String, Encoding)
+        {
+            Ok(WakuPubsubTopic {
+                application_name,
+                version,
+                content_topic_name,
+                encoding,
+            })
+        } else {
+            Err(
+                format!(
+                    "Wrong pub-sub topic format. Should be `/{{application-name}}/{{version-of-the-application}}/{{content-topic-name}}/{{encoding}}`. Got: {}", 
+                    s
+                )
+            )
+        }
+    }
 }

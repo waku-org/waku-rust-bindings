@@ -1,5 +1,5 @@
 // std
-use std::ffi::{c_char, CStr, CString};
+use std::ffi::{CStr, CString};
 use std::time::Duration;
 // crates
 use multiaddr::Multiaddr;
