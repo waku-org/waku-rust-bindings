@@ -11,6 +11,7 @@ pub type ContentTopic = String;
 pub type WakuMessageVersion = usize;
 /// Base58 encoded peer id
 pub type PeerId = String;
+pub type MessageId = String;
 
 /// JsonResponse wrapper.
 /// `go-waku` ffi returns this type as a `char *` as per the [specification](https://rfc.vac.dev/spec/36/#jsonresponse-type)
