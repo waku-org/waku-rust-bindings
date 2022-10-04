@@ -170,21 +170,21 @@ impl RegexRepresentation for Encoding {
     const REGEX: &'static str = r"\w";
 }
 
-pub struct WakuPubsubTopic {
+pub struct WakuContentTopic {
     application_name: String,
     version: usize,
     content_topic_name: String,
     encoding: Encoding,
 }
 
-impl FromStr for WakuPubsubTopic {
+impl FromStr for WakuContentTopic {
     type Err = String;
 
     fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
         if let Ok((application_name, version, content_topic_name, encoding)) =
-            scanf!(s, "{}/{}/{}/{}", String, usize, String, Encoding)
+            scanf!(s, "/{}/{}/{}/{}", String, usize, String, Encoding)
         {
-            Ok(WakuPubsubTopic {
+            Ok(WakuContentTopic {
                 application_name,
                 version,
                 content_topic_name,
@@ -194,6 +194,31 @@ impl FromStr for WakuPubsubTopic {
             Err(
                 format!(
                     "Wrong pub-sub topic format. Should be `/{{application-name}}/{{version-of-the-application}}/{{content-topic-name}}/{{encoding}}`. Got: {}", 
+                    s
+                )
+            )
+        }
+    }
+}
+
+pub struct WakuPubSubTopic {
+    topic_name: String,
+    encoding: Encoding,
+}
+
+impl FromStr for WakuPubSubTopic {
+    type Err = String;
+
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        if let Ok((topic_name, encoding)) = scanf!(s, "/waku/v2/{}/{}", String, Encoding) {
+            Ok(WakuPubSubTopic {
+                topic_name,
+                encoding,
+            })
+        } else {
+            Err(
+                format!(
+                    "Wrong pub-sub topic format. Should be `/{{application-name}}/{{version-of-the-application}}/{{content-topic-name}}/{{encoding}}`. Got: {}",
                     s
                 )
             )
