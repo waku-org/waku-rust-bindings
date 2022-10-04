@@ -1,6 +1,7 @@
 mod config;
 mod management;
 mod peers;
+mod relay;
 
 // std
 use multiaddr::Multiaddr;
