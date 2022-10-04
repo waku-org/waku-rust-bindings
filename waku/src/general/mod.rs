@@ -201,6 +201,16 @@ impl FromStr for WakuContentTopic {
     }
 }
 
+impl Display for WakuContentTopic {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "/{}/{}/{}/{}",
+            self.application_name, self.version, self.content_topic_name, self.encoding
+        )
+    }
+}
+
 pub struct WakuPubSubTopic {
     topic_name: String,
     encoding: Encoding,
@@ -218,10 +228,16 @@ impl FromStr for WakuPubSubTopic {
         } else {
             Err(
                 format!(
-                    "Wrong pub-sub topic format. Should be `/{{application-name}}/{{version-of-the-application}}/{{content-topic-name}}/{{encoding}}`. Got: {}",
+                    "Wrong pub-sub topic format. Should be `/waku/2/{{topic-name}}/{{encoding}}`. Got: {}",
                     s
                 )
             )
         }
+    }
+}
+
+impl Display for WakuPubSubTopic {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "/waku/2/{}/{}", self.topic_name, self.encoding)
     }
 }
