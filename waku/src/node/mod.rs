@@ -37,6 +37,7 @@ pub struct WakuNodeHandle<State: WakuNodeState>(PhantomData<State>);
 
 /// We do not have any inner state, so the handle should be safe to be send among threads.
 unsafe impl<State: WakuNodeState> Send for WakuNodeHandle<State> {}
+
 /// References to the handle are safe to share, as they do not mutate the handle itself and
 /// operations are performed by the bindings backend, which is supposed to be thread safe.
 unsafe impl<State: WakuNodeState> Sync for WakuNodeHandle<State> {}
