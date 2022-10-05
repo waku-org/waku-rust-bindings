@@ -57,7 +57,7 @@ pub fn waku_connect_peer_with_address(address: Multiaddr, timeout: Option<Durati
 /// Dial peer using a peer id
 /// If `timeout` as milliseconds doesn't fit into a `i32` it is clamped to [`i32::MAX`]
 /// The peer must be already known.
-/// It must have been added before with [`waku_add_peer`] or previously dialed with [`waku_connect_peer_with_address`]
+/// It must have been added before with [`waku_add_peers`] or previously dialed with [`waku_connect_peer_with_address`]
 /// As per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_connect_peeridchar-peerid-int-timeoutms)
 pub fn waku_connect_peer_with_id(peer_id: PeerId, timeout: Option<Duration>) -> Result<()> {
     let response = unsafe {

@@ -36,18 +36,28 @@ impl WakuNodeState for Running {}
 pub struct WakuNodeHandle<State: WakuNodeState>(PhantomData<State>);
 
 impl<State: WakuNodeState> WakuNodeHandle<State> {
-    pub fn peer_id(&self) -> Result<String> {
+    /// If the execution is successful, the result is the peer ID as a string (base58 encoded)
+    ///
+    /// wrapper around [`management::waku_peer_id`]
+    pub fn peer_id(&self) -> Result<PeerId> {
         management::waku_peer_id()
     }
 
+    /// Get the multiaddresses the Waku node is listening to
+    ///
+    /// wrapper around [`management::waku_listen_addresses`]
     pub fn listen_addresses(&self) -> Result<Vec<Multiaddr>> {
-        management::waku_listen_addressses()
+        management::waku_listen_addresses()
     }
 
+    /// Add a node multiaddress and protocol to the waku node’s peerstore
+    ///
+    /// wrapper around [`peers::waku_add_peers`]
     pub fn add_peer(&mut self, address: Multiaddr, protocol_id: usize) -> Result<PeerId> {
         peers::waku_add_peers(address, protocol_id)
     }
 }
+
 fn stop_node() -> Result<()> {
     let mut node_initialized = WAKU_NODE_INITIALIZED
         .lock()
@@ -57,20 +67,35 @@ fn stop_node() -> Result<()> {
 }
 
 impl WakuNodeHandle<Initialized> {
+    /// Start a Waku node mounting all the protocols that were enabled during the Waku node instantiation
+    ///
+    /// wrapper around [`management::waku_start`]
     pub fn start(self) -> Result<WakuNodeHandle<Running>> {
         management::waku_start().map(|_| WakuNodeHandle(Default::default()))
     }
 
+    /// Stops a Waku node
+    ///
+    /// internally uses [`management::waku_stop`]
     pub fn stop(self) -> Result<()> {
         stop_node()
     }
 }
 
 impl WakuNodeHandle<Running> {
+    /// Stops a Waku node
+    ///
+    /// internally uses [`management::waku_stop`]
     pub fn stop(self) -> Result<()> {
         stop_node()
     }
 
+    /// Dial peer using a multiaddress
+    /// If `timeout` as milliseconds doesn't fit into a `i32` it is clamped to [`i32::MAX`]
+    /// If the function execution takes longer than `timeout` value, the execution will be canceled and an error returned.
+    /// Use 0 for no timeout
+    ///
+    /// wrapper around [`peers::waku_connect_peer_with_address`]
     pub fn connect_peer_with_address(
         &mut self,
         address: Multiaddr,
@@ -79,6 +104,9 @@ impl WakuNodeHandle<Running> {
         peers::waku_connect_peer_with_address(address, timeout)
     }
 
+    /// Dial peer using its peer ID
+    ///
+    /// wrapper around [`peers::waku_connect_peer_with_id`]
     pub fn connect_peer_with_id(
         &mut self,
         peer_id: PeerId,
@@ -87,19 +115,31 @@ impl WakuNodeHandle<Running> {
         peers::waku_connect_peer_with_id(peer_id, timeout)
     }
 
+    /// Disconnect a peer using its peerID
+    ///
+    /// wrapper around [`peers::waku_disconnect_peer_with_id`]
     pub fn disconnect_peer_with_id(&mut self, peer_id: PeerId) -> Result<()> {
         peers::waku_disconnect_peer_with_id(peer_id)
     }
 
+    /// Get number of connected peers
+    ///
+    /// wrapper around [`peers::waku_peer_count`]
     pub fn peer_count(&self) -> Result<usize> {
         peers::waku_peer_count()
     }
 
+    /// Retrieve the list of peers known by the Waku node
+    ///
+    /// wrapper around [`peers::waku_peers`]
     pub fn peers(&self) -> Result<WakuPeers> {
         peers::waku_peers()
     }
 
-    pub fn publish_message(
+    /// Publish a message using Waku Relay
+    ///
+    /// wrapper around [`relay::waku_relay_publish_message`]
+    pub fn relay_publish_message(
         &mut self,
         message: &WakuMessage,
         pubsub_topic: Option<WakuPubSubTopic>,
@@ -108,7 +148,10 @@ impl WakuNodeHandle<Running> {
         relay::waku_relay_publish_message(message, pubsub_topic, timeout)
     }
 
-    pub fn publish_encrypt_asymmetric(
+    /// Optionally sign, encrypt using asymmetric encryption and publish a message using Waku Relay
+    ///
+    /// wrapper around [`relay::waku_relay_publish_encrypt_asymmetric`]
+    pub fn relay_publish_encrypt_asymmetric(
         &mut self,
         message: &WakuMessage,
         pubsub_topic: Option<WakuPubSubTopic>,
@@ -125,7 +168,10 @@ impl WakuNodeHandle<Running> {
         )
     }
 
-    pub fn publish_encrypt_symmetric(
+    /// Optionally sign, encrypt using symmetric encryption and publish a message using Waku Relay
+    ///
+    /// wrapper around [`relay::waku_relay_publish_encrypt_symmetric`]
+    pub fn relay_publish_encrypt_symmetric(
         &mut self,
         message: &WakuMessage,
         pubsub_topic: Option<WakuPubSubTopic>,
@@ -142,19 +188,30 @@ impl WakuNodeHandle<Running> {
         )
     }
 
-    pub fn enough_peers(&self, pubsub_topic: Option<WakuPubSubTopic>) -> Result<bool> {
+    /// Determine if there are enough peers to publish a message on a given pubsub topic
+    ///
+    /// wrapper around [`relay::waku_enough_peers`]
+    pub fn relay_enough_peers(&self, pubsub_topic: Option<WakuPubSubTopic>) -> Result<bool> {
         relay::waku_enough_peers(pubsub_topic)
     }
 
-    pub fn subscribe(&mut self, pubsub_topic: Option<WakuPubSubTopic>) -> Result<()> {
+    /// Subscribe to a Waku Relay pubsub topic to receive messages
+    ///
+    /// wrapper around [`relay::waku_relay_subscribe`]
+    pub fn relay_subscribe(&mut self, pubsub_topic: Option<WakuPubSubTopic>) -> Result<()> {
         relay::waku_relay_subscribe(pubsub_topic)
     }
 
-    pub fn unsubscribe(&mut self, pubsub_topic: Option<WakuPubSubTopic>) -> Result<()> {
+    /// Closes the pubsub subscription to a pubsub topic. No more messages will be received from this pubsub topic
+    ///
+    /// wrapper around [`relay::waku_relay_unsubscribe`]
+    pub fn relay_unsubscribe(&mut self, pubsub_topic: Option<WakuPubSubTopic>) -> Result<()> {
         relay::waku_relay_unsubscribe(pubsub_topic)
     }
 }
 
+/// Spawn a new Waku node with the givent configuration (default configuration if `None` provided)
+/// Internally uses [`management::waku_new`]
 pub fn waku_new(config: Option<WakuNodeConfig>) -> Result<WakuNodeHandle<Initialized>> {
     let mut node_initialized = WAKU_NODE_INITIALIZED
         .lock()
