@@ -188,3 +188,57 @@ pub fn waku_relay_publish_encrypt_symmetric(
         serde_json::from_str(result).expect("JsonResponse should always succeed to deserialize");
     message_id.into()
 }
+
+pub fn waku_enough_peers(pubsub_topic: Option<&str>) -> Result<bool> {
+    let pubsub_topic = pubsub_topic
+        .map(ToString::to_string)
+        .unwrap_or_else(|| waku_dafault_pubsub_topic().to_string());
+    let result = unsafe {
+        CStr::from_ptr(waku_sys::waku_relay_enough_peers(
+            CString::new(pubsub_topic)
+                .expect("CString should build properly from pubsub topic")
+                .into_raw(),
+        ))
+    }
+    .to_str()
+    .expect("Response should always succeed to load to a &str");
+    let enough_peers: JsonResponse<bool> =
+        serde_json::from_str(result).expect("JsonResponse should always succeed to deserialize");
+    enough_peers.into()
+}
+
+pub fn waku_relay_subscribe(pubsub_topic: Option<&str>) -> Result<()> {
+    let pubsub_topic = pubsub_topic
+        .map(ToString::to_string)
+        .unwrap_or_else(|| waku_dafault_pubsub_topic().to_string());
+    let result = unsafe {
+        CStr::from_ptr(waku_sys::waku_relay_subscribe(
+            CString::new(pubsub_topic)
+                .expect("CString should build properly from pubsub topic")
+                .into_raw(),
+        ))
+    }
+    .to_str()
+    .expect("Response should always succeed to load to a &str");
+    let enough_peers: JsonResponse<bool> =
+        serde_json::from_str(result).expect("JsonResponse should always succeed to deserialize");
+    Result::from(enough_peers).map(|_| ())
+}
+
+pub fn waku_relay_sunubscribe(pubsub_topic: Option<&str>) -> Result<()> {
+    let pubsub_topic = pubsub_topic
+        .map(ToString::to_string)
+        .unwrap_or_else(|| waku_dafault_pubsub_topic().to_string());
+    let result = unsafe {
+        CStr::from_ptr(waku_sys::waku_relay_unsubscribe(
+            CString::new(pubsub_topic)
+                .expect("CString should build properly from pubsub topic")
+                .into_raw(),
+        ))
+    }
+    .to_str()
+    .expect("Response should always succeed to load to a &str");
+    let enough_peers: JsonResponse<bool> =
+        serde_json::from_str(result).expect("JsonResponse should always succeed to deserialize");
+    Result::from(enough_peers).map(|_| ())
+}
