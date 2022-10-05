@@ -53,7 +53,7 @@ impl<State: WakuNodeState> WakuNodeHandle<State> {
     /// Add a node multiaddress and protocol to the waku node’s peerstore
     ///
     /// wrapper around [`peers::waku_add_peers`]
-    pub fn add_peer(&mut self, address: Multiaddr, protocol_id: usize) -> Result<PeerId> {
+    pub fn add_peer(&self, address: Multiaddr, protocol_id: usize) -> Result<PeerId> {
         peers::waku_add_peers(address, protocol_id)
     }
 }
@@ -97,7 +97,7 @@ impl WakuNodeHandle<Running> {
     ///
     /// wrapper around [`peers::waku_connect_peer_with_address`]
     pub fn connect_peer_with_address(
-        &mut self,
+        &self,
         address: Multiaddr,
         timeout: Option<Duration>,
     ) -> Result<()> {
@@ -107,18 +107,14 @@ impl WakuNodeHandle<Running> {
     /// Dial peer using its peer ID
     ///
     /// wrapper around [`peers::waku_connect_peer_with_id`]
-    pub fn connect_peer_with_id(
-        &mut self,
-        peer_id: PeerId,
-        timeout: Option<Duration>,
-    ) -> Result<()> {
+    pub fn connect_peer_with_id(&self, peer_id: PeerId, timeout: Option<Duration>) -> Result<()> {
         peers::waku_connect_peer_with_id(peer_id, timeout)
     }
 
     /// Disconnect a peer using its peerID
     ///
     /// wrapper around [`peers::waku_disconnect_peer_with_id`]
-    pub fn disconnect_peer_with_id(&mut self, peer_id: PeerId) -> Result<()> {
+    pub fn disconnect_peer_with_id(&self, peer_id: PeerId) -> Result<()> {
         peers::waku_disconnect_peer_with_id(peer_id)
     }
 
@@ -140,7 +136,7 @@ impl WakuNodeHandle<Running> {
     ///
     /// wrapper around [`relay::waku_relay_publish_message`]
     pub fn relay_publish_message(
-        &mut self,
+        &self,
         message: &WakuMessage,
         pubsub_topic: Option<WakuPubSubTopic>,
         timeout: Duration,
@@ -152,7 +148,7 @@ impl WakuNodeHandle<Running> {
     ///
     /// wrapper around [`relay::waku_relay_publish_encrypt_asymmetric`]
     pub fn relay_publish_encrypt_asymmetric(
-        &mut self,
+        &self,
         message: &WakuMessage,
         pubsub_topic: Option<WakuPubSubTopic>,
         public_key: &PublicKey,
@@ -172,7 +168,7 @@ impl WakuNodeHandle<Running> {
     ///
     /// wrapper around [`relay::waku_relay_publish_encrypt_symmetric`]
     pub fn relay_publish_encrypt_symmetric(
-        &mut self,
+        &self,
         message: &WakuMessage,
         pubsub_topic: Option<WakuPubSubTopic>,
         symmetric_key: &Key<Aes256Gcm>,
