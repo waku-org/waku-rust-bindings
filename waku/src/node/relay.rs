@@ -15,7 +15,7 @@ pub fn waku_create_content_topic(
     application_name: &str,
     application_version: usize,
     content_topic_name: &str,
-    enconding: Encoding,
+    encoding: Encoding,
 ) -> WakuContentTopic {
     unsafe {
         CStr::from_ptr(waku_sys::waku_content_topic(
@@ -28,7 +28,7 @@ pub fn waku_create_content_topic(
             CString::new(content_topic_name)
                 .expect("Conmtent topic should always transform to CString")
                 .into_raw(),
-            CString::new(enconding.to_string())
+            CString::new(encoding.to_string())
                 .expect("Encoding should always transform to CString")
                 .into_raw(),
         ))
@@ -41,13 +41,13 @@ pub fn waku_create_content_topic(
 
 /// Create a pubsub topic according to [RFC 23](https://rfc.vac.dev/spec/23/)
 /// As per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_pubsub_topicchar-name-char-encoding)
-pub fn waku_create_pubsub_topic(topic_name: &str, enconding: Encoding) -> WakuPubSubTopic {
+pub fn waku_create_pubsub_topic(topic_name: &str, encoding: Encoding) -> WakuPubSubTopic {
     unsafe {
         CStr::from_ptr(waku_sys::waku_pubsub_topic(
             CString::new(topic_name)
                 .expect("Topic name should always transform to CString")
                 .into_raw(),
-            CString::new(enconding.to_string())
+            CString::new(encoding.to_string())
                 .expect("Encoding should always transform to CString")
                 .into_raw(),
         ))
