@@ -194,14 +194,14 @@ impl WakuNodeHandle<Running> {
     /// Subscribe to a Waku Relay pubsub topic to receive messages
     ///
     /// wrapper around [`relay::waku_relay_subscribe`]
-    pub fn relay_subscribe(&mut self, pubsub_topic: Option<WakuPubSubTopic>) -> Result<()> {
+    pub fn relay_subscribe(&self, pubsub_topic: Option<WakuPubSubTopic>) -> Result<()> {
         relay::waku_relay_subscribe(pubsub_topic)
     }
 
     /// Closes the pubsub subscription to a pubsub topic. No more messages will be received from this pubsub topic
     ///
     /// wrapper around [`relay::waku_relay_unsubscribe`]
-    pub fn relay_unsubscribe(&mut self, pubsub_topic: Option<WakuPubSubTopic>) -> Result<()> {
+    pub fn relay_unsubscribe(&self, pubsub_topic: Option<WakuPubSubTopic>) -> Result<()> {
         relay::waku_relay_unsubscribe(pubsub_topic)
     }
 }
