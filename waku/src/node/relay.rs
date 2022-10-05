@@ -71,12 +71,12 @@ pub fn waku_dafault_pubsub_topic() -> WakuPubSubTopic {
 /// As per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_relay_publishchar-messagejson-char-pubsubtopic-int-timeoutms)
 pub fn waku_relay_publish_message(
     message: &WakuMessage,
-    pubsub_topic: Option<&str>,
+    pubsub_topic: Option<WakuPubSubTopic>,
     timeout: Duration,
 ) -> Result<MessageId> {
     let pubsub_topic = pubsub_topic
-        .map(ToString::to_string)
-        .unwrap_or_else(|| waku_dafault_pubsub_topic().to_string());
+        .unwrap_or_else(waku_dafault_pubsub_topic)
+        .to_string();
     let result = unsafe {
         CStr::from_ptr(waku_sys::waku_relay_publish(
             CString::new(
@@ -105,7 +105,7 @@ pub fn waku_relay_publish_message(
 /// As per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_relay_publish_enc_asymmetricchar-messagejson-char-pubsubtopic-char-publickey-char-optionalsigningkey-int-timeoutms)
 pub fn waku_relay_publish_encrypt_asymmetric(
     message: &WakuMessage,
-    pubsub_topic: Option<&str>,
+    pubsub_topic: Option<WakuPubSubTopic>,
     public_key: &PublicKey,
     signing_key: &SecretKey,
     timeout: Duration,
@@ -113,8 +113,8 @@ pub fn waku_relay_publish_encrypt_asymmetric(
     let pk = hex::encode(public_key.serialize());
     let sk = hex::encode(signing_key.serialize());
     let pubsub_topic = pubsub_topic
-        .map(ToString::to_string)
-        .unwrap_or_else(|| waku_dafault_pubsub_topic().to_string());
+        .unwrap_or_else(waku_dafault_pubsub_topic)
+        .to_string();
     let result = unsafe {
         CStr::from_ptr(waku_sys::waku_relay_publish_enc_asymmetric(
             CString::new(
@@ -149,7 +149,7 @@ pub fn waku_relay_publish_encrypt_asymmetric(
 /// As per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_relay_publish_enc_symmetricchar-messagejson-char-pubsubtopic-char-symmetrickey-char-optionalsigningkey-int-timeoutms)
 pub fn waku_relay_publish_encrypt_symmetric(
     message: &WakuMessage,
-    pubsub_topic: Option<&str>,
+    pubsub_topic: Option<WakuPubSubTopic>,
     symmetric_key: &Key<Aes256Gcm>,
     signing_key: &SecretKey,
     timeout: Duration,
@@ -157,8 +157,8 @@ pub fn waku_relay_publish_encrypt_symmetric(
     let symk = hex::encode(symmetric_key.as_slice());
     let sk = hex::encode(signing_key.serialize());
     let pubsub_topic = pubsub_topic
-        .map(ToString::to_string)
-        .unwrap_or_else(|| waku_dafault_pubsub_topic().to_string());
+        .unwrap_or_else(waku_dafault_pubsub_topic)
+        .to_string();
     let result = unsafe {
         CStr::from_ptr(waku_sys::waku_relay_publish_enc_symmetric(
             CString::new(
@@ -189,10 +189,10 @@ pub fn waku_relay_publish_encrypt_symmetric(
     message_id.into()
 }
 
-pub fn waku_enough_peers(pubsub_topic: Option<&str>) -> Result<bool> {
+pub fn waku_enough_peers(pubsub_topic: Option<WakuPubSubTopic>) -> Result<bool> {
     let pubsub_topic = pubsub_topic
-        .map(ToString::to_string)
-        .unwrap_or_else(|| waku_dafault_pubsub_topic().to_string());
+        .unwrap_or_else(waku_dafault_pubsub_topic)
+        .to_string();
     let result = unsafe {
         CStr::from_ptr(waku_sys::waku_relay_enough_peers(
             CString::new(pubsub_topic)
@@ -207,10 +207,10 @@ pub fn waku_enough_peers(pubsub_topic: Option<&str>) -> Result<bool> {
     enough_peers.into()
 }
 
-pub fn waku_relay_subscribe(pubsub_topic: Option<&str>) -> Result<()> {
+pub fn waku_relay_subscribe(pubsub_topic: Option<WakuPubSubTopic>) -> Result<()> {
     let pubsub_topic = pubsub_topic
-        .map(ToString::to_string)
-        .unwrap_or_else(|| waku_dafault_pubsub_topic().to_string());
+        .unwrap_or_else(waku_dafault_pubsub_topic)
+        .to_string();
     let result = unsafe {
         CStr::from_ptr(waku_sys::waku_relay_subscribe(
             CString::new(pubsub_topic)
@@ -225,10 +225,10 @@ pub fn waku_relay_subscribe(pubsub_topic: Option<&str>) -> Result<()> {
     Result::from(enough_peers).map(|_| ())
 }
 
-pub fn waku_relay_sunubscribe(pubsub_topic: Option<&str>) -> Result<()> {
+pub fn waku_relay_unsubscribe(pubsub_topic: Option<WakuPubSubTopic>) -> Result<()> {
     let pubsub_topic = pubsub_topic
-        .map(ToString::to_string)
-        .unwrap_or_else(|| waku_dafault_pubsub_topic().to_string());
+        .unwrap_or_else(waku_dafault_pubsub_topic)
+        .to_string();
     let result = unsafe {
         CStr::from_ptr(waku_sys::waku_relay_unsubscribe(
             CString::new(pubsub_topic)

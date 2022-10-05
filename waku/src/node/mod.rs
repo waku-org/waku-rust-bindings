@@ -4,16 +4,19 @@ mod peers;
 mod relay;
 
 // std
+use aes_gcm::{Aes256Gcm, Key};
+use libsecp256k1::{PublicKey, SecretKey};
 use multiaddr::Multiaddr;
 use std::marker::PhantomData;
 use std::sync::Mutex;
 use std::time::Duration;
 // crates
 // internal
-use crate::general::{PeerId, Result};
+use crate::general::{MessageId, PeerId, Result, WakuMessage, WakuPubSubTopic};
 
 pub use config::WakuNodeConfig;
 pub use peers::{Protocol, WakuPeerData, WakuPeers};
+pub use relay::{waku_create_content_topic, waku_create_pubsub_topic, waku_dafault_pubsub_topic};
 
 /// Shared flag to check if a waku node is already running in the current process
 static WAKU_NODE_INITIALIZED: Mutex<bool> = Mutex::new(false);
@@ -94,6 +97,61 @@ impl WakuNodeHandle<Running> {
 
     pub fn peers(&self) -> Result<WakuPeers> {
         peers::waku_peers()
+    }
+
+    pub fn publish_message(
+        &mut self,
+        message: &WakuMessage,
+        pubsub_topic: Option<WakuPubSubTopic>,
+        timeout: Duration,
+    ) -> Result<MessageId> {
+        relay::waku_relay_publish_message(message, pubsub_topic, timeout)
+    }
+
+    pub fn publish_encrypt_asymmetric(
+        &mut self,
+        message: &WakuMessage,
+        pubsub_topic: Option<WakuPubSubTopic>,
+        public_key: &PublicKey,
+        signing_key: &SecretKey,
+        timeout: Duration,
+    ) -> Result<MessageId> {
+        relay::waku_relay_publish_encrypt_asymmetric(
+            message,
+            pubsub_topic,
+            public_key,
+            signing_key,
+            timeout,
+        )
+    }
+
+    pub fn publish_encrypt_symmetric(
+        &mut self,
+        message: &WakuMessage,
+        pubsub_topic: Option<WakuPubSubTopic>,
+        symmetric_key: &Key<Aes256Gcm>,
+        signing_key: &SecretKey,
+        timeout: Duration,
+    ) -> Result<MessageId> {
+        relay::waku_relay_publish_encrypt_symmetric(
+            message,
+            pubsub_topic,
+            symmetric_key,
+            signing_key,
+            timeout,
+        )
+    }
+
+    pub fn enough_peers(&self, pubsub_topic: Option<WakuPubSubTopic>) -> Result<bool> {
+        relay::waku_enough_peers(pubsub_topic)
+    }
+
+    pub fn subscribe(&mut self, pubsub_topic: Option<WakuPubSubTopic>) -> Result<()> {
+        relay::waku_relay_subscribe(pubsub_topic)
+    }
+
+    pub fn unsubscribe(&mut self, pubsub_topic: Option<WakuPubSubTopic>) -> Result<()> {
+        relay::waku_relay_unsubscribe(pubsub_topic)
     }
 }
 
