@@ -2,7 +2,7 @@
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;
 // crates
-use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use serde::{de::Error, Deserialize, Deserializer, Serialize, Serializer};
 use sscanf::{scanf, RegexRepresentation};
 // internal
 
