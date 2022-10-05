@@ -6,7 +6,7 @@ use std::sync::RwLock;
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 // internal
-use crate::general::{PubsubTopic, WakuMessage};
+use crate::general::{WakuMessage, WakuPubSubTopic};
 
 #[derive(Serialize, Deserialize)]
 pub struct Signal {
@@ -26,7 +26,7 @@ pub enum Event {
 #[serde(rename_all = "camelCase")]
 pub struct WakuMessageEvent {
     /// The pubsub topic on which the message was received
-    pubsub_topic: PubsubTopic,
+    pubsub_topic: WakuPubSubTopic,
     /// The message id
     message_id: String,
     /// The message in [`WakuMessage`] format
@@ -34,7 +34,7 @@ pub struct WakuMessageEvent {
 }
 
 impl WakuMessageEvent {
-    pub fn pubsub_topic(&self) -> &PubsubTopic {
+    pub fn pubsub_topic(&self) -> &WakuPubSubTopic {
         &self.pubsub_topic
     }
 

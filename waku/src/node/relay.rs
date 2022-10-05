@@ -9,7 +9,7 @@ use crate::general::{
     Encoding, JsonResponse, MessageId, Result, WakuContentTopic, WakuMessage, WakuPubSubTopic,
 };
 
-/// Create a content topic string according to [RFC 23](https://rfc.vac.dev/spec/23/)
+/// Create a content topic according to [RFC 23](https://rfc.vac.dev/spec/23/)
 /// As per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_content_topicchar-applicationname-unsigned-int-applicationversion-char-contenttopicname-char-encoding)
 pub fn waku_create_content_topic(
     application_name: &str,
@@ -39,7 +39,7 @@ pub fn waku_create_content_topic(
     .expect("Content topic data should be always parseable")
 }
 
-/// Create a pubsub topic string according to [RFC 23](https://rfc.vac.dev/spec/23/)
+/// Create a pubsub topic according to [RFC 23](https://rfc.vac.dev/spec/23/)
 /// As per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_pubsub_topicchar-name-char-encoding)
 pub fn waku_create_pubsub_topic(topic_name: &str, enconding: Encoding) -> WakuPubSubTopic {
     unsafe {
