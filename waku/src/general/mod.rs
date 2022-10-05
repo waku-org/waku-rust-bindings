@@ -36,7 +36,7 @@ impl<T> From<JsonResponse<T>> for Result<T> {
 
 /// JsonMessage, Waku message in JSON format.
 /// as per the [specification](https://rfc.vac.dev/spec/36/#jsonmessage-type)
-#[derive(Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct WakuMessage {
     payload: Box<[u8]>,
@@ -62,7 +62,7 @@ pub struct DecodedPayload {
 
 /// The content topic of a Waku message
 /// as per the [specification](https://rfc.vac.dev/spec/36/#contentfilter-type)
-#[derive(Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ContentFilter {
     /// The content topic of a Waku message
@@ -71,7 +71,7 @@ pub struct ContentFilter {
 
 /// The criteria to create subscription to a light node in JSON Format
 /// as per the [specification](https://rfc.vac.dev/spec/36/#filtersubscription-type)
-#[derive(Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct FilterSubscription {
     /// Array of [`ContentFilter`] being subscribed to / unsubscribed from
@@ -81,7 +81,7 @@ pub struct FilterSubscription {
 }
 
 /// Criteria used to retrieve historical messages
-#[derive(Serialize)]
+#[derive(Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct StoreQuery {
     /// The pubsub topic on which messages are published
@@ -99,7 +99,7 @@ pub struct StoreQuery {
 }
 
 /// The response received after doing a query to a store node
-#[derive(Deserialize)]
+#[derive(Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct StoreResponse {
     /// Array of retrieved historical messages in [`WakuMessage`] format
@@ -109,7 +109,7 @@ pub struct StoreResponse {
 }
 
 /// Paging information
-#[derive(Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PagingOptions {
     /// Number of messages to retrieve per page
@@ -122,7 +122,7 @@ pub struct PagingOptions {
     forward: bool,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct MessageIndex {
     /// Hash of the message at this [`MessageIndex`]
@@ -135,6 +135,7 @@ pub struct MessageIndex {
     pubsub_topic: WakuPubSubTopic,
 }
 
+#[derive(Copy, Clone)]
 pub enum Encoding {
     Proto,
     Rlp,
@@ -169,6 +170,7 @@ impl RegexRepresentation for Encoding {
     const REGEX: &'static str = r"\w";
 }
 
+#[derive(Clone)]
 pub struct WakuContentTopic {
     application_name: String,
     version: usize,
@@ -231,6 +233,7 @@ impl<'de> Deserialize<'de> for WakuContentTopic {
     }
 }
 
+#[derive(Clone)]
 pub struct WakuPubSubTopic {
     topic_name: String,
     encoding: Encoding,
