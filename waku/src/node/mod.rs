@@ -160,7 +160,7 @@ impl WakuNodeHandle<Running> {
         message: &WakuMessage,
         pubsub_topic: Option<WakuPubSubTopic>,
         public_key: &PublicKey,
-        signing_key: &SecretKey,
+        signing_key: Option<&SecretKey>,
         timeout: Duration,
     ) -> Result<MessageId> {
         relay::waku_relay_publish_encrypt_asymmetric(
@@ -180,7 +180,7 @@ impl WakuNodeHandle<Running> {
         message: &WakuMessage,
         pubsub_topic: Option<WakuPubSubTopic>,
         symmetric_key: &Key<Aes256Gcm>,
-        signing_key: &SecretKey,
+        signing_key: Option<&SecretKey>,
         timeout: Duration,
     ) -> Result<MessageId> {
         relay::waku_relay_publish_encrypt_symmetric(

@@ -107,11 +107,13 @@ pub fn waku_relay_publish_encrypt_asymmetric(
     message: &WakuMessage,
     pubsub_topic: Option<WakuPubSubTopic>,
     public_key: &PublicKey,
-    signing_key: &SecretKey,
+    signing_key: Option<&SecretKey>,
     timeout: Duration,
 ) -> Result<MessageId> {
     let pk = hex::encode(public_key.serialize());
-    let sk = hex::encode(signing_key.serialize());
+    let sk = signing_key
+        .map(|signing_key| hex::encode(signing_key.serialize()))
+        .unwrap_or_else(String::new);
     let pubsub_topic = pubsub_topic
         .unwrap_or_else(waku_dafault_pubsub_topic)
         .to_string();
@@ -151,11 +153,13 @@ pub fn waku_relay_publish_encrypt_symmetric(
     message: &WakuMessage,
     pubsub_topic: Option<WakuPubSubTopic>,
     symmetric_key: &Key<Aes256Gcm>,
-    signing_key: &SecretKey,
+    signing_key: Option<&SecretKey>,
     timeout: Duration,
 ) -> Result<MessageId> {
     let symk = hex::encode(symmetric_key.as_slice());
-    let sk = hex::encode(signing_key.serialize());
+    let sk = signing_key
+        .map(|signing_key| hex::encode(signing_key.serialize()))
+        .unwrap_or_else(String::new);
     let pubsub_topic = pubsub_topic
         .unwrap_or_else(waku_dafault_pubsub_topic)
         .to_string();
