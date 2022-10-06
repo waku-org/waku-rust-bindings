@@ -1,4 +1,5 @@
 mod config;
+mod lightpush;
 mod management;
 mod peers;
 mod relay;
