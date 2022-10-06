@@ -4,7 +4,7 @@ use std::ffi::{CStr, CString};
 // crates
 // internal
 use super::config::WakuNodeConfig;
-use crate::general::{JsonResponse, Result};
+use crate::general::{JsonResponse, PeerId, Result};
 
 /// Instantiates a Waku node
 /// as per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_newchar-jsonconfig)
@@ -52,7 +52,7 @@ pub fn waku_stop() -> Result<bool> {
 
 /// If the execution is successful, the result is the peer ID as a string (base58 encoded)
 /// as per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_stop)
-pub fn waku_peer_id() -> Result<String> {
+pub fn waku_peer_id() -> Result<PeerId> {
     let response = unsafe { CStr::from_ptr(waku_sys::waku_peerid()) }
         .to_str()
         .expect("Response should always succeed to load to a &str");
@@ -65,7 +65,7 @@ pub fn waku_peer_id() -> Result<String> {
 
 /// Get the multiaddresses the Waku node is listening to
 /// as per [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_listen_addresses)
-pub fn waku_listen_addressses() -> Result<Vec<Multiaddr>> {
+pub fn waku_listen_addresses() -> Result<Vec<Multiaddr>> {
     let response = unsafe { CStr::from_ptr(waku_sys::waku_listen_addresses()) }
         .to_str()
         .expect("Response should always succeed to load to a &str");
@@ -79,7 +79,7 @@ pub fn waku_listen_addressses() -> Result<Vec<Multiaddr>> {
 #[cfg(test)]
 mod test {
     use super::waku_new;
-    use crate::node::management::{waku_listen_addressses, waku_peer_id, waku_start, waku_stop};
+    use crate::node::management::{waku_listen_addresses, waku_peer_id, waku_start, waku_stop};
 
     #[test]
     fn waku_flow() {
@@ -91,7 +91,7 @@ mod test {
         assert!(!id.is_empty());
 
         // test addresses, since we cannot start different instances of the node
-        let addresses = waku_listen_addressses().unwrap();
+        let addresses = waku_listen_addresses().unwrap();
         dbg!(&addresses);
         assert!(!addresses.is_empty());
 
