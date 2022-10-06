@@ -8,6 +8,8 @@ use libsecp256k1::{PublicKey, SecretKey};
 use crate::general::{JsonResponse, MessageId, PeerId, Result, WakuMessage, WakuPubSubTopic};
 use crate::node::waku_dafault_pubsub_topic;
 
+/// Publish a message using Waku Lightpush
+/// As per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_lightpush_publishchar-messagejson-char-topic-char-peerid-int-timeoutms)
 pub fn waku_lightpush_publish(
     message: &WakuMessage,
     pubsub_topic: WakuPubSubTopic,
@@ -43,6 +45,8 @@ pub fn waku_lightpush_publish(
     response.into()
 }
 
+/// Optionally sign, encrypt using asymmetric encryption and publish a message using Waku Lightpush
+/// As per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_lightpush_publish_enc_asymmetricchar-messagejson-char-pubsubtopic-char-peerid-char-publickey-char-optionalsigningkey-int-timeoutms)
 pub fn waku_lightpush_publish_encrypt_asymmetric(
     message: &WakuMessage,
     pubsub_topic: Option<WakuPubSubTopic>,
@@ -91,6 +95,8 @@ pub fn waku_lightpush_publish_encrypt_asymmetric(
     message_id.into()
 }
 
+/// Optionally sign, encrypt using symmetric encryption and publish a message using Waku Lightpush
+/// As per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_lightpush_publish_enc_symmetricchar-messagejson-char-pubsubtopic-char-peerid-char-symmetrickey-char-optionalsigningkey-int-timeoutms)
 pub fn waku_lightpush_publish_encrypt_symmetric(
     message: &WakuMessage,
     pubsub_topic: Option<WakuPubSubTopic>,
