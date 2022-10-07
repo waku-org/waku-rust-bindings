@@ -7,7 +7,7 @@ use std::time::Duration;
 
 // internal
 use crate::general::Result;
-use crate::general::{FilterSubscription, JsonResponse, MessageId, PeerId};
+use crate::general::{FilterSubscription, JsonResponse, PeerId};
 
 /// Creates a subscription in a lightnode for messages that matches a content filter and optionally a [`WakuPubSubTopic`](`crate::general::WakuPubSubTopic`)
 /// As per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_filter_subscribechar-filterjson-char-peerid-int-timeoutms)

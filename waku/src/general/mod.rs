@@ -4,9 +4,12 @@
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;
 // crates
+use aes_gcm::{Aes256Gcm, Key};
+use libsecp256k1::SecretKey;
 use serde::{de::Error, Deserialize, Deserializer, Serialize, Serializer};
 use sscanf::{scanf, RegexRepresentation};
 // internal
+use crate::decrypt::{waku_decode_asymmetric, waku_decode_symmetric};
 
 pub type WakuMessageVersion = usize;
 /// Base58 encoded peer id
@@ -36,7 +39,7 @@ impl<T> From<JsonResponse<T>> for Result<T> {
     }
 }
 
-/// JsonMessage, Waku message in JSON format.
+/// Waku message in JSON format.
 /// as per the [specification](https://rfc.vac.dev/spec/36/#jsonmessage-type)
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -50,7 +53,25 @@ pub struct WakuMessage {
     timestamp: usize,
 }
 
+impl WakuMessage {
+    /// Try decode the message with an expected symmetric key
+    ///
+    /// wrapper around [`crate::decrypt::waku_decode_symmetric`]
+    pub fn try_decode_symmetric(&self, symmetric_key: &Key<Aes256Gcm>) -> Result<DecodedPayload> {
+        waku_decode_symmetric(self, symmetric_key)
+    }
+
+    /// Try decode the message with an expected asymmetric key
+    ///
+    /// wrapper around [`crate::decrypt::waku_decode_asymmetric`]
+    pub fn try_decode_asymmentric(&self, asymmetric_key: &SecretKey) -> Result<DecodedPayload> {
+        waku_decode_asymmetric(self, asymmetric_key)
+    }
+}
+
 /// A payload once decoded, used when a received Waku Message is encrypted
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct DecodedPayload {
     /// Public key that signed the message (optional), hex encoded with 0x prefix
     public_key: Option<String>,
