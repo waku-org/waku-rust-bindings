@@ -15,7 +15,10 @@ use std::sync::Mutex;
 use std::time::Duration;
 // crates
 // internal
-use crate::general::{MessageId, PeerId, Result, WakuMessage, WakuPubSubTopic};
+use crate::general::{
+    FilterSubscription, MessageId, PeerId, Result, StoreQuery, StoreResponse, WakuMessage,
+    WakuPubSubTopic,
+};
 
 pub use config::WakuNodeConfig;
 pub use peers::{Protocol, WakuPeerData, WakuPeers};
@@ -218,6 +221,92 @@ impl WakuNodeHandle<Running> {
     /// wrapper around [`relay::waku_relay_unsubscribe`]
     pub fn relay_unsubscribe(&self, pubsub_topic: Option<WakuPubSubTopic>) -> Result<()> {
         relay::waku_relay_unsubscribe(pubsub_topic)
+    }
+
+    /// Retrieves historical messages on specific content topics
+    ///
+    /// wrapper around [`store::waku_store_query`]
+    pub fn store_query(
+        query: &StoreQuery,
+        peer_id: PeerId,
+        timeout: Duration,
+    ) -> Result<StoreResponse> {
+        store::waku_store_query(query, peer_id, timeout)
+    }
+
+    /// Publish a message using Waku Lightpush
+    ///
+    /// wrapper around [`lightpush::waku_lightpush_publish`]
+    pub fn lightpush_publish(
+        message: &WakuMessage,
+        pubsub_topic: WakuPubSubTopic,
+        peer_id: PeerId,
+        timeout: Duration,
+    ) -> Result<MessageId> {
+        lightpush::waku_lightpush_publish(message, pubsub_topic, peer_id, timeout)
+    }
+
+    /// Optionally sign, encrypt using asymmetric encryption and publish a message using Waku Lightpush
+    ///
+    /// wrapper around [`lightpush::waku_lightpush_publish_encrypt_asymmetric`]
+    pub fn lightpush_publish_encrypt_asymmetric(
+        message: &WakuMessage,
+        pubsub_topic: Option<WakuPubSubTopic>,
+        peer_id: PeerId,
+        public_key: &PublicKey,
+        signing_key: Option<&SecretKey>,
+        timeout: Duration,
+    ) -> Result<MessageId> {
+        lightpush::waku_lightpush_publish_encrypt_asymmetric(
+            message,
+            pubsub_topic,
+            peer_id,
+            public_key,
+            signing_key,
+            timeout,
+        )
+    }
+
+    /// Optionally sign, encrypt using symmetric encryption and publish a message using Waku Lightpush
+    ///
+    /// wrapper around [`lightpush::waku_lightpush_publish_encrypt_symmetric`]
+    pub fn lightpush_publish_encrypt_symmetric(
+        message: &WakuMessage,
+        pubsub_topic: Option<WakuPubSubTopic>,
+        peer_id: PeerId,
+        symmetric_key: &Key<Aes256Gcm>,
+        signing_key: Option<&SecretKey>,
+        timeout: Duration,
+    ) -> Result<MessageId> {
+        lightpush::waku_lightpush_publish_encrypt_symmetric(
+            message,
+            pubsub_topic,
+            peer_id,
+            symmetric_key,
+            signing_key,
+            timeout,
+        )
+    }
+
+    /// Creates a subscription in a lightnode for messages that matches a content filter and optionally a [`WakuPubSubTopic`](`crate::general::WakuPubSubTopic`)
+    ///
+    /// wrapper around [`filter::waku_filter_subscribe`]
+    pub fn filter_subscribe(
+        filter_subscription: &FilterSubscription,
+        peer_id: PeerId,
+        timeout: Duration,
+    ) -> Result<()> {
+        filter::waku_filter_subscribe(filter_subscription, peer_id, timeout)
+    }
+
+    /// Removes subscriptions in a light node matching a content filter and, optionally, a [`WakuPubSubTopic`](`crate::general::WakuPubSubTopic`)
+    ///
+    /// wrapper around [`filter::waku_filter_unsubscribe`]
+    pub fn filter_unsubscribe(
+        filter_subscription: &FilterSubscription,
+        timeout: Duration,
+    ) -> Result<()> {
+        filter::waku_filter_unsubscribe(filter_subscription, timeout)
     }
 }
 
