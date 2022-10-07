@@ -39,6 +39,7 @@ impl<T> From<JsonResponse<T>> for Result<T> {
     }
 }
 
+// TODO: Properly type and deserialize payload form base64 encoded string
 /// Waku message in JSON format.
 /// as per the [specification](https://rfc.vac.dev/spec/36/#jsonmessage-type)
 #[derive(Clone, Serialize, Deserialize)]
@@ -69,6 +70,7 @@ impl WakuMessage {
     }
 }
 
+// TODO: use proper types instead of base64 strings
 /// A payload once decoded, used when a received Waku Message is encrypted
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
