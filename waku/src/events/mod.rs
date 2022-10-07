@@ -12,7 +12,6 @@ use serde::{Deserialize, Serialize};
 // internal
 use crate::general::{WakuMessage, WakuPubSubTopic};
 
-// TODO: Signal and even can possibly be merged into a single Signal object with side tagged and aliased type
 /// Event signal
 #[derive(Serialize, Deserialize)]
 pub struct Signal {
