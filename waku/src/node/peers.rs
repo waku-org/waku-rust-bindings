@@ -131,6 +131,24 @@ pub struct WakuPeerData {
     connected: bool,
 }
 
+impl WakuPeerData {
+    pub fn peer_id(&self) -> &PeerId {
+        &self.peer_id
+    }
+
+    pub fn protocols(&self) -> &[Protocol] {
+        &self.protocols
+    }
+
+    pub fn addresses(&self) -> &[Multiaddr] {
+        &self.addresses
+    }
+
+    pub fn connected(&self) -> bool {
+        self.connected
+    }
+}
+
 /// List of [`WakuPeerData`], return value from [`waku_peers`] funtion
 pub type WakuPeers = Vec<WakuPeerData>;
 

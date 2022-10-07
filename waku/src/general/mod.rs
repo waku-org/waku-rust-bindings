@@ -45,7 +45,7 @@ impl<T> From<JsonResponse<T>> for Result<T> {
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct WakuMessage {
-    payload: Box<[u8]>,
+    payload: Vec<u8>,
     /// The content topic to be set on the message
     content_topic: WakuContentTopic,
     /// The Waku Message version number
@@ -55,6 +55,37 @@ pub struct WakuMessage {
 }
 
 impl WakuMessage {
+    pub fn new<PAYLOAD: AsRef<[u8]>>(
+        payload: PAYLOAD,
+        content_topic: WakuContentTopic,
+        version: WakuMessageVersion,
+        timestamp: usize,
+    ) -> Self {
+        let payload = payload.as_ref().to_vec();
+        Self {
+            payload,
+            content_topic,
+            version,
+            timestamp,
+        }
+    }
+
+    pub fn payload(&self) -> &[u8] {
+        &self.payload
+    }
+
+    pub fn content_topic(&self) -> &WakuContentTopic {
+        &self.content_topic
+    }
+
+    pub fn version(&self) -> WakuMessageVersion {
+        self.version
+    }
+
+    pub fn timestamp(&self) -> usize {
+        self.timestamp
+    }
+
     /// Try decode the message with an expected symmetric key
     ///
     /// wrapper around [`crate::decrypt::waku_decode_symmetric`]
@@ -85,6 +116,24 @@ pub struct DecodedPayload {
     padding: String,
 }
 
+impl DecodedPayload {
+    pub fn public_key(&self) -> Option<&str> {
+        self.public_key.as_deref()
+    }
+
+    pub fn signature(&self) -> Option<&str> {
+        self.signature.as_deref()
+    }
+
+    pub fn data(&self) -> &str {
+        &self.data
+    }
+
+    pub fn padding(&self) -> &str {
+        &self.padding
+    }
+}
+
 /// The content topic of a Waku message
 /// as per the [specification](https://rfc.vac.dev/spec/36/#contentfilter-type)
 #[derive(Clone, Serialize, Deserialize)]
@@ -92,6 +141,16 @@ pub struct DecodedPayload {
 pub struct ContentFilter {
     /// The content topic of a Waku message
     content_topic: WakuContentTopic,
+}
+
+impl ContentFilter {
+    pub fn new(content_topic: WakuContentTopic) -> Self {
+        Self { content_topic }
+    }
+
+    pub fn content_topic(&self) -> &WakuContentTopic {
+        &self.content_topic
+    }
 }
 
 /// The criteria to create subscription to a light node in JSON Format
@@ -105,22 +164,32 @@ pub struct FilterSubscription {
     pubsub_topic: Option<WakuPubSubTopic>,
 }
 
+impl FilterSubscription {
+    pub fn content_filters(&self) -> &[ContentFilter] {
+        &self.content_filters
+    }
+
+    pub fn pubsub_topic(&self) -> Option<&WakuPubSubTopic> {
+        self.pubsub_topic.as_ref()
+    }
+}
+
 /// Criteria used to retrieve historical messages
 #[derive(Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct StoreQuery {
     /// The pubsub topic on which messages are published
-    pubsub_topic: Option<WakuPubSubTopic>,
+    pub pubsub_topic: Option<WakuPubSubTopic>,
     /// Array of [`ContentFilter`] to query for historical messages
-    content_filters: Vec<ContentFilter>,
+    pub content_filters: Vec<ContentFilter>,
     /// The inclusive lower bound on the timestamp of queried messages.
     /// This field holds the Unix epoch time in nanoseconds
-    start_time: Option<usize>,
+    pub start_time: Option<usize>,
     /// The inclusive upper bound on the timestamp of queried messages.
     /// This field holds the Unix epoch time in nanoseconds
-    end_time: Option<usize>,
+    pub end_time: Option<usize>,
     /// Paging information in [`PagingOptions`] format
-    paging_options: Option<PagingOptions>,
+    pub paging_options: Option<PagingOptions>,
 }
 
 /// The response received after doing a query to a store node
@@ -133,31 +202,41 @@ pub struct StoreResponse {
     paging_options: Option<PagingOptions>,
 }
 
+impl StoreResponse {
+    pub fn messages(&self) -> &[WakuMessage] {
+        &self.messages
+    }
+
+    pub fn paging_options(&self) -> Option<&PagingOptions> {
+        self.paging_options.as_ref()
+    }
+}
+
 /// Paging information
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PagingOptions {
     /// Number of messages to retrieve per page
-    page_size: usize,
+    pub page_size: usize,
     /// Message Index from which to perform pagination.
     /// If not included and forward is set to `true`, paging will be performed from the beginning of the list.
     /// If not included and forward is set to `false`, paging will be performed from the end of the list
-    cursor: Option<MessageIndex>,
+    pub cursor: Option<MessageIndex>,
     /// `true` if paging forward, `false` if paging backward
-    forward: bool,
+    pub forward: bool,
 }
 
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct MessageIndex {
     /// Hash of the message at this [`MessageIndex`]
-    digest: String,
+    pub digest: String,
     /// UNIX timestamp in nanoseconds at which the message at this [`MessageIndex`] was received
-    receiver_time: usize,
+    pub receiver_time: usize,
     /// UNIX timestamp in nanoseconds at which the message is generated by its sender
-    sender_time: usize,
+    pub sender_time: usize,
     /// The pubsub topic of the message at this [`MessageIndex`]
-    pubsub_topic: WakuPubSubTopic,
+    pub pubsub_topic: WakuPubSubTopic,
 }
 
 #[derive(Copy, Clone)]
@@ -197,10 +276,10 @@ impl RegexRepresentation for Encoding {
 
 #[derive(Clone)]
 pub struct WakuContentTopic {
-    application_name: String,
-    version: usize,
-    content_topic_name: String,
-    encoding: Encoding,
+    pub application_name: String,
+    pub version: usize,
+    pub content_topic_name: String,
+    pub encoding: Encoding,
 }
 
 impl FromStr for WakuContentTopic {
@@ -260,8 +339,17 @@ impl<'de> Deserialize<'de> for WakuContentTopic {
 
 #[derive(Clone)]
 pub struct WakuPubSubTopic {
-    topic_name: String,
-    encoding: Encoding,
+    pub topic_name: String,
+    pub encoding: Encoding,
+}
+
+impl WakuPubSubTopic {
+    pub fn new(topic_name: String, encoding: Encoding) -> Self {
+        Self {
+            topic_name,
+            encoding,
+        }
+    }
 }
 
 impl FromStr for WakuPubSubTopic {

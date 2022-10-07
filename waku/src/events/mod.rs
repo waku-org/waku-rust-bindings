@@ -24,6 +24,12 @@ pub struct Signal {
     event: Event,
 }
 
+impl Signal {
+    pub fn event(&self) -> &Event {
+        &self.event
+    }
+}
+
 #[derive(Serialize, Deserialize)]
 #[serde(tag = "untagged", rename_all = "camelCase")]
 pub enum Event {
