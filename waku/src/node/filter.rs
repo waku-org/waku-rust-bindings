@@ -1,3 +1,5 @@
+//! Waku [filter](https://rfc.vac.dev/spec/36/#waku-filter) protocol related methods
+
 // std
 use std::ffi::{CStr, CString};
 use std::time::Duration;

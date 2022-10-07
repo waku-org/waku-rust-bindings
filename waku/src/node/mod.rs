@@ -1,3 +1,5 @@
+//! Waku node implementation
+
 mod config;
 mod filter;
 mod lightpush;

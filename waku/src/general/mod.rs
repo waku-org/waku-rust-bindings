@@ -1,3 +1,5 @@
+//! Waku [general](https://rfc.vac.dev/spec/36/#general) types
+
 // std
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;

@@ -1,3 +1,5 @@
+//! Waku [relay](https://rfc.vac.dev/spec/36/#waku-relay) protocol related methods
+
 // std
 use std::ffi::{CStr, CString};
 use std::time::Duration;

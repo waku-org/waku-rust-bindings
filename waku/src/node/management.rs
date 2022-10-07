@@ -1,3 +1,5 @@
+//! Node lifcycle related methods
+
 // std
 use multiaddr::Multiaddr;
 use std::ffi::{CStr, CString};

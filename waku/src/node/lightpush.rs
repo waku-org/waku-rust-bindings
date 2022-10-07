@@ -1,3 +1,5 @@
+//! Waku [lightpush](https://rfc.vac.dev/spec/36/#waku-lightpush) protocol related methods
+
 // std
 use std::ffi::{CStr, CString};
 use std::time::Duration;

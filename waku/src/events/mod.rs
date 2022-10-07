@@ -1,3 +1,5 @@
+//! Waku message [event](https://rfc.vac.dev/spec/36/#events) related items
+//!
 //! Asynchronous events require a callback to be registered.
 //! An example of an asynchronous event that might be emitted is receiving a message.
 //! When an event is emitted, this callback will be triggered receiving a [`Signal`]

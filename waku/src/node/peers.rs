@@ -1,3 +1,5 @@
+//! Waku [peer handling and connection](https://rfc.vac.dev/spec/36/#connecting-to-peers) methods
+
 // std
 use std::ffi::{CStr, CString};
 use std::time::Duration;

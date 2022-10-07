@@ -1,3 +1,5 @@
+//! Waku [store](https://rfc.vac.dev/spec/36/#waku-store) handling methods
+
 // std
 use std::ffi::{CStr, CString};
 use std::time::Duration;
