@@ -1,3 +1,5 @@
+//! Symmetric and asymmetric waku messages [decrypting](https://rfc.vac.dev/spec/36/#decrypting-messages) methods
+
 // std
 use std::ffi::{CStr, CString};
 // crates
