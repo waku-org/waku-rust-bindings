@@ -4,6 +4,7 @@ mod lightpush;
 mod management;
 mod peers;
 mod relay;
+mod store;
 
 // std
 use aes_gcm::{Aes256Gcm, Key};

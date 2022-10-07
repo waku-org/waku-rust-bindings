@@ -7,7 +7,7 @@ use std::time::Duration;
 use crate::general::Result;
 use crate::general::{FilterSubscription, JsonResponse, MessageId, PeerId};
 
-/// Creates a subscription in a lightnode for messages that matches a content filter and optionally a [`PubSubTopic`]
+/// Creates a subscription in a lightnode for messages that matches a content filter and optionally a [`WakuPubSubTopic`](`crate::general::WakuPubSubTopic`)
 /// As per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_filter_subscribechar-filterjson-char-peerid-int-timeoutms)
 pub fn waku_filter_subscribe(
     filter_subscription: &FilterSubscription,
@@ -40,7 +40,7 @@ pub fn waku_filter_subscribe(
     Result::from(response).map(|_| ())
 }
 
-/// Removes subscriptions in a light node matching a content filter and, optionally, a [`PubSubTopic`]
+/// Removes subscriptions in a light node matching a content filter and, optionally, a [`WakuPubSubTopic`](`crate::general::WakuPubSubTopic`)
 /// As per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_filter_unsubscribechar-filterjson-int-timeoutms)
 pub fn waku_filter_unsubscribe(
     filter_subscription: &FilterSubscription,
