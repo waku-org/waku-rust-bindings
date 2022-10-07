@@ -1,4 +1,4 @@
-//! Node lifcycle related methods
+//! Node lifcycle [mangement](https://rfc.vac.dev/spec/36/#node-management) related methods
 
 // std
 use multiaddr::Multiaddr;
