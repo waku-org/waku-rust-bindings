@@ -36,6 +36,11 @@ pub struct Running;
 impl WakuNodeState for Initialized {}
 impl WakuNodeState for Running {}
 
+/// Handle to the underliying waku node
+/// Safe to sendt to/through threads.
+/// Only a waku node can be running at a time.
+/// Referenes (`&`) to the handle can call queries and perform operations in a thread safe way.
+/// Only an owned version of the handle can `start` or `stop` the node.
 pub struct WakuNodeHandle<State: WakuNodeState>(PhantomData<State>);
 
 /// We do not have any inner state, so the handle should be safe to be send among threads.
