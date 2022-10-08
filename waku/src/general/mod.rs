@@ -45,6 +45,7 @@ impl<T> From<JsonResponse<T>> for Result<T> {
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct WakuMessage {
+    #[serde(with = "base64_serde")]
     payload: Vec<u8>,
     /// The content topic to be set on the message
     content_topic: WakuContentTopic,
@@ -396,5 +397,25 @@ impl<'de> Deserialize<'de> for WakuPubSubTopic {
         as_string
             .parse::<WakuPubSubTopic>()
             .map_err(D::Error::custom)
+    }
+}
+
+mod base64_serde {
+    use serde::de::Error;
+    use serde::{Deserialize, Deserializer, Serialize, Serializer};
+
+    pub fn serialize<S>(value: &[u8], serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        base64::encode(value).serialize(serializer)
+    }
+
+    pub fn deserialize<'de, D>(deserializer: D) -> std::result::Result<Vec<u8>, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let base64_str: String = String::deserialize(deserializer)?;
+        base64::decode(base64_str).map_err(D::Error::custom)
     }
 }
