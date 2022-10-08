@@ -5,7 +5,7 @@ use std::fmt::{Display, Formatter};
 use std::str::FromStr;
 // crates
 use aes_gcm::{Aes256Gcm, Key};
-use libsecp256k1::SecretKey;
+use libsecp256k1::{PublicKey, SecretKey, Signature};
 use serde::{de::Error, Deserialize, Deserializer, Serialize, Serializer};
 use sscanf::{scanf, RegexRepresentation};
 // internal
@@ -102,35 +102,38 @@ impl WakuMessage {
     }
 }
 
-// TODO: use proper types instead of base64 strings
 /// A payload once decoded, used when a received Waku Message is encrypted
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct DecodedPayload {
     /// Public key that signed the message (optional), hex encoded with 0x prefix
-    public_key: Option<String>,
+    #[serde(deserialize_with = "deserialize_optional_pk")]
+    public_key: Option<PublicKey>,
     /// Message signature (optional), hex encoded with 0x prefix
-    signature: Option<String>,
+    #[serde(deserialize_with = "deserialize_optional_signature")]
+    signature: Option<Signature>,
     /// Decrypted message payload base64 encoded
-    data: String,
+    #[serde(with = "base64_serde")]
+    data: Vec<u8>,
     /// Padding base64 encoded
-    padding: String,
+    #[serde(with = "base64_serde")]
+    padding: Vec<u8>,
 }
 
 impl DecodedPayload {
-    pub fn public_key(&self) -> Option<&str> {
-        self.public_key.as_deref()
+    pub fn public_key(&self) -> Option<&PublicKey> {
+        self.public_key.as_ref()
     }
 
-    pub fn signature(&self) -> Option<&str> {
-        self.signature.as_deref()
+    pub fn signature(&self) -> Option<&Signature> {
+        self.signature.as_ref()
     }
 
-    pub fn data(&self) -> &str {
+    pub fn data(&self) -> &[u8] {
         &self.data
     }
 
-    pub fn padding(&self) -> &str {
+    pub fn padding(&self) -> &[u8] {
         &self.padding
     }
 }
@@ -418,4 +421,34 @@ mod base64_serde {
         let base64_str: String = String::deserialize(deserializer)?;
         base64::decode(base64_str).map_err(D::Error::custom)
     }
+}
+
+pub fn deserialize_optional_pk<'de, D>(
+    deserializer: D,
+) -> std::result::Result<Option<PublicKey>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let base64_str: Option<String> = Option::<String>::deserialize(deserializer)?;
+    base64_str
+        .map(|base64_str| {
+            let raw_bytes = base64::decode(base64_str).map_err(D::Error::custom)?;
+            PublicKey::parse_slice(&raw_bytes, None).map_err(D::Error::custom)
+        })
+        .transpose()
+}
+
+pub fn deserialize_optional_signature<'de, D>(
+    deserializer: D,
+) -> std::result::Result<Option<Signature>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let base64_str: Option<String> = Option::<String>::deserialize(deserializer)?;
+    base64_str
+        .map(|base64_str| {
+            let raw_bytes = base64::decode(base64_str).map_err(D::Error::custom)?;
+            Signature::parse_der(&raw_bytes).map_err(D::Error::custom)
+        })
+        .transpose()
 }
