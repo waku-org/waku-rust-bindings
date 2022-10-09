@@ -11,9 +11,11 @@ use sscanf::{scanf, RegexRepresentation};
 // internal
 use crate::decrypt::{waku_decode_asymmetric, waku_decode_symmetric};
 
+/// Waku message version
 pub type WakuMessageVersion = usize;
 /// Base58 encoded peer id
 pub type PeerId = String;
+/// Waku message id, hex encoded sha256 digest of the message
 pub type MessageId = String;
 
 /// JsonResponse wrapper.
@@ -244,6 +246,7 @@ pub struct MessageIndex {
     pub pubsub_topic: WakuPubSubTopic,
 }
 
+/// WakuMessage encoding scheme
 #[derive(Copy, Clone)]
 pub enum Encoding {
     Proto,
@@ -279,6 +282,7 @@ impl RegexRepresentation for Encoding {
     const REGEX: &'static str = r"\w";
 }
 
+/// A waku content topic `/{application_name}/{version}/{content_topic_name}/{encdoing}`
 #[derive(Clone)]
 pub struct WakuContentTopic {
     pub application_name: String,
@@ -342,6 +346,7 @@ impl<'de> Deserialize<'de> for WakuContentTopic {
     }
 }
 
+/// A waku pubsub topic in the form of `/waku/v2/{topic_name}/{encoding}`
 #[derive(Clone)]
 pub struct WakuPubSubTopic {
     pub topic_name: String,

@@ -30,6 +30,9 @@ impl Signal {
     }
 }
 
+/// Waku event
+/// For now just WakuMessage is supported
+#[non_exhaustive]
 #[derive(Serialize, Deserialize)]
 #[serde(tag = "untagged", rename_all = "camelCase")]
 pub enum Event {

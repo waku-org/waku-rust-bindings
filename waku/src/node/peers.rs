@@ -113,6 +113,12 @@ pub fn waku_peer_count() -> Result<usize> {
     result.into()
 }
 
+/// Waku peer supported protocol
+///
+/// Examples:
+/// `"/ipfs/id/1.0.0"`
+/// `"/vac/waku/relay/2.0.0"`
+/// `"/ipfs/ping/1.0.0"`
 pub type Protocol = String;
 
 /// Peer data from known/connected waku nodes
