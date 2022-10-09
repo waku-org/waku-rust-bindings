@@ -1,3 +1,6 @@
+//! # Waku
+//!
+//! Implementation on top of [`waku-bindings`](https://rfc.vac.dev/spec/36/)
 mod decrypt;
 mod events;
 mod general;
