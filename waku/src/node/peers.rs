@@ -7,11 +7,11 @@ use std::time::Duration;
 use multiaddr::Multiaddr;
 use serde::Deserialize;
 // internal
-use crate::general::{JsonResponse, PeerId, Result};
+use crate::general::{JsonResponse, PeerId, ProtocolId, Result};
 
 /// Add a node multiaddress and protocol to the waku node’s peerstore.
 /// As per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_add_peerchar-address-char-protocolid)
-pub fn waku_add_peers(address: Multiaddr, protocol_id: usize) -> Result<PeerId> {
+pub fn waku_add_peers(address: Multiaddr, protocol_id: ProtocolId) -> Result<PeerId> {
     let response = unsafe {
         CStr::from_ptr(waku_sys::waku_add_peer(
             CString::new(address.to_string())

@@ -13,7 +13,7 @@ pub use node::{
 
 pub use general::{
     ContentFilter, DecodedPayload, Encoding, FilterSubscription, MessageId, MessageIndex,
-    PagingOptions, PeerId, StoreQuery, StoreResponse, WakuContentTopic, WakuMessage,
+    PagingOptions, PeerId, ProtocolId, StoreQuery, StoreResponse, WakuContentTopic, WakuMessage,
     WakuMessageVersion, WakuPubSubTopic,
 };
 

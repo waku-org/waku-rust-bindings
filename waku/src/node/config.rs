@@ -12,24 +12,24 @@ use serde::{Deserialize, Serialize};
 #[serde(rename_all = "camelCase")]
 pub struct WakuNodeConfig {
     /// Listening IP address. Default `0.0.0.0`
-    host: Option<std::net::IpAddr>,
+    pub host: Option<std::net::IpAddr>,
     /// Libp2p TCP listening port. Default `60000`. Use `0` for **random**
-    port: Option<usize>,
+    pub port: Option<usize>,
     /// External address to advertise to other nodes. Can be ip4, ip6 or dns4, dns6.
     /// If null, the multiaddress(es) generated from the ip and port specified in the config (or default ones) will be used.
     /// Default: null
-    advertise_addr: Option<Multiaddr>,
+    pub advertise_addr: Option<Multiaddr>,
     /// Secp256k1 private key in Hex format (`0x123...abc`). Default random
     #[serde(with = "secret_key_serde")]
-    node_key: Option<SecretKey>,
+    pub node_key: Option<SecretKey>,
     /// Interval in seconds for pinging peers to keep the connection alive. Default `20`
-    keep_alive_interval: Option<usize>,
+    pub keep_alive_interval: Option<usize>,
     /// Enable relay protocol. Default `true`
-    relay: Option<bool>,
+    pub relay: Option<bool>,
     /// The minimum number of peers required on a topic to allow broadcasting a message. Default `0`
-    min_peers_to_publish: Option<usize>,
+    pub min_peers_to_publish: Option<usize>,
     /// Enable filter protocol. Default `false`
-    filter: Option<bool>,
+    pub filter: Option<bool>,
 }
 
 mod secret_key_serde {

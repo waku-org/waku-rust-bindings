@@ -18,6 +18,35 @@ pub type PeerId = String;
 /// Waku message id, hex encoded sha256 digest of the message
 pub type MessageId = String;
 
+/// Protocol identifiers
+#[non_exhaustive]
+pub enum ProtocolId {
+    Store,
+    Lightpush,
+    Filter,
+    Relay,
+}
+
+impl ProtocolId {
+    pub fn as_string_with_version(&self, version: &str) -> String {
+        format!("{}/{}", self, version)
+    }
+}
+
+impl Display for ProtocolId {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let tag = match self {
+            ProtocolId::Store => "/vac/waku/store",
+            ProtocolId::Lightpush => "/vac/waku/lightpush",
+            ProtocolId::Filter => "/vac/waku/filter",
+            ProtocolId::Relay => "/vac/waku/relay",
+            #[allow(unreachable_patterns)]
+            _ => unreachable!(),
+        };
+        write!(f, "{}", tag)
+    }
+}
+
 /// JsonResponse wrapper.
 /// `go-waku` ffi returns this type as a `char *` as per the [specification](https://rfc.vac.dev/spec/36/#jsonresponse-type)
 /// This is internal, as it is better to use rust plain `Result` type.
