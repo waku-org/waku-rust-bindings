@@ -230,10 +230,11 @@ pub struct PagingOptions {
     pub forward: bool,
 }
 
+/// Pagination index type
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct MessageIndex {
-    /// Hash of the message at this [`MessageIndex`]
+    /// Hash of the message at this [``MessageIndex`]
     pub digest: String,
     /// UNIX timestamp in nanoseconds at which the message at this [`MessageIndex`] was received
     pub receiver_time: usize,
