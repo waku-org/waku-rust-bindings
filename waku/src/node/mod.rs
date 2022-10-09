@@ -73,7 +73,7 @@ impl<State: WakuNodeState> WakuNodeHandle<State> {
     /// Add a node multiaddress and protocol to the waku node’s peerstore
     ///
     /// wrapper around [`peers::waku_add_peers`]
-    pub fn add_peer(&self, address: Multiaddr, protocol_id: ProtocolId) -> Result<PeerId> {
+    pub fn add_peer(&self, address: &Multiaddr, protocol_id: ProtocolId) -> Result<PeerId> {
         peers::waku_add_peers(address, protocol_id)
     }
 }
@@ -118,7 +118,7 @@ impl WakuNodeHandle<Running> {
     /// wrapper around [`peers::waku_connect_peer_with_address`]
     pub fn connect_peer_with_address(
         &self,
-        address: Multiaddr,
+        address: &Multiaddr,
         timeout: Option<Duration>,
     ) -> Result<()> {
         peers::waku_connect_peer_with_address(address, timeout)

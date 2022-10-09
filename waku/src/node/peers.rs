@@ -11,7 +11,7 @@ use crate::general::{JsonResponse, PeerId, ProtocolId, Result};
 
 /// Add a node multiaddress and protocol to the waku node’s peerstore.
 /// As per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_add_peerchar-address-char-protocolid)
-pub fn waku_add_peers(address: Multiaddr, protocol_id: ProtocolId) -> Result<PeerId> {
+pub fn waku_add_peers(address: &Multiaddr, protocol_id: ProtocolId) -> Result<PeerId> {
     let response = unsafe {
         CStr::from_ptr(waku_sys::waku_add_peer(
             CString::new(address.to_string())
@@ -36,7 +36,10 @@ pub fn waku_add_peers(address: Multiaddr, protocol_id: ProtocolId) -> Result<Pee
 /// If the function execution takes longer than `timeout` value, the execution will be canceled and an error returned.
 /// Use 0 for no timeout
 /// As per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_connect_peerchar-address-int-timeoutms)
-pub fn waku_connect_peer_with_address(address: Multiaddr, timeout: Option<Duration>) -> Result<()> {
+pub fn waku_connect_peer_with_address(
+    address: &Multiaddr,
+    timeout: Option<Duration>,
+) -> Result<()> {
     let response = unsafe {
         CStr::from_ptr(waku_sys::waku_connect(
             CString::new(address.to_string())
@@ -63,7 +66,7 @@ pub fn waku_connect_peer_with_address(address: Multiaddr, timeout: Option<Durati
 /// As per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_connect_peeridchar-peerid-int-timeoutms)
 pub fn waku_connect_peer_with_id(peer_id: PeerId, timeout: Option<Duration>) -> Result<()> {
     let response = unsafe {
-        CStr::from_ptr(waku_sys::waku_connect(
+        CStr::from_ptr(waku_sys::waku_connect_peerid(
             CString::new(peer_id)
                 .expect("CString should build properly from peer id")
                 .into_raw(),
