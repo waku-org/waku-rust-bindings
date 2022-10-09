@@ -1,14 +1,21 @@
+//! Waku [general](https://rfc.vac.dev/spec/36/#general) types
+
 // std
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;
 // crates
+use aes_gcm::{Aes256Gcm, Key};
+use libsecp256k1::{PublicKey, SecretKey, Signature};
 use serde::{de::Error, Deserialize, Deserializer, Serialize, Serializer};
 use sscanf::{scanf, RegexRepresentation};
 // internal
+use crate::decrypt::{waku_decode_asymmetric, waku_decode_symmetric};
 
+/// Waku message version
 pub type WakuMessageVersion = usize;
 /// Base58 encoded peer id
 pub type PeerId = String;
+/// Waku message id, hex encoded sha256 digest of the message
 pub type MessageId = String;
 
 /// JsonResponse wrapper.
@@ -34,12 +41,14 @@ impl<T> From<JsonResponse<T>> for Result<T> {
     }
 }
 
-/// JsonMessage, Waku message in JSON format.
+// TODO: Properly type and deserialize payload form base64 encoded string
+/// Waku message in JSON format.
 /// as per the [specification](https://rfc.vac.dev/spec/36/#jsonmessage-type)
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct WakuMessage {
-    payload: Box<[u8]>,
+    #[serde(with = "base64_serde")]
+    payload: Vec<u8>,
     /// The content topic to be set on the message
     content_topic: WakuContentTopic,
     /// The Waku Message version number
@@ -48,16 +57,87 @@ pub struct WakuMessage {
     timestamp: usize,
 }
 
+impl WakuMessage {
+    pub fn new<PAYLOAD: AsRef<[u8]>>(
+        payload: PAYLOAD,
+        content_topic: WakuContentTopic,
+        version: WakuMessageVersion,
+        timestamp: usize,
+    ) -> Self {
+        let payload = payload.as_ref().to_vec();
+        Self {
+            payload,
+            content_topic,
+            version,
+            timestamp,
+        }
+    }
+
+    pub fn payload(&self) -> &[u8] {
+        &self.payload
+    }
+
+    pub fn content_topic(&self) -> &WakuContentTopic {
+        &self.content_topic
+    }
+
+    pub fn version(&self) -> WakuMessageVersion {
+        self.version
+    }
+
+    pub fn timestamp(&self) -> usize {
+        self.timestamp
+    }
+
+    /// Try decode the message with an expected symmetric key
+    ///
+    /// wrapper around [`crate::decrypt::waku_decode_symmetric`]
+    pub fn try_decode_symmetric(&self, symmetric_key: &Key<Aes256Gcm>) -> Result<DecodedPayload> {
+        waku_decode_symmetric(self, symmetric_key)
+    }
+
+    /// Try decode the message with an expected asymmetric key
+    ///
+    /// wrapper around [`crate::decrypt::waku_decode_asymmetric`]
+    pub fn try_decode_asymmentric(&self, asymmetric_key: &SecretKey) -> Result<DecodedPayload> {
+        waku_decode_asymmetric(self, asymmetric_key)
+    }
+}
+
 /// A payload once decoded, used when a received Waku Message is encrypted
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct DecodedPayload {
     /// Public key that signed the message (optional), hex encoded with 0x prefix
-    public_key: Option<String>,
+    #[serde(deserialize_with = "deserialize_optional_pk")]
+    public_key: Option<PublicKey>,
     /// Message signature (optional), hex encoded with 0x prefix
-    signature: Option<String>,
+    #[serde(deserialize_with = "deserialize_optional_signature")]
+    signature: Option<Signature>,
     /// Decrypted message payload base64 encoded
-    data: String,
+    #[serde(with = "base64_serde")]
+    data: Vec<u8>,
     /// Padding base64 encoded
-    padding: String,
+    #[serde(with = "base64_serde")]
+    padding: Vec<u8>,
+}
+
+impl DecodedPayload {
+    pub fn public_key(&self) -> Option<&PublicKey> {
+        self.public_key.as_ref()
+    }
+
+    pub fn signature(&self) -> Option<&Signature> {
+        self.signature.as_ref()
+    }
+
+    pub fn data(&self) -> &[u8] {
+        &self.data
+    }
+
+    pub fn padding(&self) -> &[u8] {
+        &self.padding
+    }
 }
 
 /// The content topic of a Waku message
@@ -67,6 +147,16 @@ pub struct DecodedPayload {
 pub struct ContentFilter {
     /// The content topic of a Waku message
     content_topic: WakuContentTopic,
+}
+
+impl ContentFilter {
+    pub fn new(content_topic: WakuContentTopic) -> Self {
+        Self { content_topic }
+    }
+
+    pub fn content_topic(&self) -> &WakuContentTopic {
+        &self.content_topic
+    }
 }
 
 /// The criteria to create subscription to a light node in JSON Format
@@ -80,22 +170,32 @@ pub struct FilterSubscription {
     pubsub_topic: Option<WakuPubSubTopic>,
 }
 
+impl FilterSubscription {
+    pub fn content_filters(&self) -> &[ContentFilter] {
+        &self.content_filters
+    }
+
+    pub fn pubsub_topic(&self) -> Option<&WakuPubSubTopic> {
+        self.pubsub_topic.as_ref()
+    }
+}
+
 /// Criteria used to retrieve historical messages
 #[derive(Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct StoreQuery {
     /// The pubsub topic on which messages are published
-    pubsub_topic: Option<WakuPubSubTopic>,
+    pub pubsub_topic: Option<WakuPubSubTopic>,
     /// Array of [`ContentFilter`] to query for historical messages
-    content_filters: Vec<ContentFilter>,
+    pub content_filters: Vec<ContentFilter>,
     /// The inclusive lower bound on the timestamp of queried messages.
     /// This field holds the Unix epoch time in nanoseconds
-    start_time: Option<usize>,
+    pub start_time: Option<usize>,
     /// The inclusive upper bound on the timestamp of queried messages.
     /// This field holds the Unix epoch time in nanoseconds
-    end_time: Option<usize>,
+    pub end_time: Option<usize>,
     /// Paging information in [`PagingOptions`] format
-    paging_options: Option<PagingOptions>,
+    pub paging_options: Option<PagingOptions>,
 }
 
 /// The response received after doing a query to a store node
@@ -108,33 +208,45 @@ pub struct StoreResponse {
     paging_options: Option<PagingOptions>,
 }
 
+impl StoreResponse {
+    pub fn messages(&self) -> &[WakuMessage] {
+        &self.messages
+    }
+
+    pub fn paging_options(&self) -> Option<&PagingOptions> {
+        self.paging_options.as_ref()
+    }
+}
+
 /// Paging information
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PagingOptions {
     /// Number of messages to retrieve per page
-    page_size: usize,
+    pub page_size: usize,
     /// Message Index from which to perform pagination.
     /// If not included and forward is set to `true`, paging will be performed from the beginning of the list.
     /// If not included and forward is set to `false`, paging will be performed from the end of the list
-    cursor: Option<MessageIndex>,
+    pub cursor: Option<MessageIndex>,
     /// `true` if paging forward, `false` if paging backward
-    forward: bool,
+    pub forward: bool,
 }
 
+/// Pagination index type
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct MessageIndex {
-    /// Hash of the message at this [`MessageIndex`]
-    digest: String,
+    /// Hash of the message at this [``MessageIndex`]
+    pub digest: String,
     /// UNIX timestamp in nanoseconds at which the message at this [`MessageIndex`] was received
-    receiver_time: usize,
+    pub receiver_time: usize,
     /// UNIX timestamp in nanoseconds at which the message is generated by its sender
-    sender_time: usize,
+    pub sender_time: usize,
     /// The pubsub topic of the message at this [`MessageIndex`]
-    pubsub_topic: WakuPubSubTopic,
+    pub pubsub_topic: WakuPubSubTopic,
 }
 
+/// WakuMessage encoding scheme
 #[derive(Copy, Clone)]
 pub enum Encoding {
     Proto,
@@ -170,12 +282,13 @@ impl RegexRepresentation for Encoding {
     const REGEX: &'static str = r"\w";
 }
 
+/// A waku content topic `/{application_name}/{version}/{content_topic_name}/{encdoing}`
 #[derive(Clone)]
 pub struct WakuContentTopic {
-    application_name: String,
-    version: usize,
-    content_topic_name: String,
-    encoding: Encoding,
+    pub application_name: String,
+    pub version: usize,
+    pub content_topic_name: String,
+    pub encoding: Encoding,
 }
 
 impl FromStr for WakuContentTopic {
@@ -233,10 +346,20 @@ impl<'de> Deserialize<'de> for WakuContentTopic {
     }
 }
 
+/// A waku pubsub topic in the form of `/waku/v2/{topic_name}/{encoding}`
 #[derive(Clone)]
 pub struct WakuPubSubTopic {
-    topic_name: String,
-    encoding: Encoding,
+    pub topic_name: String,
+    pub encoding: Encoding,
+}
+
+impl WakuPubSubTopic {
+    pub fn new(topic_name: String, encoding: Encoding) -> Self {
+        Self {
+            topic_name,
+            encoding,
+        }
+    }
 }
 
 impl FromStr for WakuPubSubTopic {
@@ -284,4 +407,54 @@ impl<'de> Deserialize<'de> for WakuPubSubTopic {
             .parse::<WakuPubSubTopic>()
             .map_err(D::Error::custom)
     }
+}
+
+mod base64_serde {
+    use serde::de::Error;
+    use serde::{Deserialize, Deserializer, Serialize, Serializer};
+
+    pub fn serialize<S>(value: &[u8], serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        base64::encode(value).serialize(serializer)
+    }
+
+    pub fn deserialize<'de, D>(deserializer: D) -> std::result::Result<Vec<u8>, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let base64_str: String = String::deserialize(deserializer)?;
+        base64::decode(base64_str).map_err(D::Error::custom)
+    }
+}
+
+pub fn deserialize_optional_pk<'de, D>(
+    deserializer: D,
+) -> std::result::Result<Option<PublicKey>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let base64_str: Option<String> = Option::<String>::deserialize(deserializer)?;
+    base64_str
+        .map(|base64_str| {
+            let raw_bytes = base64::decode(base64_str).map_err(D::Error::custom)?;
+            PublicKey::parse_slice(&raw_bytes, None).map_err(D::Error::custom)
+        })
+        .transpose()
+}
+
+pub fn deserialize_optional_signature<'de, D>(
+    deserializer: D,
+) -> std::result::Result<Option<Signature>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let base64_str: Option<String> = Option::<String>::deserialize(deserializer)?;
+    base64_str
+        .map(|base64_str| {
+            let raw_bytes = base64::decode(base64_str).map_err(D::Error::custom)?;
+            Signature::parse_der(&raw_bytes).map_err(D::Error::custom)
+        })
+        .transpose()
 }

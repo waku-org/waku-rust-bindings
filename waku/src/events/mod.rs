@@ -1,20 +1,38 @@
+//! Waku message [event](https://rfc.vac.dev/spec/36/#events) related items
+//!
+//! Asynchronous events require a callback to be registered.
+//! An example of an asynchronous event that might be emitted is receiving a message.
+//! When an event is emitted, this callback will be triggered receiving a [`Signal`]
+
 // std
 use std::ffi::{c_char, CStr};
 use std::ops::Deref;
-use std::sync::RwLock;
+use std::sync::Mutex;
 // crates
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 // internal
 use crate::general::{WakuMessage, WakuPubSubTopic};
 
+/// Event signal
 #[derive(Serialize, Deserialize)]
 pub struct Signal {
+    /// Type of signal being emitted. Currently, only message is available
     #[serde(alias = "type")]
     _type: String,
+    /// Format depends on the type of signal
     event: Event,
 }
 
+impl Signal {
+    pub fn event(&self) -> &Event {
+        &self.event
+    }
+}
+
+/// Waku event
+/// For now just WakuMessage is supported
+#[non_exhaustive]
 #[derive(Serialize, Deserialize)]
 #[serde(tag = "untagged", rename_all = "camelCase")]
 pub enum Event {
@@ -49,12 +67,12 @@ impl WakuMessageEvent {
 
 /// Shared callback slot. Callbacks are registered here so they can be accessed by the extern "C"
 #[allow(clippy::type_complexity)]
-static CALLBACK: Lazy<RwLock<Box<dyn FnMut(Signal) + Send + Sync>>> =
-    Lazy::new(|| RwLock::new(Box::new(|_| {})));
+static CALLBACK: Lazy<Mutex<Box<dyn FnMut(Signal) + Send + Sync>>> =
+    Lazy::new(|| Mutex::new(Box::new(|_| {})));
 
 /// Register global callback
 fn set_callback<F: FnMut(Signal) + Send + Sync + 'static>(f: F) {
-    *CALLBACK.write().unwrap() = Box::new(f);
+    *CALLBACK.lock().unwrap() = Box::new(f);
 }
 
 /// Wrapper callback, it transformst the `*const c_char` into a [`Signal`]
@@ -66,7 +84,7 @@ extern "C" fn callback(data: *const c_char) {
     let data: Signal = serde_json::from_str(raw_response).expect("Parsing signal to succeed");
     (CALLBACK
         .deref()
-        .write()
+        .lock()
         .expect("Access to the shared callback")
         .as_mut())(data)
 }

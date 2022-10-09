@@ -1,3 +1,5 @@
+//! Waku [peer handling and connection](https://rfc.vac.dev/spec/36/#connecting-to-peers) methods
+
 // std
 use std::ffi::{CStr, CString};
 use std::time::Duration;
@@ -111,6 +113,12 @@ pub fn waku_peer_count() -> Result<usize> {
     result.into()
 }
 
+/// Waku peer supported protocol
+///
+/// Examples:
+/// `"/ipfs/id/1.0.0"`
+/// `"/vac/waku/relay/2.0.0"`
+/// `"/ipfs/ping/1.0.0"`
 pub type Protocol = String;
 
 /// Peer data from known/connected waku nodes
@@ -127,6 +135,24 @@ pub struct WakuPeerData {
     addresses: Vec<Multiaddr>,
     /// Already connected flag
     connected: bool,
+}
+
+impl WakuPeerData {
+    pub fn peer_id(&self) -> &PeerId {
+        &self.peer_id
+    }
+
+    pub fn protocols(&self) -> &[Protocol] {
+        &self.protocols
+    }
+
+    pub fn addresses(&self) -> &[Multiaddr] {
+        &self.addresses
+    }
+
+    pub fn connected(&self) -> bool {
+        self.connected
+    }
 }
 
 /// List of [`WakuPeerData`], return value from [`waku_peers`] funtion

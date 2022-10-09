@@ -1,3 +1,5 @@
+//! Waku node [configuration](https://rfc.vac.dev/spec/36/#jsonconfig-type) related items
+
 // std
 // crates
 use libsecp256k1::SecretKey;
