@@ -1,7 +1,11 @@
 use multiaddr::Multiaddr;
 use std::net::IpAddr;
 use std::str::FromStr;
-use waku::{waku_new, ProtocolId, WakuNodeConfig};
+use std::time::SystemTime;
+use waku::{
+    waku_new, waku_set_event_callback, Encoding, Event, ProtocolId, WakuContentTopic, WakuMessage,
+    WakuNodeConfig,
+};
 
 const NODES: &[&str] = &[
     "/dns4/node-01.ac-cn-hongkong-c.wakuv2.test.statusim.net/tcp/30303/p2p/16Uiu2HAkvWiyFsgRhuJEb9JfjYxEkoHLgnUQmr1N5mKWnYjxYRVm",
@@ -28,8 +32,47 @@ pub fn main() -> Result<(), String> {
     for node_address in NODES {
         let address: Multiaddr = node_address.parse().unwrap();
         let peer_id = node.add_peer(&address, ProtocolId::Relay)?;
-        node.connect_peer_with_id(peer_id, None)?;
+        // TODO: use conenct_peeri_with_id when [329](https://github.com/status-im/go-waku/pull/329) is fixed
+        // node.connect_peer_with_id(peer_id, None)?;
+        node.connect_peer_with_address(&address, None)?;
     }
+
+    assert!(node.peers()?.len() >= NODES.len());
+    assert!(node.peer_count()? >= NODES.len());
+
+    assert!(node.relay_enough_peers(None)?);
+
+    waku_set_event_callback(|signal| match signal.event() {
+        Event::WakuMessage(message) => {
+            println!("Message with id [{}] received", message.message_id());
+        }
+        _ => {
+            println!("Wtf is this event?");
+        }
+    });
+
+    // subscribe to default channel
+    node.relay_subscribe(None)?;
+    let content_topic = WakuContentTopic {
+        application_name: "toychat".to_string(),
+        version: 2,
+        content_topic_name: "huilong".to_string(),
+        encoding: Encoding::Proto,
+    };
+
+    let message = WakuMessage::new(
+        "Hi from 🦀!",
+        content_topic,
+        1,
+        SystemTime::now()
+            .duration_since(SystemTime::UNIX_EPOCH)
+            .unwrap()
+            .as_millis()
+            .try_into()
+            .unwrap(),
+    );
+
+    node.relay_publish_message(&message, None, None)?;
 
     node.stop()?;
     Ok(())
