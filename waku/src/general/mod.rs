@@ -395,7 +395,7 @@ impl FromStr for WakuPubSubTopic {
     type Err = String;
 
     fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-        if let Ok((topic_name, encoding)) = scanf!(s, "/waku/v2/{}/{}", String, Encoding) {
+        if let Ok((topic_name, encoding)) = scanf!(s, "/waku/2/{}/{:/.+?/}", String, Encoding) {
             Ok(WakuPubSubTopic {
                 topic_name,
                 encoding,
@@ -486,4 +486,16 @@ where
             Signature::parse_der(&raw_bytes).map_err(D::Error::custom)
         })
         .transpose()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::WakuPubSubTopic;
+    use sscanf::scanf;
+    #[test]
+    fn parse_waku_topic() {
+        let s = "/waku/2/default-waku/proto";
+        let _: WakuPubSubTopic = s.parse().unwrap();
+    }
 }
