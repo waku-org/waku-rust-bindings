@@ -32,9 +32,7 @@ pub fn main() -> Result<(), String> {
     for node_address in NODES {
         let address: Multiaddr = node_address.parse().unwrap();
         let peer_id = node.add_peer(&address, ProtocolId::Relay)?;
-        // TODO: use conenct_peeri_with_id when [329](https://github.com/status-im/go-waku/pull/329) is fixed
-        // node.connect_peer_with_id(peer_id, None)?;
-        node.connect_peer_with_address(&address, None)?;
+        node.connect_peer_with_id(peer_id, None)?;
     }
 
     assert!(node.peers()?.len() >= NODES.len());
