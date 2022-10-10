@@ -159,7 +159,7 @@ impl WakuNodeHandle<Running> {
         &self,
         message: &WakuMessage,
         pubsub_topic: Option<WakuPubSubTopic>,
-        timeout: Duration,
+        timeout: Option<Duration>,
     ) -> Result<MessageId> {
         relay::waku_relay_publish_message(message, pubsub_topic, timeout)
     }

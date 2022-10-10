@@ -74,7 +74,7 @@ pub fn waku_dafault_pubsub_topic() -> WakuPubSubTopic {
 pub fn waku_relay_publish_message(
     message: &WakuMessage,
     pubsub_topic: Option<WakuPubSubTopic>,
-    timeout: Duration,
+    timeout: Option<Duration>,
 ) -> Result<MessageId> {
     let pubsub_topic = pubsub_topic
         .unwrap_or_else(waku_dafault_pubsub_topic)
@@ -91,9 +91,13 @@ pub fn waku_relay_publish_message(
                 .expect("CString should build properly from pubsub topic")
                 .into_raw(),
             timeout
-                .as_millis()
-                .try_into()
-                .expect("Duration as milliseconds should fit in a i32"),
+                .map(|duration| {
+                    duration
+                        .as_millis()
+                        .try_into()
+                        .expect("Duration as milliseconds should fit in a i32")
+                })
+                .unwrap_or(0),
         ))
     }
     .to_str()
