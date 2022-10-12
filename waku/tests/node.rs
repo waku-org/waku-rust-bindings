@@ -1,7 +1,7 @@
 use multiaddr::Multiaddr;
 use std::net::IpAddr;
 use std::str::FromStr;
-use std::time::SystemTime;
+use std::time::{Duration, SystemTime};
 use waku::{
     waku_new, waku_set_event_callback, Encoding, Event, ProtocolId, WakuContentTopic, WakuMessage,
     WakuNodeConfig,
@@ -71,7 +71,7 @@ pub fn main() -> Result<(), String> {
     );
 
     node.relay_publish_message(&message, None, None)?;
-
+    std::thread::sleep(Duration::from_secs(2));
     node.stop()?;
     Ok(())
 }
