@@ -80,7 +80,9 @@ pub struct WakuMessage {
     payload: Vec<u8>,
     /// The content topic to be set on the message
     content_topic: WakuContentTopic,
+    // TODO: check if missing default should be 0
     /// The Waku Message version number
+    #[serde(default)]
     version: WakuMessageVersion,
     /// Unix timestamp in nanoseconds
     timestamp: usize,
@@ -325,7 +327,7 @@ impl FromStr for WakuContentTopic {
 
     fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
         if let Ok((application_name, version, content_topic_name, encoding)) =
-            scanf!(s, "/{}/{}/{}/{}", String, usize, String, Encoding)
+            scanf!(s, "/{}/{}/{}/{:/.+?/}", String, usize, String, Encoding)
         {
             Ok(WakuContentTopic {
                 application_name,
@@ -497,5 +499,11 @@ mod tests {
     fn parse_waku_topic() {
         let s = "/waku/2/default-waku/proto";
         let _: WakuPubSubTopic = s.parse().unwrap();
+    }
+
+    #[test]
+    fn deserialize_waku_message() {
+        let message = "{\"payload\":\"SGkgZnJvbSDwn6aAIQ==\",\"contentTopic\":\"/toychat/2/huilong/proto\",\"timestamp\":1665580926660}";
+        let _: WakuMessage = serde_json::from_str(message).unwrap();
     }
 }
