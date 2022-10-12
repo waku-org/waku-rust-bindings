@@ -494,7 +494,6 @@ where
 mod tests {
     use super::*;
     use crate::WakuPubSubTopic;
-    use sscanf::scanf;
     #[test]
     fn parse_waku_topic() {
         let s = "/waku/2/default-waku/proto";

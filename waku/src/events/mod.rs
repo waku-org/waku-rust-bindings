@@ -100,7 +100,7 @@ pub fn waku_set_event_callback<F: FnMut(Signal) + Send + Sync + 'static>(f: F) {
 #[cfg(test)]
 mod tests {
     use crate::events::waku_set_event_callback;
-    use crate::{Event, MessageId, Signal, WakuMessage, WakuPubSubTopic};
+    use crate::{Event, Signal};
 
     // TODO: how to actually send a signal and check if the callback is run?
     #[test]
