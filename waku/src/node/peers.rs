@@ -192,6 +192,6 @@ mod tests {
       ],
       "connected": true
     }"#;
-        let data: WakuPeerData = serde_json::from_str(json_str).unwrap();
+        let _: WakuPeerData = serde_json::from_str(json_str).unwrap();
     }
 }
