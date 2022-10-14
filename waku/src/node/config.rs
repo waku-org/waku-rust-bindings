@@ -2,8 +2,8 @@
 
 // std
 // crates
-use libsecp256k1::SecretKey;
 use multiaddr::Multiaddr;
+use secp256k1::SecretKey;
 use serde::{Deserialize, Serialize};
 // internal
 
@@ -33,7 +33,7 @@ pub struct WakuNodeConfig {
 }
 
 mod secret_key_serde {
-    use libsecp256k1::SecretKey;
+    use secp256k1::SecretKey;
     use serde::de::Error;
     use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
@@ -41,7 +41,7 @@ mod secret_key_serde {
     where
         S: Serializer,
     {
-        let as_string: Option<String> = key.as_ref().map(|key| hex::encode(key.serialize()));
+        let as_string: Option<String> = key.as_ref().map(|key| hex::encode(key.secret_bytes()));
         as_string.serialize(serializer)
     }
 
@@ -55,7 +55,7 @@ mod secret_key_serde {
             Some(s) => {
                 let key_bytes = hex::decode(s).map_err(|e| D::Error::custom(format!("{e}")))?;
                 Ok(Some(
-                    SecretKey::parse_slice(&key_bytes)
+                    SecretKey::from_slice(&key_bytes)
                         .map_err(|e| D::Error::custom(format!("{e}")))?,
                 ))
             }

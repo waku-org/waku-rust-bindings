@@ -1,7 +1,7 @@
 use aes_gcm::{Aes256Gcm, KeyInit};
-use libsecp256k1::PublicKey;
 use multiaddr::Multiaddr;
 use rand::thread_rng;
+use secp256k1::{PublicKey, Secp256k1, SecretKey};
 use std::net::IpAddr;
 use std::str::FromStr;
 use std::time::{Duration, SystemTime};
@@ -42,8 +42,8 @@ pub fn main() -> Result<(), String> {
     assert!(node.peer_count()? >= NODES.len());
 
     assert!(node.relay_enough_peers(None)?);
-    let sk = libsecp256k1::SecretKey::random(&mut thread_rng());
-    let pk = PublicKey::from_secret_key(&sk);
+    let sk = SecretKey::new(&mut thread_rng());
+    let pk = PublicKey::from_secret_key(&Secp256k1::new(), &sk);
     let ssk = Aes256Gcm::generate_key(&mut thread_rng());
 
     let content = "Hi from 🦀!";
@@ -53,11 +53,17 @@ pub fn main() -> Result<(), String> {
         Event::WakuMessage(message) => {
             println!("Message with id [{}] received", message.message_id());
             let message = message.waku_message();
-            let payload = if let Ok(message) = message.try_decode_asymmetric(&sk) {
-                println!("Asymemetry message");
+            let payload = if let Ok(message) = message
+                .try_decode_asymmetric(&sk)
+                .map_err(|e| println!("{e}"))
+            {
+                println!("Asymmetryc message");
                 message.data().to_vec()
-            } else if let Ok(message) = message.try_decode_symmetric(&ssk) {
-                println!("Symemetry message");
+            } else if let Ok(message) = message
+                .try_decode_symmetric(&ssk)
+                .map_err(|e| println!("{e}"))
+            {
+                println!("Symmetryc message");
                 message.data().to_vec()
             } else {
                 println!("Unencoded message");
@@ -94,10 +100,11 @@ pub fn main() -> Result<(), String> {
             .unwrap(),
     );
 
-    // node.relay_publish_message(&message, None, None)?;
-
+    node.relay_publish_message(&message, None, None)?;
+    node.relay_publish_encrypt_asymmetric(&message, None, &pk, None, None)?;
+    node.relay_publish_encrypt_symmetric(&message, None, &ssk, None, None)?;
     node.relay_publish_encrypt_asymmetric(&message, None, &pk, Some(&sk), None)?;
-    // node.relay_publish_encrypt_symmetric(&message, None, &pk, None, None)?;
+    node.relay_publish_encrypt_symmetric(&message, None, &ssk, Some(&sk), None)?;
 
     std::thread::sleep(Duration::from_secs(2));
     node.stop()?;

@@ -5,7 +5,7 @@ use std::ffi::{CStr, CString};
 use std::time::Duration;
 // crates
 use aes_gcm::{Aes256Gcm, Key};
-use libsecp256k1::{PublicKey, SecretKey};
+use secp256k1::{PublicKey, SecretKey};
 // internal
 use crate::general::{
     Encoding, JsonResponse, MessageId, Result, WakuContentTopic, WakuMessage, WakuPubSubTopic,
@@ -116,9 +116,9 @@ pub fn waku_relay_publish_encrypt_asymmetric(
     signing_key: Option<&SecretKey>,
     timeout: Option<Duration>,
 ) -> Result<MessageId> {
-    let pk = hex::encode(public_key.serialize());
+    let pk = hex::encode(public_key.serialize_uncompressed());
     let sk = signing_key
-        .map(|signing_key| hex::encode(signing_key.serialize()))
+        .map(|signing_key| hex::encode(signing_key.secret_bytes()))
         .unwrap_or_else(String::new);
     let pubsub_topic = pubsub_topic
         .unwrap_or_else(waku_dafault_pubsub_topic)
@@ -162,13 +162,13 @@ pub fn waku_relay_publish_encrypt_asymmetric(
 pub fn waku_relay_publish_encrypt_symmetric(
     message: &WakuMessage,
     pubsub_topic: Option<WakuPubSubTopic>,
-    symmetric_key: &PublicKey,
+    symmetric_key: &Key<Aes256Gcm>,
     signing_key: Option<&SecretKey>,
     timeout: Option<Duration>,
 ) -> Result<MessageId> {
-    let symk = hex::encode(symmetric_key.serialize());
+    let symk = hex::encode(symmetric_key.as_slice());
     let sk = signing_key
-        .map(|signing_key| hex::encode(signing_key.serialize()))
+        .map(|signing_key| hex::encode(signing_key.secret_bytes()))
         .unwrap_or_else(String::new);
     let pubsub_topic = pubsub_topic
         .unwrap_or_else(waku_dafault_pubsub_topic)

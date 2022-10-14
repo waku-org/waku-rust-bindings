@@ -5,7 +5,7 @@ use std::fmt::{Display, Formatter};
 use std::str::FromStr;
 // crates
 use aes_gcm::{Aes256Gcm, Key};
-use libsecp256k1::{PublicKey, SecretKey, Signature};
+use secp256k1::{ecdsa::Signature, PublicKey, SecretKey};
 use serde::{de::Error, Deserialize, Deserializer, Serialize, Serializer};
 use sscanf::{scanf, RegexRepresentation};
 // internal
@@ -140,10 +140,10 @@ impl WakuMessage {
 #[serde(rename_all = "camelCase")]
 pub struct DecodedPayload {
     /// Public key that signed the message (optional), hex encoded with 0x prefix
-    #[serde(deserialize_with = "deserialize_optional_pk")]
+    #[serde(deserialize_with = "deserialize_optional_pk", default)]
     public_key: Option<PublicKey>,
     /// Message signature (optional), hex encoded with 0x prefix
-    #[serde(deserialize_with = "deserialize_optional_signature")]
+    #[serde(deserialize_with = "deserialize_optional_signature", default)]
     signature: Option<Signature>,
     /// Decrypted message payload base64 encoded
     #[serde(with = "base64_serde")]
@@ -470,7 +470,7 @@ where
     base64_str
         .map(|base64_str| {
             let raw_bytes = base64::decode(base64_str).map_err(D::Error::custom)?;
-            PublicKey::parse_slice(&raw_bytes, None).map_err(D::Error::custom)
+            PublicKey::from_slice(&raw_bytes).map_err(D::Error::custom)
         })
         .transpose()
 }
@@ -481,11 +481,17 @@ pub fn deserialize_optional_signature<'de, D>(
 where
     D: Deserializer<'de>,
 {
-    let base64_str: Option<String> = Option::<String>::deserialize(deserializer)?;
-    base64_str
-        .map(|base64_str| {
-            let raw_bytes = base64::decode(base64_str).map_err(D::Error::custom)?;
-            Signature::parse_der(&raw_bytes).map_err(D::Error::custom)
+    let hex_str: Option<String> = Option::<String>::deserialize(deserializer)?;
+    hex_str
+        .map(|hex_str| {
+            let raw_bytes = hex::decode(hex_str.strip_prefix("0x").unwrap_or(&hex_str))
+                .map_err(D::Error::custom)?;
+            if ![64, 65].contains(&raw_bytes.len()) {
+                return Err(D::Error::custom(
+                    "Invalid signature, only 64 or 65 bytes len are supported",
+                ));
+            }
+            Signature::from_compact(&raw_bytes[..64]).map_err(D::Error::custom)
         })
         .transpose()
 }

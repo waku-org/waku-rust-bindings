@@ -10,8 +10,8 @@ mod store;
 
 // std
 use aes_gcm::{Aes256Gcm, Key};
-use libsecp256k1::{PublicKey, SecretKey};
 use multiaddr::Multiaddr;
+use secp256k1::{PublicKey, SecretKey};
 use std::marker::PhantomData;
 use std::sync::Mutex;
 use std::time::Duration;
@@ -192,7 +192,7 @@ impl WakuNodeHandle<Running> {
         &self,
         message: &WakuMessage,
         pubsub_topic: Option<WakuPubSubTopic>,
-        symmetric_key: &PublicKey,
+        symmetric_key: &Key<Aes256Gcm>,
         signing_key: Option<&SecretKey>,
         timeout: Option<Duration>,
     ) -> Result<MessageId> {
