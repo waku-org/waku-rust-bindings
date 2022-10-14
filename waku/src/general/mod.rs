@@ -86,6 +86,9 @@ pub struct WakuMessage {
     version: WakuMessageVersion,
     /// Unix timestamp in nanoseconds
     timestamp: usize,
+    // TODO: implement RLN fields
+    #[serde(flatten)]
+    _extras: serde_json::Value,
 }
 
 impl WakuMessage {
@@ -96,11 +99,13 @@ impl WakuMessage {
         timestamp: usize,
     ) -> Self {
         let payload = payload.as_ref().to_vec();
+
         Self {
             payload,
             content_topic,
             version,
             timestamp,
+            _extras: Default::default(),
         }
     }
 

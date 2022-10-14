@@ -106,6 +106,36 @@ pub fn main() -> Result<(), String> {
     node.relay_publish_encrypt_asymmetric(&message, None, &pk, Some(&sk), None)?;
     node.relay_publish_encrypt_symmetric(&message, None, &ssk, Some(&sk), None)?;
 
+    let peer_id = node
+        .peers()
+        .unwrap()
+        .iter()
+        .map(|peer| peer.peer_id())
+        .filter(|id| id.as_str() != node.peer_id().unwrap().as_str())
+        .next()
+        .unwrap()
+        .clone();
+
+    node.lightpush_publish(&message, None, peer_id.clone(), None)?;
+    node.lightpush_publish_encrypt_asymmetric(&message, None, peer_id.clone(), &pk, None, None)?;
+    node.lightpush_publish_encrypt_asymmetric(
+        &message,
+        None,
+        peer_id.clone(),
+        &pk,
+        Some(&sk),
+        None,
+    )?;
+    node.lightpush_publish_encrypt_symmetric(&message, None, peer_id.clone(), &ssk, None, None)?;
+    node.lightpush_publish_encrypt_symmetric(
+        &message,
+        None,
+        peer_id.clone(),
+        &ssk,
+        Some(&sk),
+        None,
+    )?;
+
     std::thread::sleep(Duration::from_secs(2));
     node.stop()?;
     Ok(())

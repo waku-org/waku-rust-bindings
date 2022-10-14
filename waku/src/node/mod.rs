@@ -230,6 +230,7 @@ impl WakuNodeHandle<Running> {
     ///
     /// wrapper around [`store::waku_store_query`]
     pub fn store_query(
+        &self,
         query: &StoreQuery,
         peer_id: PeerId,
         timeout: Duration,
@@ -241,10 +242,11 @@ impl WakuNodeHandle<Running> {
     ///
     /// wrapper around [`lightpush::waku_lightpush_publish`]
     pub fn lightpush_publish(
+        &self,
         message: &WakuMessage,
-        pubsub_topic: WakuPubSubTopic,
+        pubsub_topic: Option<WakuPubSubTopic>,
         peer_id: PeerId,
-        timeout: Duration,
+        timeout: Option<Duration>,
     ) -> Result<MessageId> {
         lightpush::waku_lightpush_publish(message, pubsub_topic, peer_id, timeout)
     }
@@ -253,12 +255,13 @@ impl WakuNodeHandle<Running> {
     ///
     /// wrapper around [`lightpush::waku_lightpush_publish_encrypt_asymmetric`]
     pub fn lightpush_publish_encrypt_asymmetric(
+        &self,
         message: &WakuMessage,
         pubsub_topic: Option<WakuPubSubTopic>,
         peer_id: PeerId,
         public_key: &PublicKey,
         signing_key: Option<&SecretKey>,
-        timeout: Duration,
+        timeout: Option<Duration>,
     ) -> Result<MessageId> {
         lightpush::waku_lightpush_publish_encrypt_asymmetric(
             message,
@@ -274,12 +277,13 @@ impl WakuNodeHandle<Running> {
     ///
     /// wrapper around [`lightpush::waku_lightpush_publish_encrypt_symmetric`]
     pub fn lightpush_publish_encrypt_symmetric(
+        &self,
         message: &WakuMessage,
         pubsub_topic: Option<WakuPubSubTopic>,
         peer_id: PeerId,
         symmetric_key: &Key<Aes256Gcm>,
         signing_key: Option<&SecretKey>,
-        timeout: Duration,
+        timeout: Option<Duration>,
     ) -> Result<MessageId> {
         lightpush::waku_lightpush_publish_encrypt_symmetric(
             message,
@@ -295,6 +299,7 @@ impl WakuNodeHandle<Running> {
     ///
     /// wrapper around [`filter::waku_filter_subscribe`]
     pub fn filter_subscribe(
+        &self,
         filter_subscription: &FilterSubscription,
         peer_id: PeerId,
         timeout: Duration,
@@ -306,6 +311,7 @@ impl WakuNodeHandle<Running> {
     ///
     /// wrapper around [`filter::waku_filter_unsubscribe`]
     pub fn filter_unsubscribe(
+        &self,
         filter_subscription: &FilterSubscription,
         timeout: Duration,
     ) -> Result<()> {

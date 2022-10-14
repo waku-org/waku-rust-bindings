@@ -14,10 +14,13 @@ use crate::node::waku_dafault_pubsub_topic;
 /// As per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_lightpush_publishchar-messagejson-char-topic-char-peerid-int-timeoutms)
 pub fn waku_lightpush_publish(
     message: &WakuMessage,
-    pubsub_topic: WakuPubSubTopic,
+    pubsub_topic: Option<WakuPubSubTopic>,
     peer_id: PeerId,
-    timeout: Duration,
+    timeout: Option<Duration>,
 ) -> Result<MessageId> {
+    let pubsub_topic = pubsub_topic
+        .unwrap_or_else(waku_dafault_pubsub_topic)
+        .to_string();
     let result = unsafe {
         CStr::from_ptr(waku_sys::waku_lightpush_publish(
             CString::new(
@@ -33,9 +36,13 @@ pub fn waku_lightpush_publish(
                 .expect("CString should build properly from peer id")
                 .into_raw(),
             timeout
-                .as_millis()
-                .try_into()
-                .expect("Duration as milliseconds should fit in a i32"),
+                .map(|timeout| {
+                    timeout
+                        .as_millis()
+                        .try_into()
+                        .expect("Duration as milliseconds should fit in a i32")
+                })
+                .unwrap_or(0),
         ))
     }
     .to_str()
@@ -55,9 +62,9 @@ pub fn waku_lightpush_publish_encrypt_asymmetric(
     peer_id: PeerId,
     public_key: &PublicKey,
     signing_key: Option<&SecretKey>,
-    timeout: Duration,
+    timeout: Option<Duration>,
 ) -> Result<MessageId> {
-    let pk = hex::encode(public_key.serialize());
+    let pk = hex::encode(public_key.serialize_uncompressed());
     let sk = signing_key
         .map(|signing_key| hex::encode(signing_key.secret_bytes()))
         .unwrap_or_else(String::new);
@@ -85,9 +92,13 @@ pub fn waku_lightpush_publish_encrypt_asymmetric(
                 .expect("CString should build properly from hex encoded signing key")
                 .into_raw(),
             timeout
-                .as_millis()
-                .try_into()
-                .expect("Duration as milliseconds should fit in a i32"),
+                .map(|timeout| {
+                    timeout
+                        .as_millis()
+                        .try_into()
+                        .expect("Duration as milliseconds should fit in a i32")
+                })
+                .unwrap_or(0),
         ))
         .to_str()
         .expect("Response should always succeed to load to a &str")
@@ -105,7 +116,7 @@ pub fn waku_lightpush_publish_encrypt_symmetric(
     peer_id: PeerId,
     symmetric_key: &Key<Aes256Gcm>,
     signing_key: Option<&SecretKey>,
-    timeout: Duration,
+    timeout: Option<Duration>,
 ) -> Result<MessageId> {
     let symk = hex::encode(symmetric_key.as_slice());
     let sk = signing_key
@@ -135,9 +146,13 @@ pub fn waku_lightpush_publish_encrypt_symmetric(
                 .expect("CString should build properly from hex encoded signing key")
                 .into_raw(),
             timeout
-                .as_millis()
-                .try_into()
-                .expect("Duration as milliseconds should fit in a i32"),
+                .map(|timeout| {
+                    timeout
+                        .as_millis()
+                        .try_into()
+                        .expect("Duration as milliseconds should fit in a i32")
+                })
+                .unwrap_or(0),
         ))
         .to_str()
         .expect("Response should always succeed to load to a &str")
