@@ -8,7 +8,8 @@ mod node;
 
 pub use node::{
     waku_create_content_topic, waku_create_pubsub_topic, waku_dafault_pubsub_topic, waku_new,
-    Initialized, Protocol, Running, WakuNodeConfig, WakuNodeHandle, WakuPeerData, WakuPeers,
+    waku_store_query, Initialized, Protocol, Running, WakuNodeConfig, WakuNodeHandle, WakuPeerData,
+    WakuPeers,
 };
 
 pub use general::{

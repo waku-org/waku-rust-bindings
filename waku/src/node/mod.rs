@@ -25,6 +25,7 @@ use crate::general::{
 pub use config::WakuNodeConfig;
 pub use peers::{Protocol, WakuPeerData, WakuPeers};
 pub use relay::{waku_create_content_topic, waku_create_pubsub_topic, waku_dafault_pubsub_topic};
+pub use store::waku_store_query;
 
 /// Shared flag to check if a waku node is already running in the current process
 static WAKU_NODE_INITIALIZED: Mutex<bool> = Mutex::new(false);
@@ -173,7 +174,7 @@ impl WakuNodeHandle<Running> {
         pubsub_topic: Option<WakuPubSubTopic>,
         public_key: &PublicKey,
         signing_key: Option<&SecretKey>,
-        timeout: Duration,
+        timeout: Option<Duration>,
     ) -> Result<MessageId> {
         relay::waku_relay_publish_encrypt_asymmetric(
             message,
@@ -191,9 +192,9 @@ impl WakuNodeHandle<Running> {
         &self,
         message: &WakuMessage,
         pubsub_topic: Option<WakuPubSubTopic>,
-        symmetric_key: &Key<Aes256Gcm>,
+        symmetric_key: &PublicKey,
         signing_key: Option<&SecretKey>,
-        timeout: Duration,
+        timeout: Option<Duration>,
     ) -> Result<MessageId> {
         relay::waku_relay_publish_encrypt_symmetric(
             message,

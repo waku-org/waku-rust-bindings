@@ -114,7 +114,7 @@ pub fn waku_relay_publish_encrypt_asymmetric(
     pubsub_topic: Option<WakuPubSubTopic>,
     public_key: &PublicKey,
     signing_key: Option<&SecretKey>,
-    timeout: Duration,
+    timeout: Option<Duration>,
 ) -> Result<MessageId> {
     let pk = hex::encode(public_key.serialize());
     let sk = signing_key
@@ -141,9 +141,13 @@ pub fn waku_relay_publish_encrypt_asymmetric(
                 .expect("CString should build properly from hex encoded signing key")
                 .into_raw(),
             timeout
-                .as_millis()
-                .try_into()
-                .expect("Duration as milliseconds should fit in a i32"),
+                .map(|timeout| {
+                    timeout
+                        .as_millis()
+                        .try_into()
+                        .expect("Duration as milliseconds should fit in a i32")
+                })
+                .unwrap_or(0),
         ))
         .to_str()
         .expect("Response should always succeed to load to a &str")
@@ -158,11 +162,11 @@ pub fn waku_relay_publish_encrypt_asymmetric(
 pub fn waku_relay_publish_encrypt_symmetric(
     message: &WakuMessage,
     pubsub_topic: Option<WakuPubSubTopic>,
-    symmetric_key: &Key<Aes256Gcm>,
+    symmetric_key: &PublicKey,
     signing_key: Option<&SecretKey>,
-    timeout: Duration,
+    timeout: Option<Duration>,
 ) -> Result<MessageId> {
-    let symk = hex::encode(symmetric_key.as_slice());
+    let symk = hex::encode(symmetric_key.serialize());
     let sk = signing_key
         .map(|signing_key| hex::encode(signing_key.serialize()))
         .unwrap_or_else(String::new);
@@ -187,9 +191,13 @@ pub fn waku_relay_publish_encrypt_symmetric(
                 .expect("CString should build properly from hex encoded signing key")
                 .into_raw(),
             timeout
-                .as_millis()
-                .try_into()
-                .expect("Duration as milliseconds should fit in a i32"),
+                .map(|timeout| {
+                    timeout
+                        .as_millis()
+                        .try_into()
+                        .expect("Duration as milliseconds should fit in a i32")
+                })
+                .unwrap_or(0),
         ))
         .to_str()
         .expect("Response should always succeed to load to a &str")

@@ -32,7 +32,7 @@ pub fn waku_decode_symmetric(
     .to_str()
     .expect("Response should always succeed to load to a &str");
     let response: JsonResponse<DecodedPayload> =
-        serde_json::from_str(result).expect("JsonResponse should always succeed to deserialize");
+        serde_json::from_str(result).map_err(|e| format!("{e}"))?;
     response.into()
 }
 
@@ -60,6 +60,6 @@ pub fn waku_decode_asymmetric(
     .to_str()
     .expect("Response should always succeed to load to a &str");
     let response: JsonResponse<DecodedPayload> =
-        serde_json::from_str(result).expect("JsonResponse should always succeed to deserialize");
+        serde_json::from_str(result).map_err(|e| format!("{e}"))?;
     response.into()
 }

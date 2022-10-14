@@ -130,7 +130,7 @@ impl WakuMessage {
     /// Try decode the message with an expected asymmetric key
     ///
     /// wrapper around [`crate::decrypt::waku_decode_asymmetric`]
-    pub fn try_decode_asymmentric(&self, asymmetric_key: &SecretKey) -> Result<DecodedPayload> {
+    pub fn try_decode_asymmetric(&self, asymmetric_key: &SecretKey) -> Result<DecodedPayload> {
         waku_decode_asymmetric(self, asymmetric_key)
     }
 }
