@@ -136,6 +136,12 @@ pub fn main() -> Result<(), String> {
         None,
     )?;
 
+    for node_data in node.peers()? {
+        if node_data.peer_id() != &node.peer_id()? {
+            node.disconnect_peer_with_id(node_data.peer_id())?;
+        }
+    }
+
     std::thread::sleep(Duration::from_secs(2));
     node.stop()?;
     Ok(())

@@ -135,7 +135,7 @@ impl WakuNodeHandle<Running> {
     /// Disconnect a peer using its peerID
     ///
     /// wrapper around [`peers::waku_disconnect_peer_with_id`]
-    pub fn disconnect_peer_with_id(&self, peer_id: PeerId) -> Result<()> {
+    pub fn disconnect_peer_with_id(&self, peer_id: &PeerId) -> Result<()> {
         peers::waku_disconnect_peer_with_id(peer_id)
     }
 

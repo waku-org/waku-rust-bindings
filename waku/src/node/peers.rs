@@ -86,10 +86,10 @@ pub fn waku_connect_peer_with_id(peer_id: PeerId, timeout: Option<Duration>) -> 
 
 /// Disconnect a peer using its peer id
 /// As per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_disconnect_peerchar-peerid)
-pub fn waku_disconnect_peer_with_id(peer_id: PeerId) -> Result<()> {
+pub fn waku_disconnect_peer_with_id(peer_id: &PeerId) -> Result<()> {
     let response = unsafe {
         CStr::from_ptr(waku_sys::waku_disconnect(
-            CString::new(peer_id)
+            CString::new(peer_id.as_bytes())
                 .expect("CString should build properly from peer id")
                 .into_raw(),
         ))
