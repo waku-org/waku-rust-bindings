@@ -5,7 +5,7 @@ use std::fmt::{Display, Formatter};
 use std::str::FromStr;
 // crates
 use aes_gcm::{Aes256Gcm, Key};
-use libsecp256k1::{PublicKey, SecretKey, Signature};
+use secp256k1::{ecdsa::Signature, PublicKey, SecretKey};
 use serde::{de::Error, Deserialize, Deserializer, Serialize, Serializer};
 use sscanf::{scanf, RegexRepresentation};
 // internal
@@ -17,6 +17,35 @@ pub type WakuMessageVersion = usize;
 pub type PeerId = String;
 /// Waku message id, hex encoded sha256 digest of the message
 pub type MessageId = String;
+
+/// Protocol identifiers
+#[non_exhaustive]
+pub enum ProtocolId {
+    Store,
+    Lightpush,
+    Filter,
+    Relay,
+}
+
+impl ProtocolId {
+    pub fn as_string_with_version(&self, version: &str) -> String {
+        format!("{}/{}", self, version)
+    }
+}
+
+impl Display for ProtocolId {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let tag = match self {
+            ProtocolId::Store => "/vac/waku/store",
+            ProtocolId::Lightpush => "/vac/waku/lightpush",
+            ProtocolId::Filter => "/vac/waku/filter",
+            ProtocolId::Relay => "/vac/waku/relay",
+            #[allow(unreachable_patterns)]
+            _ => unreachable!(),
+        };
+        write!(f, "{}", tag)
+    }
+}
 
 /// JsonResponse wrapper.
 /// `go-waku` ffi returns this type as a `char *` as per the [specification](https://rfc.vac.dev/spec/36/#jsonresponse-type)
@@ -51,10 +80,15 @@ pub struct WakuMessage {
     payload: Vec<u8>,
     /// The content topic to be set on the message
     content_topic: WakuContentTopic,
+    // TODO: check if missing default should be 0
     /// The Waku Message version number
+    #[serde(default)]
     version: WakuMessageVersion,
     /// Unix timestamp in nanoseconds
     timestamp: usize,
+    // TODO: implement RLN fields
+    #[serde(flatten)]
+    _extras: serde_json::Value,
 }
 
 impl WakuMessage {
@@ -65,11 +99,13 @@ impl WakuMessage {
         timestamp: usize,
     ) -> Self {
         let payload = payload.as_ref().to_vec();
+
         Self {
             payload,
             content_topic,
             version,
             timestamp,
+            _extras: Default::default(),
         }
     }
 
@@ -99,7 +135,7 @@ impl WakuMessage {
     /// Try decode the message with an expected asymmetric key
     ///
     /// wrapper around [`crate::decrypt::waku_decode_asymmetric`]
-    pub fn try_decode_asymmentric(&self, asymmetric_key: &SecretKey) -> Result<DecodedPayload> {
+    pub fn try_decode_asymmetric(&self, asymmetric_key: &SecretKey) -> Result<DecodedPayload> {
         waku_decode_asymmetric(self, asymmetric_key)
     }
 }
@@ -109,10 +145,10 @@ impl WakuMessage {
 #[serde(rename_all = "camelCase")]
 pub struct DecodedPayload {
     /// Public key that signed the message (optional), hex encoded with 0x prefix
-    #[serde(deserialize_with = "deserialize_optional_pk")]
+    #[serde(deserialize_with = "deserialize_optional_pk", default)]
     public_key: Option<PublicKey>,
     /// Message signature (optional), hex encoded with 0x prefix
-    #[serde(deserialize_with = "deserialize_optional_signature")]
+    #[serde(deserialize_with = "deserialize_optional_signature", default)]
     signature: Option<Signature>,
     /// Decrypted message payload base64 encoded
     #[serde(with = "base64_serde")]
@@ -296,7 +332,7 @@ impl FromStr for WakuContentTopic {
 
     fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
         if let Ok((application_name, version, content_topic_name, encoding)) =
-            scanf!(s, "/{}/{}/{}/{}", String, usize, String, Encoding)
+            scanf!(s, "/{}/{}/{}/{:/.+?/}", String, usize, String, Encoding)
         {
             Ok(WakuContentTopic {
                 application_name,
@@ -366,7 +402,7 @@ impl FromStr for WakuPubSubTopic {
     type Err = String;
 
     fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-        if let Ok((topic_name, encoding)) = scanf!(s, "/waku/v2/{}/{}", String, Encoding) {
+        if let Ok((topic_name, encoding)) = scanf!(s, "/waku/2/{}/{:/.+?/}", String, Encoding) {
             Ok(WakuPubSubTopic {
                 topic_name,
                 encoding,
@@ -439,7 +475,7 @@ where
     base64_str
         .map(|base64_str| {
             let raw_bytes = base64::decode(base64_str).map_err(D::Error::custom)?;
-            PublicKey::parse_slice(&raw_bytes, None).map_err(D::Error::custom)
+            PublicKey::from_slice(&raw_bytes).map_err(D::Error::custom)
         })
         .transpose()
 }
@@ -450,11 +486,34 @@ pub fn deserialize_optional_signature<'de, D>(
 where
     D: Deserializer<'de>,
 {
-    let base64_str: Option<String> = Option::<String>::deserialize(deserializer)?;
-    base64_str
-        .map(|base64_str| {
-            let raw_bytes = base64::decode(base64_str).map_err(D::Error::custom)?;
-            Signature::parse_der(&raw_bytes).map_err(D::Error::custom)
+    let hex_str: Option<String> = Option::<String>::deserialize(deserializer)?;
+    hex_str
+        .map(|hex_str| {
+            let raw_bytes = hex::decode(hex_str.strip_prefix("0x").unwrap_or(&hex_str))
+                .map_err(D::Error::custom)?;
+            if ![64, 65].contains(&raw_bytes.len()) {
+                return Err(D::Error::custom(
+                    "Invalid signature, only 64 or 65 bytes len are supported",
+                ));
+            }
+            Signature::from_compact(&raw_bytes[..64]).map_err(D::Error::custom)
         })
         .transpose()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::WakuPubSubTopic;
+    #[test]
+    fn parse_waku_topic() {
+        let s = "/waku/2/default-waku/proto";
+        let _: WakuPubSubTopic = s.parse().unwrap();
+    }
+
+    #[test]
+    fn deserialize_waku_message() {
+        let message = "{\"payload\":\"SGkgZnJvbSDwn6aAIQ==\",\"contentTopic\":\"/toychat/2/huilong/proto\",\"timestamp\":1665580926660}";
+        let _: WakuMessage = serde_json::from_str(message).unwrap();
+    }
 }

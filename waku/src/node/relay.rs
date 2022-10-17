@@ -5,7 +5,7 @@ use std::ffi::{CStr, CString};
 use std::time::Duration;
 // crates
 use aes_gcm::{Aes256Gcm, Key};
-use libsecp256k1::{PublicKey, SecretKey};
+use secp256k1::{PublicKey, SecretKey};
 // internal
 use crate::general::{
     Encoding, JsonResponse, MessageId, Result, WakuContentTopic, WakuMessage, WakuPubSubTopic,
@@ -74,7 +74,7 @@ pub fn waku_dafault_pubsub_topic() -> WakuPubSubTopic {
 pub fn waku_relay_publish_message(
     message: &WakuMessage,
     pubsub_topic: Option<WakuPubSubTopic>,
-    timeout: Duration,
+    timeout: Option<Duration>,
 ) -> Result<MessageId> {
     let pubsub_topic = pubsub_topic
         .unwrap_or_else(waku_dafault_pubsub_topic)
@@ -91,9 +91,13 @@ pub fn waku_relay_publish_message(
                 .expect("CString should build properly from pubsub topic")
                 .into_raw(),
             timeout
-                .as_millis()
-                .try_into()
-                .expect("Duration as milliseconds should fit in a i32"),
+                .map(|duration| {
+                    duration
+                        .as_millis()
+                        .try_into()
+                        .expect("Duration as milliseconds should fit in a i32")
+                })
+                .unwrap_or(0),
         ))
     }
     .to_str()
@@ -110,11 +114,11 @@ pub fn waku_relay_publish_encrypt_asymmetric(
     pubsub_topic: Option<WakuPubSubTopic>,
     public_key: &PublicKey,
     signing_key: Option<&SecretKey>,
-    timeout: Duration,
+    timeout: Option<Duration>,
 ) -> Result<MessageId> {
-    let pk = hex::encode(public_key.serialize());
+    let pk = hex::encode(public_key.serialize_uncompressed());
     let sk = signing_key
-        .map(|signing_key| hex::encode(signing_key.serialize()))
+        .map(|signing_key| hex::encode(signing_key.secret_bytes()))
         .unwrap_or_else(String::new);
     let pubsub_topic = pubsub_topic
         .unwrap_or_else(waku_dafault_pubsub_topic)
@@ -137,9 +141,13 @@ pub fn waku_relay_publish_encrypt_asymmetric(
                 .expect("CString should build properly from hex encoded signing key")
                 .into_raw(),
             timeout
-                .as_millis()
-                .try_into()
-                .expect("Duration as milliseconds should fit in a i32"),
+                .map(|timeout| {
+                    timeout
+                        .as_millis()
+                        .try_into()
+                        .expect("Duration as milliseconds should fit in a i32")
+                })
+                .unwrap_or(0),
         ))
         .to_str()
         .expect("Response should always succeed to load to a &str")
@@ -156,11 +164,11 @@ pub fn waku_relay_publish_encrypt_symmetric(
     pubsub_topic: Option<WakuPubSubTopic>,
     symmetric_key: &Key<Aes256Gcm>,
     signing_key: Option<&SecretKey>,
-    timeout: Duration,
+    timeout: Option<Duration>,
 ) -> Result<MessageId> {
     let symk = hex::encode(symmetric_key.as_slice());
     let sk = signing_key
-        .map(|signing_key| hex::encode(signing_key.serialize()))
+        .map(|signing_key| hex::encode(signing_key.secret_bytes()))
         .unwrap_or_else(String::new);
     let pubsub_topic = pubsub_topic
         .unwrap_or_else(waku_dafault_pubsub_topic)
@@ -183,9 +191,13 @@ pub fn waku_relay_publish_encrypt_symmetric(
                 .expect("CString should build properly from hex encoded signing key")
                 .into_raw(),
             timeout
-                .as_millis()
-                .try_into()
-                .expect("Duration as milliseconds should fit in a i32"),
+                .map(|timeout| {
+                    timeout
+                        .as_millis()
+                        .try_into()
+                        .expect("Duration as milliseconds should fit in a i32")
+                })
+                .unwrap_or(0),
         ))
         .to_str()
         .expect("Response should always succeed to load to a &str")

@@ -4,7 +4,7 @@
 use std::ffi::{CStr, CString};
 // crates
 use aes_gcm::{Aes256Gcm, Key};
-use libsecp256k1::SecretKey;
+use secp256k1::SecretKey;
 // internal
 use crate::general::{DecodedPayload, JsonResponse, Result, WakuMessage};
 
@@ -32,7 +32,7 @@ pub fn waku_decode_symmetric(
     .to_str()
     .expect("Response should always succeed to load to a &str");
     let response: JsonResponse<DecodedPayload> =
-        serde_json::from_str(result).expect("JsonResponse should always succeed to deserialize");
+        serde_json::from_str(result).map_err(|e| format!("{e}"))?;
     response.into()
 }
 
@@ -43,7 +43,7 @@ pub fn waku_decode_asymmetric(
     message: &WakuMessage,
     asymmetric_key: &SecretKey,
 ) -> Result<DecodedPayload> {
-    let sk = hex::encode(asymmetric_key.serialize());
+    let sk = hex::encode(asymmetric_key.secret_bytes());
     let result = unsafe {
         CStr::from_ptr(waku_sys::waku_decode_asymmetric(
             CString::new(
@@ -60,6 +60,6 @@ pub fn waku_decode_asymmetric(
     .to_str()
     .expect("Response should always succeed to load to a &str");
     let response: JsonResponse<DecodedPayload> =
-        serde_json::from_str(result).expect("JsonResponse should always succeed to deserialize");
+        serde_json::from_str(result).map_err(|e| format!("{e}"))?;
     response.into()
 }

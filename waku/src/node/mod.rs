@@ -10,21 +10,22 @@ mod store;
 
 // std
 use aes_gcm::{Aes256Gcm, Key};
-use libsecp256k1::{PublicKey, SecretKey};
 use multiaddr::Multiaddr;
+use secp256k1::{PublicKey, SecretKey};
 use std::marker::PhantomData;
 use std::sync::Mutex;
 use std::time::Duration;
 // crates
 // internal
 use crate::general::{
-    FilterSubscription, MessageId, PeerId, Result, StoreQuery, StoreResponse, WakuMessage,
-    WakuPubSubTopic,
+    FilterSubscription, MessageId, PeerId, ProtocolId, Result, StoreQuery, StoreResponse,
+    WakuMessage, WakuPubSubTopic,
 };
 
 pub use config::WakuNodeConfig;
 pub use peers::{Protocol, WakuPeerData, WakuPeers};
 pub use relay::{waku_create_content_topic, waku_create_pubsub_topic, waku_dafault_pubsub_topic};
+pub use store::waku_store_query;
 
 /// Shared flag to check if a waku node is already running in the current process
 static WAKU_NODE_INITIALIZED: Mutex<bool> = Mutex::new(false);
@@ -73,7 +74,7 @@ impl<State: WakuNodeState> WakuNodeHandle<State> {
     /// Add a node multiaddress and protocol to the waku node’s peerstore
     ///
     /// wrapper around [`peers::waku_add_peers`]
-    pub fn add_peer(&self, address: Multiaddr, protocol_id: usize) -> Result<PeerId> {
+    pub fn add_peer(&self, address: &Multiaddr, protocol_id: ProtocolId) -> Result<PeerId> {
         peers::waku_add_peers(address, protocol_id)
     }
 }
@@ -118,7 +119,7 @@ impl WakuNodeHandle<Running> {
     /// wrapper around [`peers::waku_connect_peer_with_address`]
     pub fn connect_peer_with_address(
         &self,
-        address: Multiaddr,
+        address: &Multiaddr,
         timeout: Option<Duration>,
     ) -> Result<()> {
         peers::waku_connect_peer_with_address(address, timeout)
@@ -134,7 +135,7 @@ impl WakuNodeHandle<Running> {
     /// Disconnect a peer using its peerID
     ///
     /// wrapper around [`peers::waku_disconnect_peer_with_id`]
-    pub fn disconnect_peer_with_id(&self, peer_id: PeerId) -> Result<()> {
+    pub fn disconnect_peer_with_id(&self, peer_id: &PeerId) -> Result<()> {
         peers::waku_disconnect_peer_with_id(peer_id)
     }
 
@@ -159,7 +160,7 @@ impl WakuNodeHandle<Running> {
         &self,
         message: &WakuMessage,
         pubsub_topic: Option<WakuPubSubTopic>,
-        timeout: Duration,
+        timeout: Option<Duration>,
     ) -> Result<MessageId> {
         relay::waku_relay_publish_message(message, pubsub_topic, timeout)
     }
@@ -173,7 +174,7 @@ impl WakuNodeHandle<Running> {
         pubsub_topic: Option<WakuPubSubTopic>,
         public_key: &PublicKey,
         signing_key: Option<&SecretKey>,
-        timeout: Duration,
+        timeout: Option<Duration>,
     ) -> Result<MessageId> {
         relay::waku_relay_publish_encrypt_asymmetric(
             message,
@@ -193,7 +194,7 @@ impl WakuNodeHandle<Running> {
         pubsub_topic: Option<WakuPubSubTopic>,
         symmetric_key: &Key<Aes256Gcm>,
         signing_key: Option<&SecretKey>,
-        timeout: Duration,
+        timeout: Option<Duration>,
     ) -> Result<MessageId> {
         relay::waku_relay_publish_encrypt_symmetric(
             message,
@@ -229,6 +230,7 @@ impl WakuNodeHandle<Running> {
     ///
     /// wrapper around [`store::waku_store_query`]
     pub fn store_query(
+        &self,
         query: &StoreQuery,
         peer_id: PeerId,
         timeout: Duration,
@@ -240,10 +242,11 @@ impl WakuNodeHandle<Running> {
     ///
     /// wrapper around [`lightpush::waku_lightpush_publish`]
     pub fn lightpush_publish(
+        &self,
         message: &WakuMessage,
-        pubsub_topic: WakuPubSubTopic,
+        pubsub_topic: Option<WakuPubSubTopic>,
         peer_id: PeerId,
-        timeout: Duration,
+        timeout: Option<Duration>,
     ) -> Result<MessageId> {
         lightpush::waku_lightpush_publish(message, pubsub_topic, peer_id, timeout)
     }
@@ -252,12 +255,13 @@ impl WakuNodeHandle<Running> {
     ///
     /// wrapper around [`lightpush::waku_lightpush_publish_encrypt_asymmetric`]
     pub fn lightpush_publish_encrypt_asymmetric(
+        &self,
         message: &WakuMessage,
         pubsub_topic: Option<WakuPubSubTopic>,
         peer_id: PeerId,
         public_key: &PublicKey,
         signing_key: Option<&SecretKey>,
-        timeout: Duration,
+        timeout: Option<Duration>,
     ) -> Result<MessageId> {
         lightpush::waku_lightpush_publish_encrypt_asymmetric(
             message,
@@ -273,12 +277,13 @@ impl WakuNodeHandle<Running> {
     ///
     /// wrapper around [`lightpush::waku_lightpush_publish_encrypt_symmetric`]
     pub fn lightpush_publish_encrypt_symmetric(
+        &self,
         message: &WakuMessage,
         pubsub_topic: Option<WakuPubSubTopic>,
         peer_id: PeerId,
         symmetric_key: &Key<Aes256Gcm>,
         signing_key: Option<&SecretKey>,
-        timeout: Duration,
+        timeout: Option<Duration>,
     ) -> Result<MessageId> {
         lightpush::waku_lightpush_publish_encrypt_symmetric(
             message,
@@ -294,6 +299,7 @@ impl WakuNodeHandle<Running> {
     ///
     /// wrapper around [`filter::waku_filter_subscribe`]
     pub fn filter_subscribe(
+        &self,
         filter_subscription: &FilterSubscription,
         peer_id: PeerId,
         timeout: Duration,
@@ -305,6 +311,7 @@ impl WakuNodeHandle<Running> {
     ///
     /// wrapper around [`filter::waku_filter_unsubscribe`]
     pub fn filter_unsubscribe(
+        &self,
         filter_subscription: &FilterSubscription,
         timeout: Duration,
     ) -> Result<()> {
