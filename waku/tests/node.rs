@@ -16,6 +16,7 @@ const NODES: &[&str] = &[
     "/dns4/node-01.gc-us-central1-a.wakuv2.test.statusim.net/tcp/30303/p2p/16Uiu2HAmJb2e28qLXxT5kZxVUUoJt72EMzNGXB47Rxx5hw3q4YjS"
 ];
 
+#[ignore]
 #[test]
 pub fn main() -> Result<(), String> {
     let config = WakuNodeConfig {
