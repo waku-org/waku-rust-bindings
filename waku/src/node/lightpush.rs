@@ -29,7 +29,7 @@ pub fn waku_lightpush_publish(
             )
             .expect("CString should build properly from the serialized waku message")
             .into_raw(),
-            CString::new(pubsub_topic.to_string())
+            CString::new(pubsub_topic)
                 .expect("CString should build properly from pubsub topic")
                 .into_raw(),
             CString::new(peer_id)
