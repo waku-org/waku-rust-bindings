@@ -125,7 +125,7 @@ pub fn waku_peer_count() -> Result<usize> {
 pub type Protocol = String;
 
 /// Peer data from known/connected waku nodes
-#[derive(Deserialize)]
+#[derive(Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct WakuPeerData {
     /// Waku peer id

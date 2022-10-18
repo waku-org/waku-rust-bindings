@@ -1,11 +1,9 @@
-use once_cell::sync::{Lazy, OnceCell};
-use prost::{
-    encoding::{bytes, string, uint64},
-    Message,
-};
-use waku::{Encoding, WakuContentTopic, WakuMessage};
+use chrono::{DateTime, TimeZone, Utc};
+use once_cell::sync::Lazy;
+use prost::Message;
+use waku::{Encoding, WakuContentTopic};
 
-const TOY_CHAT_CONTENT_TOPIC: Lazy<WakuContentTopic> = Lazy::new(|| WakuContentTopic {
+pub static TOY_CHAT_CONTENT_TOPIC: Lazy<WakuContentTopic> = Lazy::new(|| WakuContentTopic {
     application_name: "toy-chat".into(),
     version: 2,
     content_topic_name: "huilong".into(),
@@ -23,7 +21,22 @@ pub struct Chat2Message {
 }
 
 impl Chat2Message {
+    pub fn new(nick: &str, payload: &str) -> Self {
+        Self {
+            timestamp: Utc::now().timestamp() as u64,
+            nick: nick.to_string(),
+            payload: payload.as_bytes().to_vec(),
+        }
+    }
     pub fn message(&self) -> String {
         String::from_utf8(self.payload.clone()).unwrap()
+    }
+
+    pub fn nick(&self) -> &str {
+        &self.nick
+    }
+
+    pub fn timestamp(&self) -> DateTime<Utc> {
+        Utc.timestamp(self.timestamp as i64, 0)
     }
 }

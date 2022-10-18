@@ -13,8 +13,8 @@ use crate::general::{JsonResponse, PeerId, Result, StoreQuery, StoreResponse};
 /// These [`PagingOptions`](`crate::general::PagingOptions`) must contain a cursor pointing to the Index from which a new page can be requested
 pub fn waku_store_query(
     query: &StoreQuery,
-    peer_id: PeerId,
-    timeout: Duration,
+    peer_id: &PeerId,
+    timeout: Option<Duration>,
 ) -> Result<StoreResponse> {
     let result = unsafe {
         CStr::from_ptr(waku_sys::waku_store_query(
@@ -24,13 +24,17 @@ pub fn waku_store_query(
             )
             .expect("CString should build properly from the serialized filter subscription")
             .into_raw(),
-            CString::new(peer_id)
+            CString::new(peer_id.clone())
                 .expect("CString should build properly from peer id")
                 .into_raw(),
             timeout
-                .as_millis()
-                .try_into()
-                .expect("Duration as milliseconds should fit in a i32"),
+                .map(|timeout| {
+                    timeout
+                        .as_millis()
+                        .try_into()
+                        .expect("Duration as milliseconds should fit in a i32")
+                })
+                .unwrap_or(0),
         ))
     }
     .to_str()
