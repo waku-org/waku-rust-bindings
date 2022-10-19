@@ -23,8 +23,8 @@ use tui::{
 };
 use unicode_width::UnicodeWidthStr;
 use waku::{
-    waku_new, waku_set_event_callback, ContentFilter, Multiaddr, ProtocolId, Running, StoreQuery,
-    WakuMessage, WakuNodeHandle,
+    waku_new, waku_set_event_callback, ContentFilter, Multiaddr, PagingOptions, ProtocolId,
+    Running, StoreQuery, WakuMessage, WakuNodeHandle,
 };
 
 enum InputMode {
@@ -78,10 +78,14 @@ fn retrieve_history(node_handle: &WakuNodeHandle<Running>) -> waku::Result<Vec<C
             start_time: Some(
                 (Duration::from_secs(Utc::now().timestamp() as u64)
                     - Duration::from_secs(60 * 60 * 24))
-                .as_secs() as usize,
+                .as_nanos() as usize,
             ),
             end_time: None,
-            paging_options: None,
+            paging_options: Some(PagingOptions {
+                page_size: 25,
+                cursor: None,
+                forward: true,
+            }),
         },
         peer.peer_id(),
         Some(Duration::from_secs(10)),
@@ -137,9 +141,11 @@ fn main() -> std::result::Result<(), Box<dyn Error>> {
                 }
             }
         }
-        _ => {
-            unreachable!()
+        waku::Event::Unrecognized(data) => {
+            let mut out = std::io::stderr();
+            write!(out, "Error, received unrecognized event {data}").unwrap();
         }
+        _ => {}
     });
 
     // app.node_handle.relay_publish_message(&WakuMessage::new(Chat2Message::new(&app.nick, format!(""))))

@@ -239,6 +239,7 @@ pub struct StoreQuery {
 #[serde(rename_all = "camelCase")]
 pub struct StoreResponse {
     /// Array of retrieved historical messages in [`WakuMessage`] format
+    #[serde(default)]
     messages: Vec<WakuMessage>,
     /// Paging information in [`PagingOptions`] format from which to resume further historical queries
     paging_options: Option<PagingOptions>,

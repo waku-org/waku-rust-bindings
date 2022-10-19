@@ -38,6 +38,7 @@ impl Signal {
 #[serde(untagged, rename_all = "camelCase")]
 pub enum Event {
     WakuMessage(WakuMessageEvent),
+    Unrecognized(serde_json::Value),
 }
 
 /// Type of `event` field for a `message` event
