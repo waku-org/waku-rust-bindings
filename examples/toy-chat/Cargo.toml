@@ -1,16 +1,17 @@
 [package]
-name = "waku-sys"
+name = "toy-chat"
 version = "0.1.0"
 edition = "2021"
 authors = [
     "Daniel Sanchez Quiros <danielsq@status.im>"
 ]
-
-[lib]
-crate-type = ["rlib"]
-
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-[dependencies]
 
-[build-dependencies]
-bindgen = "0.60"
+[dependencies]
+waku = { path = "../../waku" }
+tui = "0.19"
+crossterm = "0.25"
+unicode-width = "0.1"
+prost = "0.11"
+once_cell = "1.15"
+chrono = "0.4"

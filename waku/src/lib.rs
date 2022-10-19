@@ -8,14 +8,14 @@ mod node;
 
 pub use node::{
     waku_create_content_topic, waku_create_pubsub_topic, waku_dafault_pubsub_topic, waku_new,
-    waku_store_query, Initialized, Protocol, Running, WakuNodeConfig, WakuNodeHandle, WakuPeerData,
-    WakuPeers,
+    waku_store_query, Aes256Gcm, Initialized, Key, Multiaddr, Protocol, PublicKey, Running,
+    SecretKey, WakuNodeConfig, WakuNodeHandle, WakuPeerData, WakuPeers,
 };
 
 pub use general::{
     ContentFilter, DecodedPayload, Encoding, FilterSubscription, MessageId, MessageIndex,
-    PagingOptions, PeerId, ProtocolId, StoreQuery, StoreResponse, WakuContentTopic, WakuMessage,
-    WakuMessageVersion, WakuPubSubTopic,
+    PagingOptions, PeerId, ProtocolId, Result, StoreQuery, StoreResponse, WakuContentTopic,
+    WakuMessage, WakuMessageVersion, WakuPubSubTopic,
 };
 
 pub use events::{waku_set_event_callback, Event, Signal, WakuMessageEvent};

@@ -9,9 +9,9 @@ mod relay;
 mod store;
 
 // std
-use aes_gcm::{Aes256Gcm, Key};
-use multiaddr::Multiaddr;
-use secp256k1::{PublicKey, SecretKey};
+pub use aes_gcm::{Aes256Gcm, Key};
+pub use multiaddr::Multiaddr;
+pub use secp256k1::{PublicKey, SecretKey};
 use std::marker::PhantomData;
 use std::sync::Mutex;
 use std::time::Duration;
@@ -232,8 +232,8 @@ impl WakuNodeHandle<Running> {
     pub fn store_query(
         &self,
         query: &StoreQuery,
-        peer_id: PeerId,
-        timeout: Duration,
+        peer_id: &PeerId,
+        timeout: Option<Duration>,
     ) -> Result<StoreResponse> {
         store::waku_store_query(query, peer_id, timeout)
     }
