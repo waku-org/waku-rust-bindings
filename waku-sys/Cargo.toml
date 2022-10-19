@@ -2,6 +2,9 @@
 name = "waku-sys"
 version = "0.1.0"
 edition = "2021"
+authors = [
+    "Daniel Sanchez Quiros <danielsq@status.im>"
+]
 
 [lib]
 crate-type = ["rlib"]
