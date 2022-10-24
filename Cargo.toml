@@ -2,5 +2,6 @@
 
 members = [
     "waku",
-    "waku-sys"
+    "waku-sys",
+    "examples/toy-chat"
 ]
