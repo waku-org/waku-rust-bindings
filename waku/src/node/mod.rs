@@ -324,7 +324,7 @@ impl WakuNodeHandle<Running> {
     pub fn dns_discovery(
         &self,
         url: &Url,
-        nameserver: Option<Host>,
+        nameserver: Option<&Host>,
         timeout: Option<Duration>,
     ) -> Result<Vec<Multiaddr>> {
         discovery::waku_dns_discovery(url, nameserver, timeout)

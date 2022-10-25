@@ -12,7 +12,7 @@ use crate::Result;
 /// The nameserver can optionally be specified to resolve the enrtree url. Otherwise uses the default system dns.
 pub fn waku_dns_discovery(
     url: &Url,
-    server: Option<Host>,
+    server: Option<&Host>,
     timeout: Option<Duration>,
 ) -> Result<Vec<Multiaddr>> {
     let result = unsafe {
