@@ -1,6 +1,7 @@
 //! Waku node implementation
 
 mod config;
+mod discovery;
 mod filter;
 mod lightpush;
 mod management;
@@ -16,7 +17,9 @@ use std::marker::PhantomData;
 use std::sync::Mutex;
 use std::time::Duration;
 // crates
+use url::{Host, Url};
 // internal
+
 use crate::general::{
     FilterSubscription, MessageId, PeerId, ProtocolId, Result, StoreQuery, StoreResponse,
     WakuMessage, WakuPubSubTopic,
@@ -316,6 +319,15 @@ impl WakuNodeHandle<Running> {
         timeout: Duration,
     ) -> Result<()> {
         filter::waku_filter_unsubscribe(filter_subscription, timeout)
+    }
+
+    pub fn dns_discovery(
+        &self,
+        url: &Url,
+        nameserver: Option<&Host>,
+        timeout: Option<Duration>,
+    ) -> Result<Vec<Multiaddr>> {
+        discovery::waku_dns_discovery(url, nameserver, timeout)
     }
 }
 
