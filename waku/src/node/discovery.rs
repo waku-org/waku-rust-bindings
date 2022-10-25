@@ -3,7 +3,7 @@ use std::ffi::{CStr, CString};
 use std::time::Duration;
 // crates
 use multiaddr::Multiaddr;
-use url::Url;
+use url::{Host, Url};
 // internal
 use crate::general::JsonResponse;
 use crate::Result;
@@ -12,7 +12,7 @@ use crate::Result;
 /// The nameserver can optionally be specified to resolve the enrtree url. Otherwise uses the default system dns.
 pub fn waku_dns_discovery(
     url: &Url,
-    server: Option<&str>,
+    server: Option<Host>,
     timeout: Option<Duration>,
 ) -> Result<Vec<Multiaddr>> {
     let result = unsafe {
@@ -20,9 +20,13 @@ pub fn waku_dns_discovery(
             CString::new(url.to_string())
                 .expect("CString should build properly from a valid Url")
                 .into_raw(),
-            CString::new(server.unwrap_or(""))
-                .expect("CString should build properly from a String nameserver")
-                .into_raw(),
+            CString::new(
+                server
+                    .map(|host| host.to_string())
+                    .unwrap_or_else(|| "".to_string()),
+            )
+            .expect("CString should build properly from a String nameserver")
+            .into_raw(),
             timeout
                 .map(|timeout| {
                     timeout

@@ -17,7 +17,7 @@ use std::marker::PhantomData;
 use std::sync::Mutex;
 use std::time::Duration;
 // crates
-use url::Url;
+use url::{Host, Url};
 // internal
 
 use crate::general::{
@@ -324,7 +324,7 @@ impl WakuNodeHandle<Running> {
     pub fn dns_discovery(
         &self,
         url: &Url,
-        nameserver: Option<&str>,
+        nameserver: Option<Host>,
         timeout: Option<Duration>,
     ) -> Result<Vec<Multiaddr>> {
         discovery::waku_dns_discovery(url, nameserver, timeout)
