@@ -6,8 +6,8 @@ use std::net::IpAddr;
 use std::str::FromStr;
 use std::time::{Duration, SystemTime};
 use waku::{
-    waku_new, waku_set_event_callback, Encoding, Event, ProtocolId, WakuContentTopic, WakuMessage,
-    WakuNodeConfig,
+    waku_new, waku_set_event_callback, Encoding, Event, ProtocolId, WakuContentTopic, WakuLogLevel,
+    WakuMessage, WakuNodeConfig,
 };
 
 const NODES: &[&str] = &[
@@ -28,6 +28,7 @@ pub fn main() -> Result<(), String> {
         relay: None,
         min_peers_to_publish: None,
         filter: None,
+        log_level: Some(WakuLogLevel::Error),
     };
     let node = waku_new(Some(config))?;
     let node = node.start()?;
