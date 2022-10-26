@@ -25,7 +25,7 @@ use crate::general::{
     WakuMessage, WakuPubSubTopic,
 };
 
-pub use config::WakuNodeConfig;
+pub use config::{WakuLogLevel, WakuNodeConfig};
 pub use peers::{Protocol, WakuPeerData, WakuPeers};
 pub use relay::{waku_create_content_topic, waku_create_pubsub_topic, waku_dafault_pubsub_topic};
 pub use store::waku_store_query;
