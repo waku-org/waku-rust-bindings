@@ -38,7 +38,7 @@ pub fn waku_decode_symmetric(
 
 /// Decrypt a message using a symmetric key
 ///
-/// As per the [specification](extern char* waku_decode_asymmetric(char* messageJson, char* privateKey))
+/// As per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_decode_asymmetricchar-messagejson-char-privatekey)
 pub fn waku_decode_asymmetric(
     message: &WakuMessage,
     asymmetric_key: &SecretKey,
