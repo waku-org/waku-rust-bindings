@@ -5,7 +5,7 @@
 [<img alt="docs.rs" src="https://img.shields.io/badge/doc/waku-bindings-66c2a5?style=for-the-badge&labelColor=555555&logo=docs.rs" height="20">](https://docs.rs/waku-rust-bindings)
 [<img alt="build status" src="https://img.shields.io/github/workflow/status/waku-org/waku-rust-bindings/CI/master?style=for-the-badge" height="20">](https://github.com/waku-org/waku-rust-bindings/actions?query=branch%3Amaster)
 
-Rust layer on top of [`go-waku`](https://github.com/status-im/go-waku) [c ffi bindings](https://github.com/status-im/go-waku/blob/v0.2.2/library/README.md).
+Rust api on top of [`waku-sys`](https://crates.io/crates/waku-sys) bindgen bindings to  [c ffi bindings](https://github.com/status-im/go-waku/blob/v0.2.2/library/README.md).
 
 ## About [Waku](https://waku.org/)
 
