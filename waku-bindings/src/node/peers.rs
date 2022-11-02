@@ -158,7 +158,7 @@ impl WakuPeerData {
     }
 }
 
-/// List of [`WakuPeerData`], return value from [`waku_peers`] funtion
+/// List of [`WakuPeerData`]
 pub type WakuPeers = Vec<WakuPeerData>;
 
 /// Retrieve the list of peers known by the Waku node

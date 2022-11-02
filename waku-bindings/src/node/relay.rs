@@ -28,7 +28,7 @@ pub fn waku_create_content_topic(
                 .try_into()
                 .expect("Version should fit within an u32"),
             CString::new(content_topic_name)
-                .expect("Conmtent topic should always transform to CString")
+                .expect("Content topic should always transform to CString")
                 .into_raw(),
             CString::new(encoding.to_string())
                 .expect("Encoding should always transform to CString")

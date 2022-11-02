@@ -58,9 +58,9 @@ pub(crate) enum JsonResponse<T> {
 }
 
 /// Waku response, just a `Result` with an `String` error.
-/// Convenient we can transform a [`JsonResponse`] into a [`std::result::Result`]
 pub type Result<T> = std::result::Result<T, String>;
 
+/// Convenient we can transform a [`JsonResponse`] into a [`std::result::Result`]
 impl<T> From<JsonResponse<T>> for Result<T> {
     fn from(response: JsonResponse<T>) -> Self {
         match response {
@@ -127,14 +127,14 @@ impl WakuMessage {
 
     /// Try decode the message with an expected symmetric key
     ///
-    /// wrapper around [`crate::decrypt::waku_decode_symmetric`]
+    /// As per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_decode_symmetricchar-messagejson-char-symmetrickey)
     pub fn try_decode_symmetric(&self, symmetric_key: &Key<Aes256Gcm>) -> Result<DecodedPayload> {
         waku_decode_symmetric(self, symmetric_key)
     }
 
     /// Try decode the message with an expected asymmetric key
     ///
-    /// wrapper around [`crate::decrypt::waku_decode_asymmetric`]
+    /// As per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_decode_asymmetricchar-messagejson-char-privatekey)
     pub fn try_decode_asymmetric(&self, asymmetric_key: &SecretKey) -> Result<DecodedPayload> {
         waku_decode_asymmetric(self, asymmetric_key)
     }
