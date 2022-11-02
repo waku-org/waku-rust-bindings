@@ -20,6 +20,7 @@ pub type MessageId = String;
 
 /// Protocol identifiers
 #[non_exhaustive]
+#[derive(Debug)]
 pub enum ProtocolId {
     Store,
     Lightpush,
@@ -50,7 +51,7 @@ impl Display for ProtocolId {
 /// JsonResponse wrapper.
 /// `go-waku` ffi returns this type as a `char *` as per the [specification](https://rfc.vac.dev/spec/36/#jsonresponse-type)
 /// This is internal, as it is better to use rust plain `Result` type.
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 #[serde(rename_all = "snake_case")]
 pub(crate) enum JsonResponse<T> {
     Result(T),
@@ -73,7 +74,7 @@ impl<T> From<JsonResponse<T>> for Result<T> {
 // TODO: Properly type and deserialize payload form base64 encoded string
 /// Waku message in JSON format.
 /// as per the [specification](https://rfc.vac.dev/spec/36/#jsonmessage-type)
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct WakuMessage {
     #[serde(with = "base64_serde")]
@@ -141,7 +142,7 @@ impl WakuMessage {
 }
 
 /// A payload once decoded, used when a received Waku Message is encrypted
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct DecodedPayload {
     /// Public key that signed the message (optional), hex encoded with 0x prefix
@@ -178,7 +179,7 @@ impl DecodedPayload {
 
 /// The content topic of a Waku message
 /// as per the [specification](https://rfc.vac.dev/spec/36/#contentfilter-type)
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct ContentFilter {
     /// The content topic of a Waku message
@@ -197,7 +198,7 @@ impl ContentFilter {
 
 /// The criteria to create subscription to a light node in JSON Format
 /// as per the [specification](https://rfc.vac.dev/spec/36/#filtersubscription-type)
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct FilterSubscription {
     /// Array of [`ContentFilter`] being subscribed to / unsubscribed from
@@ -217,7 +218,7 @@ impl FilterSubscription {
 }
 
 /// Criteria used to retrieve historical messages
-#[derive(Clone, Serialize)]
+#[derive(Clone, Serialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct StoreQuery {
     /// The pubsub topic on which messages are published
@@ -235,7 +236,7 @@ pub struct StoreQuery {
 }
 
 /// The response received after doing a query to a store node
-#[derive(Clone, Deserialize)]
+#[derive(Clone, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct StoreResponse {
     /// Array of retrieved historical messages in [`WakuMessage`] format
@@ -256,7 +257,7 @@ impl StoreResponse {
 }
 
 /// Paging information
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct PagingOptions {
     /// Number of messages to retrieve per page
@@ -270,7 +271,7 @@ pub struct PagingOptions {
 }
 
 /// Pagination index type
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct MessageIndex {
     /// Hash of the message at this [``MessageIndex`]
@@ -284,7 +285,7 @@ pub struct MessageIndex {
 }
 
 /// WakuMessage encoding scheme
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub enum Encoding {
     Proto,
     Rlp,
@@ -320,7 +321,7 @@ impl RegexRepresentation for Encoding {
 }
 
 /// A waku content topic `/{application_name}/{version}/{content_topic_name}/{encdoing}`
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct WakuContentTopic {
     pub application_name: String,
     pub version: usize,
@@ -384,7 +385,7 @@ impl<'de> Deserialize<'de> for WakuContentTopic {
 }
 
 /// A waku pubsub topic in the form of `/waku/v2/{topic_name}/{encoding}`
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct WakuPubSubTopic {
     pub topic_name: String,
     pub encoding: Encoding,

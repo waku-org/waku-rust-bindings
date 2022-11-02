@@ -10,7 +10,7 @@ use serde::{Deserialize, Serialize};
 // internal
 
 /// Waku node configuration
-#[derive(Clone, Default, Serialize, Deserialize)]
+#[derive(Clone, Default, Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct WakuNodeConfig {
     /// Listening IP address. Default `0.0.0.0`
@@ -36,7 +36,7 @@ pub struct WakuNodeConfig {
     pub log_level: Option<WakuLogLevel>,
 }
 
-#[derive(Clone, Default, Serialize, Deserialize)]
+#[derive(Clone, Default, Serialize, Deserialize, Debug)]
 pub enum WakuLogLevel {
     #[default]
     Info,
