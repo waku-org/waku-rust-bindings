@@ -1,7 +1,7 @@
 [workspace]
 
 members = [
-    "waku",
+    "waku-bindings",
     "waku-sys",
     "examples/toy-chat"
 ]
