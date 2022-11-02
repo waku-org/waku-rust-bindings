@@ -1,5 +1,7 @@
 //! Waku node [configuration](https://rfc.vac.dev/spec/36/#jsonconfig-type) related items
 
+use std::fmt::{Display, Formatter};
+use std::str::FromStr;
 // std
 // crates
 use multiaddr::Multiaddr;
@@ -30,6 +32,55 @@ pub struct WakuNodeConfig {
     pub min_peers_to_publish: Option<usize>,
     /// Enable filter protocol. Default `false`
     pub filter: Option<bool>,
+    /// Set the log level. Default `INFO`. Allowed values "DEBUG", "INFO", "WARN", "ERROR", "DPANIC", "PANIC", "FATAL"
+    pub log_level: Option<WakuLogLevel>,
+}
+
+#[derive(Clone, Default, Serialize, Deserialize)]
+pub enum WakuLogLevel {
+    #[default]
+    Info,
+    Debug,
+    Warn,
+    Error,
+    DPanic,
+    Panic,
+    Fatal,
+}
+
+impl FromStr for WakuLogLevel {
+    type Err = std::io::Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.to_lowercase().as_str() {
+            "info" => Ok(Self::Info),
+            "debug" => Ok(Self::Debug),
+            "warn" => Ok(Self::Warn),
+            "error" => Ok(Self::Error),
+            "dpanic" => Ok(Self::DPanic),
+            "panic" => Ok(Self::Panic),
+            "fatal" => Ok(Self::Fatal),
+            _ => Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidData,
+                format!("Unrecognized waku log level: {}. Allowed values \"DEBUG\", \"INFO\", \"WARN\", \"ERROR\", \"DPANIC\", \"PANIC\", \"FATAL\"", s),
+            )),
+        }
+    }
+}
+
+impl Display for WakuLogLevel {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let tag = match self {
+            WakuLogLevel::Info => "INFO",
+            WakuLogLevel::Debug => "DEBUG",
+            WakuLogLevel::Warn => "WARN",
+            WakuLogLevel::Error => "ERROR",
+            WakuLogLevel::DPanic => "DPANIC",
+            WakuLogLevel::Panic => "PANIC",
+            WakuLogLevel::Fatal => "FATAL",
+        };
+        write!(f, "{tag}")
+    }
 }
 
 mod secret_key_serde {

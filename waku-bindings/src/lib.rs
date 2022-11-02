@@ -9,7 +9,7 @@ mod node;
 pub use node::{
     waku_create_content_topic, waku_create_pubsub_topic, waku_dafault_pubsub_topic, waku_new,
     waku_store_query, Aes256Gcm, Initialized, Key, Multiaddr, Protocol, PublicKey, Running,
-    SecretKey, WakuNodeConfig, WakuNodeHandle, WakuPeerData, WakuPeers,
+    SecretKey, WakuLogLevel, WakuNodeConfig, WakuNodeHandle, WakuPeerData, WakuPeers,
 };
 
 pub use general::{
