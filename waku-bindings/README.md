@@ -7,6 +7,17 @@
 
 Rust api on top of [`waku-sys`](https://crates.io/crates/waku-sys) bindgen bindings to  [c ffi bindings](https://github.com/status-im/go-waku/blob/v0.2.2/library/README.md).
 
+
+## Usage
+
+Add this to your `Cargo.toml`:
+
+```toml
+[dependencies]
+waku-bindings = "0.1.0"
+```
+
+
 ## About [Waku](https://waku.org/)
 
 Waku is the communication layer for Web3. Decentralized communication that scales.
