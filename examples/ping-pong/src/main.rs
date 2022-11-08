@@ -20,7 +20,7 @@ impl BasicMessage {
     }
 }
 
-fn setup_node_handle() -> std::result::Result<WakuNodeHandle<Running>, Box<dyn Error>> {
+fn setup_node_handle(graphcast_topic: Option<WakuPubSubTopic>) -> std::result::Result<WakuNodeHandle<Running>, Box<dyn Error>> {
     const NODES: &[&str] = &[
     "/dns4/node-01.ac-cn-hongkong-c.wakuv2.test.statusim.net/tcp/30303/p2p/16Uiu2HAkvWiyFsgRhuJEb9JfjYxEkoHLgnUQmr1N5mKWnYjxYRVm",
     "/dns4/node-01.do-ams3.wakuv2.test.statusim.net/tcp/30303/p2p/16Uiu2HAmPLe7Mzm8TsYUubgCAW1aJoeFScxrLj8ppHFivPo97bUZ",
@@ -36,19 +36,25 @@ fn setup_node_handle() -> std::result::Result<WakuNodeHandle<Running>, Box<dyn E
         let peerid = node_handle.add_peer(&address, ProtocolId::Relay)?;
         node_handle.connect_peer_with_id(peerid, None)?;
     }
-    node_handle.relay_subscribe(None)?;
+    node_handle.relay_subscribe(graphcast_topic)?;
     Ok(node_handle)
 }
 
 pub static BASIC_TOPIC: Lazy<WakuContentTopic> = Lazy::new(|| WakuContentTopic {
-    application_name: String::from("waku"),
-    version: 2,
-    content_topic_name: String::from("ping-pong"),
+    application_name: String::from("poi-crosschecker"),
+    version: 0,
+    content_topic_name: String::from("blaaaah"),
     encoding: Encoding::Proto,
 });
 
 fn main() {
-    let node_handle = setup_node_handle().unwrap();
+    let app_name:String = String::from("graphcast");
+    let graphcast_topic = Some(WakuPubSubTopic {
+        topic_name: app_name,
+        encoding: Encoding::Proto,
+    });
+
+    let node_handle = setup_node_handle(graphcast_topic.clone()).unwrap();
 
     waku_set_event_callback(move |signal: Signal| match signal.event() {
         waku::Event::WakuMessage(event) => {
@@ -81,10 +87,8 @@ fn main() {
         Utc::now().timestamp() as usize,
     );
 
-    println!("{:?}", waku_message);
-
     let res = node_handle
-        .relay_publish_message(&waku_message, None, None)
+        .relay_publish_message(&waku_message, graphcast_topic, None)
         .expect("Could not send message.");
 
     println!("{:?}", res);
