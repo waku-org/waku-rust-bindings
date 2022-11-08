@@ -36,10 +36,7 @@ fn setup_node_handle() -> std::result::Result<WakuNodeHandle<Running>, Box<dyn E
         let peerid = node_handle.add_peer(&address, ProtocolId::Relay)?;
         node_handle.connect_peer_with_id(peerid, None)?;
     }
-    node_handle.relay_subscribe(Some(WakuPubSubTopic {
-        topic_name: String::from("ping-pong"),
-        encoding: Encoding::Proto,
-    }))?;
+    node_handle.relay_subscribe(None)?;
     Ok(node_handle)
 }
 
@@ -54,19 +51,19 @@ fn main() {
     let node_handle = setup_node_handle().unwrap();
 
     waku_set_event_callback(move |signal: Signal| match signal.event() {
-        // waku::Event::WakuMessage(event) => {
-        //     match <BasicMessage as Message>::decode(event.waku_message().payload()) {
-        //         Ok(basic_message) => {
-        //             println!("New message received! \n{:?}", basic_message);
-        //         }
-        //         Err(e) => {
-        //             println!("Error occurred!\n {:?}", e);
-        //         }
-        //     }
-        // }
-        // waku::Event::Unrecognized(data) => {
-        //     println!("Unrecognized event!\n {:?}", data);
-        // }
+        waku::Event::WakuMessage(event) => {
+            match <BasicMessage as Message>::decode(event.waku_message().payload()) {
+                Ok(basic_message) => {
+                    println!("New message received! \n{:?}", basic_message);
+                }
+                Err(e) => {
+                    println!("Error occurred!\n {:?}", e);
+                }
+            }
+        }
+        waku::Event::Unrecognized(data) => {
+            println!("Unrecognized event!\n {:?}", data);
+        }
         _ => {
             println!("signal! {:?}", serde_json::to_string(&signal));
         }
