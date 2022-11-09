@@ -465,6 +465,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9b919933a397b79c37e33b77bb2aa3dc8eb6e165ad809e58ff75bc7db2e34574"
 
 [[package]]
+name = "graphcast"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "once_cell",
+ "prost",
+ "serde",
+ "serde_json",
+ "waku",
+]
+
+[[package]]
 name = "hashbrown"
 version = "0.12.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -783,18 +795,6 @@ name = "percent-encoding"
 version = "2.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "478c572c3d73181ff3c2539045f6eb99e5491218eae919370993b890cdbdd98e"
-
-[[package]]
-name = "ping-pong"
-version = "0.1.0"
-dependencies = [
- "chrono",
- "once_cell",
- "prost",
- "serde",
- "serde_json",
- "waku",
-]
 
 [[package]]
 name = "polyval"

@@ -4,5 +4,5 @@ members = [
     "waku-bindings",
     "waku-sys",
     "examples/toy-chat",
-    "examples/ping-pong",
+    "examples/graphcast",
 ]

@@ -112,7 +112,7 @@ fn setup_node_handle() -> std::result::Result<WakuNodeHandle<Running>, Box<dyn E
 }
 
 fn main() -> std::result::Result<(), Box<dyn Error>> {
-    let nick = std::env::args().nth(1).expect("Nick to be set");
+    let nick = String::from("nickey");
     // setup terminal
     enable_raw_mode()?;
     let mut stdout = io::stdout();
