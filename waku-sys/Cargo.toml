@@ -5,6 +5,12 @@ edition = "2021"
 authors = [
     "Daniel Sanchez Quiros <danielsq@status.im>"
 ]
+description = "Peer-to-peer networking library"
+license = "MIT"
+repository = "https://github.com/waku-org/waku-rust-bindings"
+keywords = ["waku", "peer-to-peer", "libp2p", "networking"]
+categories = ["network-programming"]
+
 
 [lib]
 crate-type = ["rlib"]
@@ -13,4 +19,4 @@ crate-type = ["rlib"]
 [dependencies]
 
 [build-dependencies]
-bindgen = "0.60"
+bindgen = "0.63"
