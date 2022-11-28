@@ -31,6 +31,7 @@ fn build_go_waku_lib(go_bin: &str, project_dir: &Path) {
     // Build go-waku static lib
     // build command taken from waku make file:
     // https://github.com/status-im/go-waku/blob/eafbc4c01f94f3096c3201fb1e44f17f907b3068/Makefile#L115
+    let out_dir: PathBuf = env::var_os("OUT_DIR").unwrap().into();
     let vendor_path = project_dir.join("vendor");
     set_current_dir(vendor_path).expect("Moving to vendor dir");
     Command::new(go_bin)
@@ -38,7 +39,7 @@ fn build_go_waku_lib(go_bin: &str, project_dir: &Path) {
         .arg("build")
         .arg("-buildmode=c-archive")
         .arg("-o")
-        .arg("./build/lib/libgowaku.a")
+        .arg(out_dir.join("libgowaku.a"))
         .arg("./library")
         .status()
         .map_err(|e| println!("cargo:warning=go build failed due to: {}", e))
@@ -46,8 +47,10 @@ fn build_go_waku_lib(go_bin: &str, project_dir: &Path) {
     set_current_dir(project_dir).expect("Going back to project dir");
 }
 
-fn generate_bindgen_code(project_dir: &Path) {
-    let lib_dir = project_dir.join("vendor/build/lib");
+fn generate_bindgen_code() {
+    let lib_dir: PathBuf = env::var_os("OUT_DIR").unwrap().into();
+
+    // let lib_dir = project_dir.join("vendor/build/lib");
 
     println!("cargo:rustc-link-search={}", lib_dir.display());
     println!("cargo:rustc-link-lib=static=gowaku");
@@ -79,5 +82,5 @@ fn main() {
     let project_dir = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap());
 
     build_go_waku_lib(&go_bin, &project_dir);
-    generate_bindgen_code(&project_dir);
+    generate_bindgen_code();
 }
