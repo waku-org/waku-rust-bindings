@@ -36,6 +36,7 @@ fn build_go_waku_lib(go_bin: &str, project_dir: &Path) {
     set_current_dir(vendor_path).expect("Moving to vendor dir");
     Command::new(go_bin)
         .env("CGO_ENABLED", "1")
+        .env("GOCACHE", "off")
         .arg("build")
         .arg("-buildmode=c-archive")
         .arg("-o")
