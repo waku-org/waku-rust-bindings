@@ -1,7 +1,7 @@
 use chrono::{DateTime, TimeZone, Utc};
 use once_cell::sync::Lazy;
 use prost::Message;
-use waku::{Encoding, WakuContentTopic};
+use waku_bindings::{Encoding, WakuContentTopic};
 
 pub static TOY_CHAT_CONTENT_TOPIC: Lazy<WakuContentTopic> = Lazy::new(|| WakuContentTopic {
     application_name: "toy-chat".into(),

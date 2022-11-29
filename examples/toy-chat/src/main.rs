@@ -22,7 +22,7 @@ use tui::{
     Frame, Terminal,
 };
 use unicode_width::UnicodeWidthStr;
-use waku::{
+use waku_bindings::{
     waku_new, waku_set_event_callback, ContentFilter, Multiaddr, PagingOptions, ProtocolId,
     Running, StoreQuery, WakuMessage, WakuNodeHandle,
 };
@@ -62,7 +62,9 @@ impl App {
         }
     }
 }
-fn retrieve_history(node_handle: &WakuNodeHandle<Running>) -> waku::Result<Vec<Chat2Message>> {
+fn retrieve_history(
+    node_handle: &WakuNodeHandle<Running>,
+) -> waku_bindings::Result<Vec<Chat2Message>> {
     let self_id = node_handle.peer_id().unwrap();
     let peer = node_handle
         .peers()?
@@ -130,7 +132,7 @@ fn main() -> std::result::Result<(), Box<dyn Error>> {
     }
     let shared_messages = Arc::clone(&app.messages);
     waku_set_event_callback(move |signal| match signal.event() {
-        waku::Event::WakuMessage(event) => {
+        waku_bindings::Event::WakuMessage(event) => {
             match <Chat2Message as Message>::decode(event.waku_message().payload()) {
                 Ok(chat_message) => {
                     shared_messages.write().unwrap().push(chat_message);
@@ -141,7 +143,7 @@ fn main() -> std::result::Result<(), Box<dyn Error>> {
                 }
             }
         }
-        waku::Event::Unrecognized(data) => {
+        waku_bindings::Event::Unrecognized(data) => {
             let mut out = std::io::stderr();
             write!(out, "Error, received unrecognized event {data}").unwrap();
         }

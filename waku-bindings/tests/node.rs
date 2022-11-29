@@ -5,7 +5,7 @@ use secp256k1::{PublicKey, Secp256k1, SecretKey};
 use std::net::IpAddr;
 use std::str::FromStr;
 use std::time::{Duration, SystemTime};
-use waku::{
+use waku_bindings::{
     waku_new, waku_set_event_callback, Encoding, Event, ProtocolId, WakuContentTopic, WakuLogLevel,
     WakuMessage, WakuNodeConfig,
 };
