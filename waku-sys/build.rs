@@ -34,17 +34,25 @@ fn build_go_waku_lib(go_bin: &str, project_dir: &Path) {
     let out_dir: PathBuf = env::var_os("OUT_DIR").unwrap().into();
     let vendor_path = project_dir.join("vendor");
     set_current_dir(vendor_path).expect("Moving to vendor dir");
-    Command::new(go_bin)
-        .env("CGO_ENABLED", "1")
-        .env("GOCACHE", "off")
+
+    let mut cmd = Command::new(go_bin);
+    cmd.env("CGO_ENABLED", "1")
         .arg("build")
         .arg("-buildmode=c-archive")
         .arg("-o")
         .arg(out_dir.join("libgowaku.a"))
-        .arg("./library")
-        .status()
+        .arg("./library");
+
+    // Setting `GOCACHE=/tmp/` for crates.io job that builds documentation
+    // when a crate is being published or updated.
+    if std::env::var("DOCS_RS").is_ok() {
+        cmd.env("GOCACHE", "/tmp/");
+    }
+
+    cmd.status()
         .map_err(|e| println!("cargo:warning=go build failed due to: {}", e))
         .unwrap();
+
     set_current_dir(project_dir).expect("Going back to project dir");
 }
 
