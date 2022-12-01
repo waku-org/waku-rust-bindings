@@ -295,7 +295,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
         .map(|message| {
             let content = vec![Spans::from(Span::raw(format!(
                 "[{} - {}]: {}",
-                message.timestamp().format("%d-%m-%y %H:%M"),
+                message.timestamp().unwrap().format("%d-%m-%y %H:%M"),
                 message.nick(),
                 message.message()
             )))];
