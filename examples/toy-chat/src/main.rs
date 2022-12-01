@@ -197,7 +197,7 @@ fn run_app<B: Backend>(
                             buff,
                             TOY_CHAT_CONTENT_TOPIC.clone(),
                             1,
-                            Utc::now().timestamp() as usize,
+                            Utc::now().timestamp_nanos() as usize,
                         );
                         if let Err(e) =
                             app.node_handle
