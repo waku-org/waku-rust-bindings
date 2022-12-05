@@ -83,12 +83,7 @@ pub fn main() -> Result<(), String> {
 
     // subscribe to default channel
     node.relay_subscribe(None)?;
-    let content_topic = WakuContentTopic {
-        application_name: "toychat".to_string(),
-        version: 2,
-        content_topic_name: "huilong".to_string(),
-        encoding: Encoding::Proto,
-    };
+    let content_topic = WakuContentTopic::new("toychat", 2, "huilong", Encoding::Proto);
 
     let message = WakuMessage::new(
         content,
