@@ -286,7 +286,7 @@ pub struct MessageIndex {
 }
 
 /// WakuMessage encoding scheme
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum Encoding {
     Proto,
     Rlp,
@@ -322,7 +322,7 @@ impl RegexRepresentation for Encoding {
 }
 
 /// A waku content topic `/{application_name}/{version}/{content_topic_name}/{encdoing}`
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct WakuContentTopic {
     pub application_name: Cow<'static, str>,
     pub version: usize,
@@ -402,7 +402,7 @@ impl<'de> Deserialize<'de> for WakuContentTopic {
 }
 
 /// A waku pubsub topic in the form of `/waku/v2/{topic_name}/{encoding}`
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct WakuPubSubTopic {
     pub topic_name: Cow<'static, str>,
     pub encoding: Encoding,
