@@ -1,5 +1,6 @@
 //! Waku [general](https://rfc.vac.dev/spec/36/#general) types
 
+use std::borrow::Cow;
 // std
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;
@@ -323,10 +324,26 @@ impl RegexRepresentation for Encoding {
 /// A waku content topic `/{application_name}/{version}/{content_topic_name}/{encdoing}`
 #[derive(Clone, Debug)]
 pub struct WakuContentTopic {
-    pub application_name: String,
+    pub application_name: Cow<'static, str>,
     pub version: usize,
-    pub content_topic_name: String,
+    pub content_topic_name: Cow<'static, str>,
     pub encoding: Encoding,
+}
+
+impl WakuContentTopic {
+    pub const fn new(
+        application_name: &'static str,
+        version: usize,
+        content_topic_name: &'static str,
+        encoding: Encoding,
+    ) -> Self {
+        Self {
+            application_name: Cow::Borrowed(application_name),
+            version,
+            content_topic_name: Cow::Borrowed(content_topic_name),
+            encoding,
+        }
+    }
 }
 
 impl FromStr for WakuContentTopic {
@@ -337,9 +354,9 @@ impl FromStr for WakuContentTopic {
             scanf!(s, "/{}/{}/{}/{:/.+?/}", String, usize, String, Encoding)
         {
             Ok(WakuContentTopic {
-                application_name,
+                application_name: Cow::Owned(application_name),
                 version,
-                content_topic_name,
+                content_topic_name: Cow::Owned(content_topic_name),
                 encoding,
             })
         } else {
@@ -387,14 +404,21 @@ impl<'de> Deserialize<'de> for WakuContentTopic {
 /// A waku pubsub topic in the form of `/waku/v2/{topic_name}/{encoding}`
 #[derive(Clone, Debug)]
 pub struct WakuPubSubTopic {
-    pub topic_name: String,
+    pub topic_name: Cow<'static, str>,
     pub encoding: Encoding,
 }
 
 impl WakuPubSubTopic {
-    pub fn new(topic_name: String, encoding: Encoding) -> Self {
+    pub const fn new(topic_name: &'static str, encoding: Encoding) -> Self {
         Self {
-            topic_name,
+            topic_name: Cow::Borrowed(topic_name),
+            encoding,
+        }
+    }
+
+    pub fn with_topic_name(topic_name: String, encoding: Encoding) -> Self {
+        Self {
+            topic_name: Cow::Owned(topic_name),
             encoding,
         }
     }
@@ -406,7 +430,7 @@ impl FromStr for WakuPubSubTopic {
     fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
         if let Ok((topic_name, encoding)) = scanf!(s, "/waku/2/{}/{:/.+?/}", String, Encoding) {
             Ok(WakuPubSubTopic {
-                topic_name,
+                topic_name: Cow::Owned(topic_name),
                 encoding,
             })
         } else {

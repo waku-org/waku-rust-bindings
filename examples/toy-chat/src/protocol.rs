@@ -1,14 +1,9 @@
 use chrono::{DateTime, LocalResult, TimeZone, Utc};
-use once_cell::sync::Lazy;
 use prost::Message;
 use waku_bindings::{Encoding, WakuContentTopic};
 
-pub static TOY_CHAT_CONTENT_TOPIC: Lazy<WakuContentTopic> = Lazy::new(|| WakuContentTopic {
-    application_name: "toy-chat".into(),
-    version: 2,
-    content_topic_name: "huilong".into(),
-    encoding: Encoding::Proto,
-});
+pub static TOY_CHAT_CONTENT_TOPIC: WakuContentTopic =
+    WakuContentTopic::new("toy-chat", 2, "huilong", Encoding::Proto);
 
 #[derive(Clone, Message)]
 pub struct Chat2Message {
