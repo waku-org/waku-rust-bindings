@@ -1,5 +1,19 @@
 # Waku Rust bindings
 
+[![Crates.io][crates-badge]][crates-url]
+[![Documentation][docs-badge]][docs-url]
+[![Build Status][actions-badge]][actions-url]
+[![Codecov Status][codecov-badge]][codecov-url]
+
+[crates-badge]: https://img.shields.io/crates/v/waku-bindings.svg
+[crates-url]: https://crates.io/crates/waku-bindings
+[docs-badge]: https://docs.rs/waku-bindings/badge.svg
+[docs-url]: https://docs.rs/waku-bindings
+[actions-badge]: https://github.com/waku-org/waku-rust-bindings/workflows/CI/badge.svg
+[actions-url]: https://github.com/waku-org/waku-rust-bindings/actions/workflows/main.yml?query=workflow%3ACI+branch%3Amaster
+[codecov-badge]: https://codecov.io/github/waku-org/waku-rust-bindings/branch/main/graph/badge.svg?token=H4CQWRUCUS
+[codecov-url]: https://codecov.io/github/waku-org/waku-rust-bindings
+
 Rust layer on top of [`go-waku`](https://github.com/status-im/go-waku) [c ffi bindings](https://github.com/status-im/go-waku/blob/v0.2.2/library/README.md).
 
 
