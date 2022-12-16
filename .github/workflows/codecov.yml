@@ -33,6 +33,7 @@ jobs:
           cargo install grcov;
           cargo test --all-features;
           mkdir /tmp/cov;
+          cp target/debug/deps/waku* target/debug/; # Select only waku related bins for codecov
           grcov . --binary-path ./target/debug/ -s . -t lcov --branch --ignore-not-existing --ignore '../*' --ignore "/*" -o /tmp/cov/tests.lcov;
       - uses: codecov/codecov-action@v3
         with:
