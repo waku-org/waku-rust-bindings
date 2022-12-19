@@ -3,7 +3,7 @@ on:
     tags:
       - v*.*.*
 
-name: CI
+name: Release
 
 jobs:
   release:
