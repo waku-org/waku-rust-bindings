@@ -29,9 +29,9 @@ pub fn main() -> Result<(), String> {
         min_peers_to_publish: None,
         filter: None,
         log_level: Some(WakuLogLevel::Error),
-        disc_v5: Some(false),
-        disc_v5_udp_port: Some(9000),
-        disc_v5_bootstrap_nodes: Vec::new(),
+        discv5: Some(false),
+        discv5_udp_port: Some(9000),
+        discv5_bootstrap_nodes: Vec::new(),
     };
     let node = waku_new(Some(config))?;
     let node = node.start()?;

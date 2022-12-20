@@ -45,14 +45,14 @@ pub struct WakuNodeConfig {
     /// Enable DiscoveryV5. Default `false`
     #[default(Some(false))]
     #[serde(rename = "discV5")]
-    pub disc_v5: Option<bool>,
+    pub discv5: Option<bool>,
     /// Array of bootstrap nodes ENR.
     #[serde(rename = "discV5BootstrapNodes")]
-    pub disc_v5_bootstrap_nodes: Vec<String>,
+    pub discv5_bootstrap_nodes: Vec<String>,
     /// UDP port for DiscoveryV5. Default `9000`.
     #[default(Some(9000))]
     #[serde(rename = "discV5UDPPort")]
-    pub disc_v5_udp_port: Option<u16>,
+    pub discv5_udp_port: Option<u16>,
 }
 
 #[derive(Clone, Default, Serialize, Deserialize, Debug)]

@@ -1,7 +1,7 @@
 //! Waku node implementation
 
 mod config;
-mod disc_v5;
+mod discv5;
 mod discovery;
 mod filter;
 mod lightpush;
@@ -27,7 +27,6 @@ use crate::general::{
 };
 
 pub use config::{WakuLogLevel, WakuNodeConfig};
-pub use disc_v5::{waku_discv5_start, waku_discv5_stop};
 pub use peers::{Protocol, WakuPeerData, WakuPeers};
 pub use relay::{waku_create_content_topic, waku_create_pubsub_topic, waku_dafault_pubsub_topic};
 pub use store::waku_store_query;
@@ -90,6 +89,16 @@ fn stop_node() -> Result<()> {
 }
 
 impl WakuNodeHandle<Initialized> {
+    /// Starts the DiscoveryV5 service to discover and connect to new peers
+    pub fn discv5_start(&self) -> Result<bool> {
+        discv5::waku_discv5_start()
+    }
+
+    /// Stops the DiscoveryV5 service
+    pub fn discv5_stop(&self) -> Result<bool> {
+        discv5::waku_discv5_stop()
+    }
+
     /// Start a Waku node mounting all the protocols that were enabled during the Waku node instantiation.
     /// as per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_start)
     pub fn start(self) -> Result<WakuNodeHandle<Running>> {
