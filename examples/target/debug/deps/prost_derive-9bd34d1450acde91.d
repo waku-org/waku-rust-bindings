@@ -1,0 +1,11 @@
+/Users/al/Developer/status/waku/waku-rust-bindings/examples/target/debug/deps/libprost_derive-9bd34d1450acde91.dylib: /Users/al/.cargo/registry/src/github.com-1ecc6299db9ec823/prost-derive-0.11.2/src/lib.rs /Users/al/.cargo/registry/src/github.com-1ecc6299db9ec823/prost-derive-0.11.2/src/field/mod.rs /Users/al/.cargo/registry/src/github.com-1ecc6299db9ec823/prost-derive-0.11.2/src/field/group.rs /Users/al/.cargo/registry/src/github.com-1ecc6299db9ec823/prost-derive-0.11.2/src/field/map.rs /Users/al/.cargo/registry/src/github.com-1ecc6299db9ec823/prost-derive-0.11.2/src/field/message.rs /Users/al/.cargo/registry/src/github.com-1ecc6299db9ec823/prost-derive-0.11.2/src/field/oneof.rs /Users/al/.cargo/registry/src/github.com-1ecc6299db9ec823/prost-derive-0.11.2/src/field/scalar.rs
+
+/Users/al/Developer/status/waku/waku-rust-bindings/examples/target/debug/deps/prost_derive-9bd34d1450acde91.d: /Users/al/.cargo/registry/src/github.com-1ecc6299db9ec823/prost-derive-0.11.2/src/lib.rs /Users/al/.cargo/registry/src/github.com-1ecc6299db9ec823/prost-derive-0.11.2/src/field/mod.rs /Users/al/.cargo/registry/src/github.com-1ecc6299db9ec823/prost-derive-0.11.2/src/field/group.rs /Users/al/.cargo/registry/src/github.com-1ecc6299db9ec823/prost-derive-0.11.2/src/field/map.rs /Users/al/.cargo/registry/src/github.com-1ecc6299db9ec823/prost-derive-0.11.2/src/field/message.rs /Users/al/.cargo/registry/src/github.com-1ecc6299db9ec823/prost-derive-0.11.2/src/field/oneof.rs /Users/al/.cargo/registry/src/github.com-1ecc6299db9ec823/prost-derive-0.11.2/src/field/scalar.rs
+
+/Users/al/.cargo/registry/src/github.com-1ecc6299db9ec823/prost-derive-0.11.2/src/lib.rs:
+/Users/al/.cargo/registry/src/github.com-1ecc6299db9ec823/prost-derive-0.11.2/src/field/mod.rs:
+/Users/al/.cargo/registry/src/github.com-1ecc6299db9ec823/prost-derive-0.11.2/src/field/group.rs:
+/Users/al/.cargo/registry/src/github.com-1ecc6299db9ec823/prost-derive-0.11.2/src/field/map.rs:
+/Users/al/.cargo/registry/src/github.com-1ecc6299db9ec823/prost-derive-0.11.2/src/field/message.rs:
+/Users/al/.cargo/registry/src/github.com-1ecc6299db9ec823/prost-derive-0.11.2/src/field/oneof.rs:
+/Users/al/.cargo/registry/src/github.com-1ecc6299db9ec823/prost-derive-0.11.2/src/field/scalar.rs:

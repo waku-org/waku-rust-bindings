@@ -34,6 +34,15 @@ pub struct WakuNodeConfig {
     pub filter: Option<bool>,
     /// Set the log level. Default `INFO`. Allowed values "DEBUG", "INFO", "WARN", "ERROR", "DPANIC", "PANIC", "FATAL"
     pub log_level: Option<WakuLogLevel>,
+    /// Enable DiscoveryV5. Default `false`
+    #[serde(rename = "discV5")]
+    pub disc_v5: Option<bool>,
+    /// Array of bootstrap nodes ENR.
+    #[serde(rename = "discV5BootstrapNodes")]
+    pub disc_v5_bootstrap_nodes: Vec<String>,
+    /// UDP port for DiscoveryV5. Default `9000`.
+    #[serde(rename = "discV5UDPPort")]
+    pub disc_v5_udp_port: Option<u16>,
 }
 
 #[derive(Clone, Default, Serialize, Deserialize, Debug)]

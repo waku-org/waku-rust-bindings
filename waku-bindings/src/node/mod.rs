@@ -1,6 +1,7 @@
 //! Waku node implementation
 
 mod config;
+mod disc_v5;
 mod discovery;
 mod filter;
 mod lightpush;
@@ -26,6 +27,7 @@ use crate::general::{
 };
 
 pub use config::{WakuLogLevel, WakuNodeConfig};
+pub use disc_v5::{waku_discv5_start, waku_discv5_stop};
 pub use peers::{Protocol, WakuPeerData, WakuPeers};
 pub use relay::{waku_create_content_topic, waku_create_pubsub_topic, waku_dafault_pubsub_topic};
 pub use store::waku_store_query;
