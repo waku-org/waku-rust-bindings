@@ -138,8 +138,6 @@ pub fn main() -> Result<(), String> {
     }
 
     std::thread::sleep(Duration::from_secs(2));
-    let result = node.discv5_stop()?;
-    assert!(result, "Discv5 should be stopped");
     node.stop()?;
     Ok(())
 }
