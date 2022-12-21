@@ -34,6 +34,9 @@ pub fn main() -> Result<(), String> {
         discv5_bootstrap_nodes: Vec::new(),
     };
     let node = waku_new(Some(config))?;
+    let result = node.discv5_start()?;
+    println!("Discv5 started: {}", result);
+
     let node = node.start()?;
     println!("Node peer id: {}", node.peer_id()?);
 
@@ -52,7 +55,7 @@ pub fn main() -> Result<(), String> {
     let ssk = Aes256Gcm::generate_key(&mut thread_rng());
 
     let content = "Hi from 🦀!";
-    let content_callback = content.clone();
+    let content_callback = content;
 
     waku_set_event_callback(move |signal| match signal.event() {
         Event::WakuMessage(message) => {
@@ -111,8 +114,7 @@ pub fn main() -> Result<(), String> {
         .unwrap()
         .iter()
         .map(|peer| peer.peer_id())
-        .filter(|id| id.as_str() != node.peer_id().unwrap().as_str())
-        .next()
+        .find(|id| id.as_str() != node.peer_id().unwrap().as_str())
         .unwrap()
         .clone();
 
@@ -127,14 +129,7 @@ pub fn main() -> Result<(), String> {
         None,
     )?;
     node.lightpush_publish_encrypt_symmetric(&message, None, peer_id.clone(), &ssk, None, None)?;
-    node.lightpush_publish_encrypt_symmetric(
-        &message,
-        None,
-        peer_id.clone(),
-        &ssk,
-        Some(&sk),
-        None,
-    )?;
+    node.lightpush_publish_encrypt_symmetric(&message, None, peer_id, &ssk, Some(&sk), None)?;
 
     for node_data in node.peers()? {
         if node_data.peer_id() != &node.peer_id()? {
@@ -143,6 +138,8 @@ pub fn main() -> Result<(), String> {
     }
 
     std::thread::sleep(Duration::from_secs(2));
+    let result = node.discv5_stop()?;
+    assert!(result, "Discv5 should be stopped");
     node.stop()?;
     Ok(())
 }

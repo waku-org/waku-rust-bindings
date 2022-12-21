@@ -119,6 +119,11 @@ impl WakuNodeHandle<Running> {
         stop_node()
     }
 
+    /// Stops the DiscoveryV5 service
+    pub fn discv5_stop(&self) -> Result<bool> {
+        discv5::waku_discv5_stop()
+    }
+
     /// Dial peer using a multiaddress
     /// If `timeout` as milliseconds doesn't fit into a `i32` it is clamped to [`i32::MAX`]
     /// If the function execution takes longer than `timeout` value, the execution will be canceled and an error returned.
