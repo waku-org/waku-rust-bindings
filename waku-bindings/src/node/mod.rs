@@ -1,8 +1,8 @@
 //! Waku node implementation
 
 mod config;
-mod discv5;
 mod discovery;
+mod discv5;
 mod filter;
 mod lightpush;
 mod management;

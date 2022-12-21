@@ -1,3 +1,10 @@
+// std
+use std::ffi::CStr;
+
+// crates
+use crate::general::JsonResponse;
+use crate::Result;
+
 /// Starts the DiscoveryV5 service to discover and connect to new peers
 pub fn waku_discv5_start() -> Result<bool> {
     let result = unsafe { CStr::from_ptr(waku_sys::waku_discv5_start()) }
