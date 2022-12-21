@@ -209,6 +209,13 @@ pub struct FilterSubscription {
 }
 
 impl FilterSubscription {
+    pub fn new(content_filters: Vec<ContentFilter>, pubsub_topic: Option<WakuPubSubTopic>) -> Self {
+        Self {
+            content_filters,
+            pubsub_topic,
+        }
+    }
+
     pub fn content_filters(&self) -> &[ContentFilter] {
         &self.content_filters
     }
