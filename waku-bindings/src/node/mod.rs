@@ -119,6 +119,11 @@ impl WakuNodeHandle<Running> {
         stop_node()
     }
 
+    /// Starts the DiscoveryV5 service to discover and connect to new peers
+    pub fn discv5_start(&self) -> Result<bool> {
+        discv5::waku_discv5_start()
+    }
+    
     /// Stops the DiscoveryV5 service
     pub fn discv5_stop(&self) -> Result<bool> {
         discv5::waku_discv5_stop()

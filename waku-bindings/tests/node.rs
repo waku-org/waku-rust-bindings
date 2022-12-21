@@ -29,16 +29,16 @@ pub fn main() -> Result<(), String> {
         min_peers_to_publish: None,
         filter: None,
         log_level: Some(WakuLogLevel::Error),
-        discv5: Some(false),
+        discv5: Some(true),
         discv5_udp_port: Some(9000),
         discv5_bootstrap_nodes: Vec::new(),
     };
     let node = waku_new(Some(config))?;
-    let result = node.discv5_start()?;
-    println!("Discv5 started: {}", result);
-
     let node = node.start()?;
     println!("Node peer id: {}", node.peer_id()?);
+
+    let result = node.discv5_start()?;
+    println!("Discv5 started: {}", result);
 
     for node_address in NODES {
         let address: Multiaddr = node_address.parse().unwrap();
