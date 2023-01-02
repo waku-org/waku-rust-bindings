@@ -21,7 +21,7 @@ pub type MessageId = String;
 
 /// Protocol identifiers
 #[non_exhaustive]
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum ProtocolId {
     Store,
     Lightpush,
