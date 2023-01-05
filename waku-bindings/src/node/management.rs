@@ -43,7 +43,7 @@ pub fn waku_start() -> Result<bool> {
 /// Stops a Waku node
 /// as per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_stop)
 pub fn waku_stop() -> Result<bool> {
-    let response = unsafe { CStr::from_ptr(waku_sys::waku_start()) }
+    let response = unsafe { CStr::from_ptr(waku_sys::waku_stop()) }
         .to_str()
         .expect("Response should always succeed to load to a &str");
 
