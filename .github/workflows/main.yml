@@ -76,8 +76,6 @@ jobs:
         continue-on-error: false
         with:
           command: test
-          args: content_topic
-
 
   lints:
     name: Rust lints
