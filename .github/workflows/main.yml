@@ -75,7 +75,8 @@ jobs:
       - uses: actions-rs/cargo@v1
         continue-on-error: false
         with:
-          command: test content_topic
+          command: test
+          args: content_topic
 
 
   lints:
