@@ -326,8 +326,10 @@ pub fn waku_new(config: Option<WakuNodeConfig>) -> Result<WakuNodeHandle<Initial
 #[cfg(test)]
 mod tests {
     use super::waku_new;
+    use serial_test::serial;
 
     #[test]
+    #[serial]
     fn exclusive_running() {
         let handle1 = waku_new(None).unwrap();
         let handle2 = waku_new(None);

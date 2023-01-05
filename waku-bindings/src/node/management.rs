@@ -82,8 +82,10 @@ pub fn waku_listen_addresses() -> Result<Vec<Multiaddr>> {
 mod test {
     use super::waku_new;
     use crate::node::management::{waku_listen_addresses, waku_peer_id, waku_start, waku_stop};
+    use serial_test::serial;
 
     #[test]
+    #[serial]
     fn waku_flow() {
         waku_new(None).unwrap();
         waku_start().unwrap();

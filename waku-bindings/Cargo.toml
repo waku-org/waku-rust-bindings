@@ -26,3 +26,6 @@ sscanf = "0.3"
 smart-default = "0.6"
 url = "2.3"
 waku-sys = { version = "0.1.0-beta1", path = "../waku-sys" }
+
+[dev-dependencies]
+serial_test = "0.10.0"
