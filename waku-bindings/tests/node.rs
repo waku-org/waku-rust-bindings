@@ -37,9 +37,6 @@ pub fn main() -> Result<(), String> {
     let node = node.start()?;
     println!("Node peer id: {}", node.peer_id()?);
 
-    let result = node.discv5_start()?;
-    println!("Discv5 started: {}", result);
-
     for node_address in NODES {
         let address: Multiaddr = node_address.parse().unwrap();
         let peer_id = node.add_peer(&address, ProtocolId::Relay)?;

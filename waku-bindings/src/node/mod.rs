@@ -2,7 +2,6 @@
 
 mod config;
 mod discovery;
-mod discv5;
 mod filter;
 mod lightpush;
 mod management;
@@ -89,16 +88,6 @@ fn stop_node() -> Result<()> {
 }
 
 impl WakuNodeHandle<Initialized> {
-    /// Starts the DiscoveryV5 service to discover and connect to new peers
-    pub fn discv5_start(&self) -> Result<bool> {
-        discv5::waku_discv5_start()
-    }
-
-    /// Stops the DiscoveryV5 service
-    pub fn discv5_stop(&self) -> Result<bool> {
-        discv5::waku_discv5_stop()
-    }
-
     /// Start a Waku node mounting all the protocols that were enabled during the Waku node instantiation.
     /// as per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_start)
     pub fn start(self) -> Result<WakuNodeHandle<Running>> {
@@ -117,16 +106,6 @@ impl WakuNodeHandle<Running> {
     /// as per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_stop)
     pub fn stop(self) -> Result<()> {
         stop_node()
-    }
-
-    /// Starts the DiscoveryV5 service to discover and connect to new peers
-    pub fn discv5_start(&self) -> Result<bool> {
-        discv5::waku_discv5_start()
-    }
-
-    /// Stops the DiscoveryV5 service
-    pub fn discv5_stop(&self) -> Result<bool> {
-        discv5::waku_discv5_stop()
     }
 
     /// Dial peer using a multiaddress
