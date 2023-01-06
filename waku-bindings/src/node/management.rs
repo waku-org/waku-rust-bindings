@@ -43,7 +43,7 @@ pub fn waku_start() -> Result<bool> {
 /// Stops a Waku node
 /// as per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_stop)
 pub fn waku_stop() -> Result<bool> {
-    let response = unsafe { CStr::from_ptr(waku_sys::waku_start()) }
+    let response = unsafe { CStr::from_ptr(waku_sys::waku_stop()) }
         .to_str()
         .expect("Response should always succeed to load to a &str");
 
@@ -82,8 +82,10 @@ pub fn waku_listen_addresses() -> Result<Vec<Multiaddr>> {
 mod test {
     use super::waku_new;
     use crate::node::management::{waku_listen_addresses, waku_peer_id, waku_start, waku_stop};
+    use serial_test::serial;
 
     #[test]
+    #[serial]
     fn waku_flow() {
         waku_new(None).unwrap();
         waku_start().unwrap();
