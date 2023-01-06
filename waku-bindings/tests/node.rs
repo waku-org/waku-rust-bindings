@@ -29,9 +29,6 @@ pub fn main() -> Result<(), String> {
         min_peers_to_publish: None,
         filter: None,
         log_level: Some(WakuLogLevel::Error),
-        discv5: Some(true),
-        discv5_udp_port: Some(9000),
-        discv5_bootstrap_nodes: Vec::new(),
     };
     let node = waku_new(Some(config))?;
     let node = node.start()?;
@@ -52,7 +49,7 @@ pub fn main() -> Result<(), String> {
     let ssk = Aes256Gcm::generate_key(&mut thread_rng());
 
     let content = "Hi from 🦀!";
-    let content_callback = content;
+    let content_callback = content.clone();
 
     waku_set_event_callback(move |signal| match signal.event() {
         Event::WakuMessage(message) => {
@@ -111,7 +108,8 @@ pub fn main() -> Result<(), String> {
         .unwrap()
         .iter()
         .map(|peer| peer.peer_id())
-        .find(|id| id.as_str() != node.peer_id().unwrap().as_str())
+        .filter(|id| id.as_str() != node.peer_id().unwrap().as_str())
+        .next()
         .unwrap()
         .clone();
 
@@ -126,7 +124,14 @@ pub fn main() -> Result<(), String> {
         None,
     )?;
     node.lightpush_publish_encrypt_symmetric(&message, None, peer_id.clone(), &ssk, None, None)?;
-    node.lightpush_publish_encrypt_symmetric(&message, None, peer_id, &ssk, Some(&sk), None)?;
+    node.lightpush_publish_encrypt_symmetric(
+        &message,
+        None,
+        peer_id.clone(),
+        &ssk,
+        Some(&sk),
+        None,
+    )?;
 
     for node_data in node.peers()? {
         if node_data.peer_id() != &node.peer_id()? {
