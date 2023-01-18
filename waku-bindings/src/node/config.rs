@@ -7,15 +7,18 @@ use std::str::FromStr;
 use multiaddr::Multiaddr;
 use secp256k1::SecretKey;
 use serde::{Deserialize, Serialize};
+use smart_default::SmartDefault;
 // internal
 
 /// Waku node configuration
-#[derive(Clone, Default, Serialize, Deserialize, Debug)]
+#[derive(Clone, SmartDefault, Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct WakuNodeConfig {
     /// Listening IP address. Default `0.0.0.0`
+    #[default(Some(std::net::IpAddr::V4(std::net::Ipv4Addr::new(0, 0, 0, 0))))]
     pub host: Option<std::net::IpAddr>,
     /// Libp2p TCP listening port. Default `60000`. Use `0` for **random**
+    #[default(Some(60000))]
     pub port: Option<usize>,
     /// External address to advertise to other nodes. Can be ip4, ip6 or dns4, dns6.
     /// If null, the multiaddress(es) generated from the ip and port specified in the config (or default ones) will be used.
@@ -25,15 +28,31 @@ pub struct WakuNodeConfig {
     #[serde(with = "secret_key_serde")]
     pub node_key: Option<SecretKey>,
     /// Interval in seconds for pinging peers to keep the connection alive. Default `20`
+    #[default(Some(20))]
     pub keep_alive_interval: Option<usize>,
     /// Enable relay protocol. Default `true`
+    #[default(Some(true))]
     pub relay: Option<bool>,
     /// The minimum number of peers required on a topic to allow broadcasting a message. Default `0`
+    #[default(Some(0))]
     pub min_peers_to_publish: Option<usize>,
     /// Enable filter protocol. Default `false`
+    #[default(Some(false))]
     pub filter: Option<bool>,
     /// Set the log level. Default `INFO`. Allowed values "DEBUG", "INFO", "WARN", "ERROR", "DPANIC", "PANIC", "FATAL"
+    #[default(Some(WakuLogLevel::Info))]
     pub log_level: Option<WakuLogLevel>,
+    /// Enable DiscoveryV5. Default `false`
+    #[default(Some(false))]
+    #[serde(rename = "discV5")]
+    pub discv5: Option<bool>,
+    /// Array of bootstrap nodes ENR.
+    #[serde(rename = "discV5BootstrapNodes")]
+    pub discv5_bootstrap_nodes: Vec<String>,
+    /// UDP port for DiscoveryV5. Default `9000`.
+    #[default(Some(9000))]
+    #[serde(rename = "discV5UDPPort")]
+    pub discv5_udp_port: Option<u16>,
 }
 
 #[derive(Clone, Default, Serialize, Deserialize, Debug)]
