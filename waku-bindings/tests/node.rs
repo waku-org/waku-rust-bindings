@@ -5,13 +5,17 @@ use secp256k1::{PublicKey, Secp256k1, SecretKey};
 use serial_test::serial;
 use std::net::IpAddr;
 use std::str::FromStr;
-use std::time::SystemTime;
+use std::time::{Duration, SystemTime};
 use std::{collections::HashSet, str::from_utf8};
 use tokio::sync::mpsc::{self, Sender};
+use tokio::time;
 use waku_bindings::{
     waku_new, waku_set_event_callback, Encoding, Event, Key, MessageId, ProtocolId, Running,
     WakuContentTopic, WakuLogLevel, WakuMessage, WakuNodeConfig, WakuNodeHandle,
 };
+
+const ECHO_TIMEOUT: u64 = 10;
+const ECHO_MESSAGE: &str = "Hi from 🦀!";
 
 const NODES: &[&str] = &[
     "/dns4/node-01.ac-cn-hongkong-c.wakuv2.test.statusim.net/tcp/30303/p2p/16Uiu2HAkvWiyFsgRhuJEb9JfjYxEkoHLgnUQmr1N5mKWnYjxYRVm",
@@ -97,7 +101,7 @@ fn set_callback(tx: Sender<Response>, sk: SecretKey, ssk: Key<Aes256Gcm>) {
     });
 }
 
-fn test_echo_messages(
+async fn test_echo_messages(
     node: &WakuNodeHandle<Running>,
     content: &'static str,
     content_topic: WakuContentTopic,
@@ -116,7 +120,7 @@ fn test_echo_messages(
             .unwrap(),
     );
 
-    let (tx, mut rx) = mpsc::channel(100);
+    let (tx, mut rx) = mpsc::channel(1);
     set_callback(tx, sk, ssk);
 
     let mut ids =
@@ -126,7 +130,7 @@ fn test_echo_messages(
         try_publish_lightpush_messages(node, &message, &sk, &ssk).expect("send lightpush messages"),
     );
 
-    while let Some(res) = futures::executor::block_on(rx.recv()) {
+    while let Some(res) = rx.recv().await {
         if ids.take(&res.id).is_some() {
             let msg = from_utf8(&res.payload).expect("should be valid message");
             assert_eq!(content, msg);
@@ -139,23 +143,16 @@ fn test_echo_messages(
 }
 
 #[ignore]
-#[test]
+#[tokio::test]
 #[serial]
-fn discv5_echo() -> Result<(), String> {
+async fn discv5_echo() -> Result<(), String> {
     let config = WakuNodeConfig {
         host: IpAddr::from_str("0.0.0.0").ok(),
-        port: None,
-        advertise_addr: None,
-        node_key: None,
-        keep_alive_interval: None,
-        relay: None,
-        relay_topics: vec![],
-        min_peers_to_publish: None,
-        filter: None,
         log_level: Some(WakuLogLevel::Error),
         discv5: Some(true),
         discv5_udp_port: Some(9000),
         discv5_bootstrap_nodes: Vec::new(),
+        ..Default::default()
     };
 
     let node = waku_new(Some(config))?;
@@ -175,14 +172,20 @@ fn discv5_echo() -> Result<(), String> {
     let sk = SecretKey::new(&mut thread_rng());
     let ssk = Aes256Gcm::generate_key(&mut thread_rng());
 
-    let content = "Hi from 🦀!";
-
     // Subscribe to default channel.
     node.relay_subscribe(None)?;
     let content_topic = WakuContentTopic::new("toychat", 2, "huilong", Encoding::Proto);
 
+    let sleep = time::sleep(Duration::from_secs(ECHO_TIMEOUT));
+    tokio::pin!(sleep);
+
     // Send and receive messages. Waits until all messages received.
-    test_echo_messages(&node, content, content_topic, sk, ssk);
+    let got_all = tokio::select! {
+        _ = sleep => false,
+        _ = test_echo_messages(&node, ECHO_MESSAGE, content_topic, sk, ssk) => true,
+    };
+
+    assert!(got_all);
 
     for node_data in node.peers()? {
         if node_data.peer_id() != &node.peer_id()? {
@@ -195,10 +198,14 @@ fn discv5_echo() -> Result<(), String> {
 }
 
 #[ignore]
-#[test]
+#[tokio::test]
 #[serial]
-fn default_echo() -> Result<(), String> {
-    let config = Default::default();
+async fn default_echo() -> Result<(), String> {
+    let config = WakuNodeConfig {
+        log_level: Some(WakuLogLevel::Error),
+        ..Default::default()
+    };
+
     let node = waku_new(Some(config))?;
     let node = node.start()?;
     println!("Node peer id: {}", node.peer_id()?);
@@ -216,14 +223,20 @@ fn default_echo() -> Result<(), String> {
     let sk = SecretKey::new(&mut thread_rng());
     let ssk = Aes256Gcm::generate_key(&mut thread_rng());
 
-    let content = "Hi from 🦀!";
-
     // subscribe to default channel
     node.relay_subscribe(None)?;
     let content_topic = WakuContentTopic::new("toychat", 2, "huilong", Encoding::Proto);
 
+    let sleep = time::sleep(Duration::from_secs(ECHO_TIMEOUT));
+    tokio::pin!(sleep);
+
     // Send and receive messages. Waits until all messages received.
-    test_echo_messages(&node, content, content_topic, sk, ssk);
+    let got_all = tokio::select! {
+        _ = sleep => false,
+        _ = test_echo_messages(&node, ECHO_MESSAGE, content_topic, sk, ssk) => true,
+    };
+
+    assert!(got_all);
 
     for node_data in node.peers()? {
         if node_data.peer_id() != &node.peer_id()? {
