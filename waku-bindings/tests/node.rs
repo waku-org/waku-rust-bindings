@@ -26,6 +26,7 @@ pub fn main() -> Result<(), String> {
         node_key: None,
         keep_alive_interval: None,
         relay: None,
+        relay_topics: vec![],
         min_peers_to_publish: None,
         filter: None,
         log_level: Some(WakuLogLevel::Error),

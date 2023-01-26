@@ -4,6 +4,7 @@ use std::fmt::{Display, Formatter};
 use std::str::FromStr;
 // std
 // crates
+use crate::WakuPubSubTopic;
 use multiaddr::Multiaddr;
 use secp256k1::SecretKey;
 use serde::{Deserialize, Serialize};
@@ -33,6 +34,8 @@ pub struct WakuNodeConfig {
     /// Enable relay protocol. Default `true`
     #[default(Some(true))]
     pub relay: Option<bool>,
+    #[serde(default)]
+    pub relay_topics: Vec<WakuPubSubTopic>,
     /// The minimum number of peers required on a topic to allow broadcasting a message. Default `0`
     #[default(Some(0))]
     pub min_peers_to_publish: Option<usize>,
@@ -47,7 +50,7 @@ pub struct WakuNodeConfig {
     #[serde(rename = "discV5")]
     pub discv5: Option<bool>,
     /// Array of bootstrap nodes ENR.
-    #[serde(rename = "discV5BootstrapNodes")]
+    #[serde(rename = "discV5BootstrapNodes", default)]
     pub discv5_bootstrap_nodes: Vec<String>,
     /// UDP port for DiscoveryV5. Default `9000`.
     #[default(Some(9000))]
