@@ -139,7 +139,7 @@ fn main() -> std::result::Result<(), Box<dyn Error>> {
                 }
                 Err(e) => {
                     let mut out = std::io::stderr();
-                    write!(out, "{:?}", e).unwrap();
+                    write!(out, "{e:?}").unwrap();
                 }
             }
         }
@@ -164,7 +164,7 @@ fn main() -> std::result::Result<(), Box<dyn Error>> {
     app.node_handle.stop()?;
 
     if let Err(err) = res {
-        println!("{:?}", err)
+        println!("{err:?}")
     }
     Ok(())
 }
@@ -204,7 +204,7 @@ fn run_app<B: Backend>(
                                 .relay_publish_message(&waku_message, None, None)
                         {
                             let mut out = std::io::stderr();
-                            write!(out, "{:?}", e).unwrap();
+                            write!(out, "{e:?}").unwrap();
                         }
                     }
                     KeyCode::Char(c) => {
