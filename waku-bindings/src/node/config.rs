@@ -84,7 +84,7 @@ impl FromStr for WakuLogLevel {
             "fatal" => Ok(Self::Fatal),
             _ => Err(std::io::Error::new(
                 std::io::ErrorKind::InvalidData,
-                format!("Unrecognized waku log level: {}. Allowed values \"DEBUG\", \"INFO\", \"WARN\", \"ERROR\", \"DPANIC\", \"PANIC\", \"FATAL\"", s),
+                format!("Unrecognized waku log level: {s}. Allowed values \"DEBUG\", \"INFO\", \"WARN\", \"ERROR\", \"DPANIC\", \"PANIC\", \"FATAL\""),
             )),
         }
     }
