@@ -31,7 +31,7 @@ pub enum ProtocolId {
 
 impl ProtocolId {
     pub fn as_string_with_version(&self, version: &str) -> String {
-        format!("{}/{}", self, version)
+        format!("{self}/{version}")
     }
 }
 
@@ -45,7 +45,7 @@ impl Display for ProtocolId {
             #[allow(unreachable_patterns)]
             _ => unreachable!(),
         };
-        write!(f, "{}", tag)
+        write!(f, "{tag}")
     }
 }
 
@@ -319,7 +319,7 @@ impl FromStr for Encoding {
             "proto" => Ok(Self::Proto),
             "rlp" => Ok(Self::Rlp),
             "rfc26" => Ok(Self::Rfc26),
-            encoding => Err(format!("Unrecognized encoding: {}", encoding)),
+            encoding => Err(format!("Unrecognized encoding: {encoding}")),
         }
     }
 }
@@ -369,8 +369,7 @@ impl FromStr for WakuContentTopic {
         } else {
             Err(
                 format!(
-                    "Wrong pub-sub topic format. Should be `/{{application-name}}/{{version-of-the-application}}/{{content-topic-name}}/{{encoding}}`. Got: {}", 
-                    s
+                    "Wrong pub-sub topic format. Should be `/{{application-name}}/{{version-of-the-application}}/{{content-topic-name}}/{{encoding}}`. Got: {s}"
                 )
             )
         }
@@ -443,8 +442,7 @@ impl FromStr for WakuPubSubTopic {
         } else {
             Err(
                 format!(
-                    "Wrong pub-sub topic format. Should be `/waku/2/{{topic-name}}/{{encoding}}`. Got: {}",
-                    s
+                    "Wrong pub-sub topic format. Should be `/waku/2/{{topic-name}}/{{encoding}}`. Got: {s}"
                 )
             )
         }

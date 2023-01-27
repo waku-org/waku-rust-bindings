@@ -9,7 +9,7 @@ fn get_go_bin() -> String {
             Command::new("/usr/bin/which")
                 .arg("go")
                 .output()
-                .map_err(|e| println!("cargo:warning=Couldn't find `which` command: {}", e))
+                .map_err(|e| println!("cargo:warning=Couldn't find `which` command: {e}"))
                 .expect("`which` command not found")
                 .stdout,
         )
@@ -50,7 +50,7 @@ fn build_go_waku_lib(go_bin: &str, project_dir: &Path) {
     }
 
     cmd.status()
-        .map_err(|e| println!("cargo:warning=go build failed due to: {}", e))
+        .map_err(|e| println!("cargo:warning=go build failed due to: {e}"))
         .unwrap();
 
     set_current_dir(project_dir).expect("Going back to project dir");
