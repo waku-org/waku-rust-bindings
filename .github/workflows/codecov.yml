@@ -31,11 +31,14 @@ jobs:
         continue-on-error: true
       - run: |
           cargo install grcov;
-          cargo test --all-features -- --ignored;
+          cargo test --all-features;
+          cargo test discv5_echo -- --ignored;
+          cargo test default_echo -- --ignored;
           mkdir /tmp/cov;
           grcov . --binary-path ./target/debug/ -s . -t lcov --branch --ignore-not-existing --ignore '../*' --ignore "/*" -o /tmp/cov/tests.lcov;
       - uses: codecov/codecov-action@v3
         with:
+          token: ${{ secrets.CODECOV_TOKEN }}
           directory: /tmp/cov/
           name: waku-bindings-codecov
           fail_ci_if_error: true
