@@ -225,6 +225,14 @@ impl WakuNodeHandle<Running> {
         store::waku_store_query(query, peer_id, timeout)
     }
 
+    /// Retrieves locally stored historical messages on specific content topics. This method may be called with [`PagingOptions`](`crate::general::PagingOptions`),
+    /// to retrieve historical messages on a per-page basis. If the request included [`PagingOptions`](`crate::general::PagingOptions`),
+    /// the node must return messages on a per-page basis and include [`PagingOptions`](`crate::general::PagingOptions`) in the response.
+    /// These [`PagingOptions`](`crate::general::PagingOptions`) must contain a cursor pointing to the Index from which a new page can be requested
+    pub fn local_store_query(&self, query: &StoreQuery) -> Result<StoreResponse> {
+        store::waku_local_store_query(query)
+    }
+
     /// Publish a message using Waku Lightpush
     /// As per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_lightpush_publishchar-messagejson-char-topic-char-peerid-int-timeoutms)
     pub fn lightpush_publish(

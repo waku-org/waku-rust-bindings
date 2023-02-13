@@ -102,6 +102,7 @@ fn retrieve_history(
         })
         .collect())
 }
+
 fn setup_node_handle() -> std::result::Result<WakuNodeHandle<Running>, Box<dyn Error>> {
     let node_handle = waku_new(None)?;
     let node_handle = node_handle.start()?;
