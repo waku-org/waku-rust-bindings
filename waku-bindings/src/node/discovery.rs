@@ -15,18 +15,20 @@ pub fn waku_dns_discovery(
     server: Option<&Host>,
     timeout: Option<Duration>,
 ) -> Result<Vec<Multiaddr>> {
-    let result = unsafe {
-        CStr::from_ptr(waku_sys::waku_dns_discovery(
-            CString::new(url.to_string())
-                .expect("CString should build properly from a valid Url")
-                .into_raw(),
-            CString::new(
-                server
-                    .map(|host| host.to_string())
-                    .unwrap_or_else(|| "".to_string()),
-            )
-            .expect("CString should build properly from a String nameserver")
-            .into_raw(),
+    let url = CString::new(url.to_string())
+        .expect("CString should build properly from a valid Url")
+        .into_raw();
+    let server = CString::new(
+        server
+            .map(|host| host.to_string())
+            .unwrap_or_else(|| "".to_string()),
+    )
+    .expect("CString should build properly from a String nameserver")
+    .into_raw();
+    let result_ptr = unsafe {
+        let res = waku_sys::waku_dns_discovery(
+            url,
+            server,
             timeout
                 .map(|timeout| {
                     timeout
@@ -35,13 +37,20 @@ pub fn waku_dns_discovery(
                         .expect("Duration as milliseconds should fit in a i32")
                 })
                 .unwrap_or(0),
-        ))
-    }
-    .to_str()
-    .expect("Response should always succeed to load to a &str");
+        );
+        // Recover strings and drop them
+        drop(CString::from_raw(url));
+        drop(CString::from_raw(server));
+        res
+    };
+    let result = unsafe { CStr::from_ptr(result_ptr) }
+        .to_str()
+        .expect("Response should always succeed to load to a &str");
 
     let response: JsonResponse<Vec<Multiaddr>> =
         serde_json::from_str(result).expect("JsonResponse should always succeed to deserialize");
-
+    unsafe {
+        waku_sys::waku_utils_free(result_ptr);
+    }
     response.into()
 }
