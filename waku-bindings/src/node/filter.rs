@@ -16,16 +16,17 @@ pub fn waku_filter_subscribe(
     peer_id: PeerId,
     timeout: Duration,
 ) -> Result<()> {
-    let filter_subscription = CString::new(
+    let filter_subscription_ptr = CString::new(
         serde_json::to_string(filter_subscription)
             .expect("FilterSubscription should always succeed to serialize"),
     )
-    .expect("FilterSubscription should always be able to be serialized");
-    let peer_id = CString::new(peer_id).expect("PeerId should always be able to be serialized");
+    .expect("FilterSubscription should always be able to be serialized")
+    .into_raw();
+    let peer_id_ptr = CString::new(peer_id)
+        .expect("PeerId should always be able to be serialized")
+        .into_raw();
 
     let result_ptr = unsafe {
-        let filter_subscription_ptr = filter_subscription.into_raw();
-        let peer_id_ptr = peer_id.into_raw();
         let result_ptr = waku_sys::waku_filter_subscribe(
             filter_subscription_ptr,
             peer_id_ptr,
@@ -56,13 +57,13 @@ pub fn waku_filter_unsubscribe(
     filter_subscription: &FilterSubscription,
     timeout: Duration,
 ) -> Result<()> {
-    let filter_subscription = CString::new(
+    let filter_subscription_ptr = CString::new(
         serde_json::to_string(filter_subscription)
             .expect("FilterSubscription should always succeed to serialize"),
     )
-    .expect("CString should build properly from the serialized filter subscription");
+    .expect("CString should build properly from the serialized filter subscription")
+    .into_raw();
     let result_ptr = unsafe {
-        let filter_subscription_ptr = filter_subscription.into_raw();
         let res = waku_sys::waku_filter_unsubscribe(
             filter_subscription_ptr,
             timeout
