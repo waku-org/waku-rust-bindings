@@ -34,7 +34,18 @@ pub struct WakuNodeConfig {
     /// Enable relay protocol. Default `true`
     #[default(Some(true))]
     pub relay: Option<bool>,
-    #[serde(default)]
+    /// Enable store protocol to persist message history
+    #[default(Some(false))]
+    pub store: Option<bool>,
+    /// Url connection string. Accepts SQLite and PostgreSQL connection strings
+    #[default(Some("sqlite3://store.db".to_string()))]
+    pub database_url: Option<String>,
+    /// Max number of messages to store in the databas
+    #[default(Some(1000))]
+    pub store_retention_max_messages: Option<usize>,
+    /// Max number of seconds that a message will be persisted in the database, default 1 day
+    #[default(Some(86400))]
+    pub store_retention_max_seconds: Option<usize>,
     pub relay_topics: Vec<WakuPubSubTopic>,
     /// The minimum number of peers required on a topic to allow broadcasting a message. Default `0`
     #[default(Some(0))]
