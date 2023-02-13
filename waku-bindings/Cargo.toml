@@ -1,6 +1,6 @@
 [package]
 name = "waku-bindings"
-version = "0.1.0-beta3"
+version = "0.1.0-beta4"
 edition = "2021"
 authors = [
     "Daniel Sanchez Quiros <danielsq@status.im>"
