@@ -319,13 +319,13 @@ pub fn waku_relay_subscribe(pubsub_topic: Option<WakuPubSubTopic>) -> Result<()>
         .expect("CString should build properly from pubsub topic")
         .into_raw();
 
-    let result = unsafe {
+    let result_ptr = unsafe {
         let res = waku_sys::waku_relay_subscribe(pubsub_topic_ptr);
         drop(CString::from_raw(pubsub_topic_ptr));
         res
     };
 
-    let result = unsafe { CStr::from_ptr(result) }
+    let result = unsafe { CStr::from_ptr(result_ptr) }
         .to_str()
         .expect("&str from result should always be extracted");
 
@@ -346,13 +346,13 @@ pub fn waku_relay_unsubscribe(pubsub_topic: Option<WakuPubSubTopic>) -> Result<(
         .expect("CString should build properly from pubsub topic")
         .into_raw();
 
-    let result = unsafe {
+    let result_ptr = unsafe {
         let res = waku_sys::waku_relay_unsubscribe(pubsub_topic_ptr);
         drop(CString::from_raw(pubsub_topic_ptr));
         res
     };
 
-    let result = unsafe { CStr::from_ptr(result) }
+    let result = unsafe { CStr::from_ptr(result_ptr) }
         .to_str()
         .expect("&str from result should always be extracted");
 

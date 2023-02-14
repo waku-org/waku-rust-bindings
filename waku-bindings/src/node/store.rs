@@ -16,17 +16,19 @@ pub fn waku_store_query(
     peer_id: &PeerId,
     timeout: Option<Duration>,
 ) -> Result<StoreResponse> {
-    let result = unsafe {
-        CStr::from_ptr(waku_sys::waku_store_query(
-            CString::new(
-                serde_json::to_string(query)
-                    .expect("StoreQuery should always be able to be serialized"),
-            )
-            .expect("CString should build properly from the serialized filter subscription")
-            .into_raw(),
-            CString::new(peer_id.clone())
-                .expect("CString should build properly from peer id")
-                .into_raw(),
+    let query_ptr = CString::new(
+        serde_json::to_string(query).expect("StoreQuery should always be able to be serialized"),
+    )
+    .expect("CString should build properly from the serialized filter subscription")
+    .into_raw();
+    let peer_id_ptr = CString::new(peer_id.clone())
+        .expect("CString should build properly from peer id")
+        .into_raw();
+
+    let result_ptr = unsafe {
+        let res = waku_sys::waku_store_query(
+            query_ptr,
+            peer_id_ptr,
             timeout
                 .map(|timeout| {
                     timeout
@@ -35,12 +37,20 @@ pub fn waku_store_query(
                         .expect("Duration as milliseconds should fit in a i32")
                 })
                 .unwrap_or(0),
-        ))
-    }
-    .to_str()
-    .expect("Response should always succeed to load to a &str");
+        );
+        drop(CString::from_raw(query_ptr));
+        drop(CString::from_raw(peer_id_ptr));
+        res
+    };
+
+    let result = unsafe { CStr::from_ptr(result_ptr) }
+        .to_str()
+        .expect("Response should always succeed to load to a &str");
 
     let response: JsonResponse<StoreResponse> =
         serde_json::from_str(result).expect("JsonResponse should always succeed to deserialize");
+
+    unsafe { waku_sys::waku_utils_free(result_ptr) };
+
     response.into()
 }
