@@ -8,7 +8,7 @@ use multiaddr::Multiaddr;
 use serde::Deserialize;
 // internal
 use crate::general::{JsonResponse, PeerId, ProtocolId, Result};
-use crate::utils::decode_response;
+use crate::utils::decode_and_free_response;
 
 /// Add a node multiaddress and protocol to the waku node’s peerstore.
 /// As per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_add_peerchar-address-char-protocolid)
@@ -206,7 +206,7 @@ pub type WakuPeers = Vec<WakuPeerData>;
 /// As per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_peers)
 pub fn waku_peers() -> Result<WakuPeers> {
     let response_ptr = unsafe { waku_sys::waku_peers() };
-    decode_response(response_ptr)
+    decode_and_free_response(response_ptr)
 }
 
 #[cfg(test)]

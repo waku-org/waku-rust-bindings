@@ -10,7 +10,7 @@ use secp256k1::{PublicKey, SecretKey};
 use crate::general::{
     Encoding, JsonResponse, MessageId, Result, WakuContentTopic, WakuMessage, WakuPubSubTopic,
 };
-use crate::utils::decode_response;
+use crate::utils::decode_and_free_response;
 
 /// Create a content topic according to [RFC 23](https://rfc.vac.dev/spec/23/)
 /// As per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_content_topicchar-applicationname-unsigned-int-applicationversion-char-contenttopicname-char-encoding)
@@ -138,7 +138,7 @@ pub fn waku_relay_publish_message(
         res
     };
 
-    decode_response(result_ptr)
+    decode_and_free_response(result_ptr)
 }
 
 /// Optionally sign, encrypt using asymmetric encryption and publish a message using Waku Relay
@@ -196,7 +196,7 @@ pub fn waku_relay_publish_encrypt_asymmetric(
         res
     };
 
-    decode_response(result_ptr)
+    decode_and_free_response(result_ptr)
 }
 
 /// Optionally sign, encrypt using symmetric encryption and publish a message using Waku Relay
@@ -254,7 +254,7 @@ pub fn waku_relay_publish_encrypt_symmetric(
         res
     };
 
-    decode_response(result_ptr)
+    decode_and_free_response(result_ptr)
 }
 
 pub fn waku_enough_peers(pubsub_topic: Option<WakuPubSubTopic>) -> Result<bool> {
@@ -299,7 +299,7 @@ pub fn waku_relay_subscribe(pubsub_topic: Option<WakuPubSubTopic>) -> Result<()>
         res
     };
 
-    decode_response::<bool>(result_ptr).map(|_| ())
+    decode_and_free_response::<bool>(result_ptr).map(|_| ())
 }
 
 pub fn waku_relay_unsubscribe(pubsub_topic: Option<WakuPubSubTopic>) -> Result<()> {
@@ -317,5 +317,5 @@ pub fn waku_relay_unsubscribe(pubsub_topic: Option<WakuPubSubTopic>) -> Result<(
         res
     };
 
-    decode_response::<bool>(result_ptr).map(|_| ())
+    decode_and_free_response::<bool>(result_ptr).map(|_| ())
 }

@@ -9,7 +9,7 @@ use secp256k1::{PublicKey, SecretKey};
 // internal
 use crate::general::{MessageId, PeerId, Result, WakuMessage, WakuPubSubTopic};
 use crate::node::waku_dafault_pubsub_topic;
-use crate::utils::decode_response;
+use crate::utils::decode_and_free_response;
 
 /// Publish a message using Waku Lightpush
 /// As per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_lightpush_publishchar-messagejson-char-topic-char-peerid-int-timeoutms)
@@ -54,7 +54,7 @@ pub fn waku_lightpush_publish(
         res
     };
 
-    decode_response(result_ptr)
+    decode_and_free_response(result_ptr)
 }
 
 /// Optionally sign, encrypt using asymmetric encryption and publish a message using Waku Lightpush
@@ -117,7 +117,7 @@ pub fn waku_lightpush_publish_encrypt_asymmetric(
         res
     };
 
-    decode_response(result_ptr)
+    decode_and_free_response(result_ptr)
 }
 
 /// Optionally sign, encrypt using symmetric encryption and publish a message using Waku Lightpush
@@ -179,5 +179,5 @@ pub fn waku_lightpush_publish_encrypt_symmetric(
         res
     };
 
-    decode_response(result_ptr)
+    decode_and_free_response(result_ptr)
 }

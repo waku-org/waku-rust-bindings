@@ -6,7 +6,7 @@ use std::time::Duration;
 // crates
 // internal
 use crate::general::{PeerId, Result, StoreQuery, StoreResponse};
-use crate::utils::decode_response;
+use crate::utils::decode_and_free_response;
 
 /// Retrieves historical messages on specific content topics. This method may be called with [`PagingOptions`](`crate::general::PagingOptions`),
 /// to retrieve historical messages on a per-page basis. If the request included [`PagingOptions`](`crate::general::PagingOptions`),
@@ -44,5 +44,5 @@ pub fn waku_store_query(
         res
     };
 
-    decode_response(result_ptr)
+    decode_and_free_response(result_ptr)
 }

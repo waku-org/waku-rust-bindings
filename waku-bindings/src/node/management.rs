@@ -7,7 +7,7 @@ use std::ffi::{CStr, CString};
 // internal
 use super::config::WakuNodeConfig;
 use crate::general::{JsonResponse, PeerId, Result};
-use crate::utils::decode_response;
+use crate::utils::decode_and_free_response;
 
 /// Instantiates a Waku node
 /// as per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_newchar-jsonconfig)
@@ -99,7 +99,7 @@ pub fn waku_peer_id() -> Result<PeerId> {
 /// as per [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_listen_addresses)
 pub fn waku_listen_addresses() -> Result<Vec<Multiaddr>> {
     let response_ptr = unsafe { waku_sys::waku_listen_addresses() };
-    decode_response(response_ptr)
+    decode_and_free_response(response_ptr)
 }
 
 #[cfg(test)]

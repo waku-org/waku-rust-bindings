@@ -8,7 +8,7 @@ use std::time::Duration;
 // internal
 use crate::general::Result;
 use crate::general::{FilterSubscription, PeerId};
-use crate::utils::decode_response;
+use crate::utils::decode_and_free_response;
 
 /// Creates a subscription in a lightnode for messages that matches a content filter and optionally a [`WakuPubSubTopic`](`crate::general::WakuPubSubTopic`)
 /// As per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_filter_subscribechar-filterjson-char-peerid-int-timeoutms)
@@ -40,7 +40,7 @@ pub fn waku_filter_subscribe(
         drop(CString::from_raw(peer_id_ptr));
         result_ptr
     };
-    decode_response::<bool>(result_ptr).map(|_| ())
+    decode_and_free_response::<bool>(result_ptr).map(|_| ())
 }
 
 /// Removes subscriptions in a light node matching a content filter and, optionally, a [`WakuPubSubTopic`](`crate::general::WakuPubSubTopic`)
@@ -67,5 +67,5 @@ pub fn waku_filter_unsubscribe(
         res
     };
 
-    decode_response::<bool>(result_ptr).map(|_| ())
+    decode_and_free_response::<bool>(result_ptr).map(|_| ())
 }

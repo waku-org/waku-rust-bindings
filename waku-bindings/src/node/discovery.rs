@@ -5,7 +5,7 @@ use std::time::Duration;
 use multiaddr::Multiaddr;
 use url::{Host, Url};
 // internal
-use crate::utils::decode_response;
+use crate::utils::decode_and_free_response;
 use crate::Result;
 
 /// RetrieveNodes returns a list of multiaddress given a url to a DNS discoverable ENR tree.
@@ -44,5 +44,5 @@ pub fn waku_dns_discovery(
         res
     };
 
-    decode_response(result_ptr)
+    decode_and_free_response(result_ptr)
 }
