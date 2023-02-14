@@ -1,13 +1,14 @@
 //! Waku [filter](https://rfc.vac.dev/spec/36/#waku-filter) protocol related methods
 
 // std
-use std::ffi::{CStr, CString};
+use std::ffi::CString;
 use std::time::Duration;
 // crates
 
 // internal
 use crate::general::Result;
-use crate::general::{FilterSubscription, JsonResponse, PeerId};
+use crate::general::{FilterSubscription, PeerId};
+use crate::utils::decode_response;
 
 /// Creates a subscription in a lightnode for messages that matches a content filter and optionally a [`WakuPubSubTopic`](`crate::general::WakuPubSubTopic`)
 /// As per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_filter_subscribechar-filterjson-char-peerid-int-timeoutms)
@@ -39,16 +40,7 @@ pub fn waku_filter_subscribe(
         drop(CString::from_raw(peer_id_ptr));
         result_ptr
     };
-    let result = unsafe { CStr::from_ptr(result_ptr) }
-        .to_str()
-        .expect("Response should always succeed to load to a &str");
-
-    let response: JsonResponse<bool> =
-        serde_json::from_str(result).expect("JsonResponse should always succeed to deserialize");
-    unsafe {
-        waku_sys::waku_utils_free(result_ptr);
-    }
-    Result::from(response).map(|_| ())
+    decode_response::<bool>(result_ptr).map(|_| ())
 }
 
 /// Removes subscriptions in a light node matching a content filter and, optionally, a [`WakuPubSubTopic`](`crate::general::WakuPubSubTopic`)
@@ -74,12 +66,6 @@ pub fn waku_filter_unsubscribe(
         drop(CString::from_raw(filter_subscription_ptr));
         res
     };
-    let result = unsafe { CStr::from_ptr(result_ptr) }
-        .to_str()
-        .expect("Response should always succeed to load to a &str");
 
-    let response: JsonResponse<bool> =
-        serde_json::from_str(result).expect("JsonResponse should always succeed to deserialize");
-    unsafe { waku_sys::waku_utils_free(result_ptr) };
-    Result::from(response).map(|_| ())
+    decode_response::<bool>(result_ptr).map(|_| ())
 }

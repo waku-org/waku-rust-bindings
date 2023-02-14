@@ -1,11 +1,11 @@
 // std
-use std::ffi::{CStr, CString};
+use std::ffi::CString;
 use std::time::Duration;
 // crates
 use multiaddr::Multiaddr;
 use url::{Host, Url};
 // internal
-use crate::general::JsonResponse;
+use crate::utils::decode_response;
 use crate::Result;
 
 /// RetrieveNodes returns a list of multiaddress given a url to a DNS discoverable ENR tree.
@@ -43,14 +43,6 @@ pub fn waku_dns_discovery(
         drop(CString::from_raw(server));
         res
     };
-    let result = unsafe { CStr::from_ptr(result_ptr) }
-        .to_str()
-        .expect("Response should always succeed to load to a &str");
 
-    let response: JsonResponse<Vec<Multiaddr>> =
-        serde_json::from_str(result).expect("JsonResponse should always succeed to deserialize");
-    unsafe {
-        waku_sys::waku_utils_free(result_ptr);
-    }
-    response.into()
+    decode_response(result_ptr)
 }

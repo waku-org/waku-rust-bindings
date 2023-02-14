@@ -1,11 +1,12 @@
 //! Waku [store](https://rfc.vac.dev/spec/36/#waku-store) handling methods
 
 // std
-use std::ffi::{CStr, CString};
+use std::ffi::CString;
 use std::time::Duration;
 // crates
 // internal
-use crate::general::{JsonResponse, PeerId, Result, StoreQuery, StoreResponse};
+use crate::general::{PeerId, Result, StoreQuery, StoreResponse};
+use crate::utils::decode_response;
 
 /// Retrieves historical messages on specific content topics. This method may be called with [`PagingOptions`](`crate::general::PagingOptions`),
 /// to retrieve historical messages on a per-page basis. If the request included [`PagingOptions`](`crate::general::PagingOptions`),
@@ -43,14 +44,5 @@ pub fn waku_store_query(
         res
     };
 
-    let result = unsafe { CStr::from_ptr(result_ptr) }
-        .to_str()
-        .expect("Response should always succeed to load to a &str");
-
-    let response: JsonResponse<StoreResponse> =
-        serde_json::from_str(result).expect("JsonResponse should always succeed to deserialize");
-
-    unsafe { waku_sys::waku_utils_free(result_ptr) };
-
-    response.into()
+    decode_response(result_ptr)
 }

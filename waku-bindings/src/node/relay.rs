@@ -10,6 +10,7 @@ use secp256k1::{PublicKey, SecretKey};
 use crate::general::{
     Encoding, JsonResponse, MessageId, Result, WakuContentTopic, WakuMessage, WakuPubSubTopic,
 };
+use crate::utils::decode_response;
 
 /// Create a content topic according to [RFC 23](https://rfc.vac.dev/spec/23/)
 /// As per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_content_topicchar-applicationname-unsigned-int-applicationversion-char-contenttopicname-char-encoding)
@@ -137,16 +138,7 @@ pub fn waku_relay_publish_message(
         res
     };
 
-    let result = unsafe { CStr::from_ptr(result_ptr) }
-        .to_str()
-        .expect("&str from result should always be extracted");
-
-    let message_id: JsonResponse<MessageId> =
-        serde_json::from_str(result).expect("JsonResponse should always succeed to deserialize");
-
-    unsafe { waku_sys::waku_utils_free(result_ptr) };
-
-    message_id.into()
+    decode_response(result_ptr)
 }
 
 /// Optionally sign, encrypt using asymmetric encryption and publish a message using Waku Relay
@@ -204,16 +196,7 @@ pub fn waku_relay_publish_encrypt_asymmetric(
         res
     };
 
-    let result = unsafe { CStr::from_ptr(result_ptr) }
-        .to_str()
-        .expect("&str from result should always be extracted");
-
-    let message_id: JsonResponse<MessageId> =
-        serde_json::from_str(result).expect("JsonResponse should always succeed to deserialize");
-
-    unsafe { waku_sys::waku_utils_free(result_ptr) };
-
-    message_id.into()
+    decode_response(result_ptr)
 }
 
 /// Optionally sign, encrypt using symmetric encryption and publish a message using Waku Relay
@@ -271,16 +254,7 @@ pub fn waku_relay_publish_encrypt_symmetric(
         res
     };
 
-    let result = unsafe { CStr::from_ptr(result_ptr) }
-        .to_str()
-        .expect("&str from result should always be extracted");
-
-    let message_id: JsonResponse<MessageId> =
-        serde_json::from_str(result).expect("JsonResponse should always succeed to deserialize");
-
-    unsafe { waku_sys::waku_utils_free(result_ptr) };
-
-    message_id.into()
+    decode_response(result_ptr)
 }
 
 pub fn waku_enough_peers(pubsub_topic: Option<WakuPubSubTopic>) -> Result<bool> {
@@ -325,16 +299,7 @@ pub fn waku_relay_subscribe(pubsub_topic: Option<WakuPubSubTopic>) -> Result<()>
         res
     };
 
-    let result = unsafe { CStr::from_ptr(result_ptr) }
-        .to_str()
-        .expect("&str from result should always be extracted");
-
-    let enough_peers: JsonResponse<bool> =
-        serde_json::from_str(result).expect("JsonResponse should always succeed to deserialize");
-
-    unsafe { waku_sys::waku_utils_free(result_ptr) };
-
-    Result::from(enough_peers).map(|_| ())
+    decode_response::<bool>(result_ptr).map(|_| ())
 }
 
 pub fn waku_relay_unsubscribe(pubsub_topic: Option<WakuPubSubTopic>) -> Result<()> {
@@ -352,14 +317,5 @@ pub fn waku_relay_unsubscribe(pubsub_topic: Option<WakuPubSubTopic>) -> Result<(
         res
     };
 
-    let result = unsafe { CStr::from_ptr(result_ptr) }
-        .to_str()
-        .expect("&str from result should always be extracted");
-
-    let enough_peers: JsonResponse<bool> =
-        serde_json::from_str(result).expect("JsonResponse should always succeed to deserialize");
-
-    unsafe { waku_sys::waku_utils_free(result_ptr) };
-
-    Result::from(enough_peers).map(|_| ())
+    decode_response::<bool>(result_ptr).map(|_| ())
 }

@@ -1,14 +1,15 @@
 //! Waku [lightpush](https://rfc.vac.dev/spec/36/#waku-lightpush) protocol related methods
 
 // std
-use std::ffi::{CStr, CString};
+use std::ffi::CString;
 use std::time::Duration;
 // crates
 use aes_gcm::{Aes256Gcm, Key};
 use secp256k1::{PublicKey, SecretKey};
 // internal
-use crate::general::{JsonResponse, MessageId, PeerId, Result, WakuMessage, WakuPubSubTopic};
+use crate::general::{MessageId, PeerId, Result, WakuMessage, WakuPubSubTopic};
 use crate::node::waku_dafault_pubsub_topic;
+use crate::utils::decode_response;
 
 /// Publish a message using Waku Lightpush
 /// As per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_lightpush_publishchar-messagejson-char-topic-char-peerid-int-timeoutms)
@@ -53,18 +54,7 @@ pub fn waku_lightpush_publish(
         res
     };
 
-    let result = unsafe { CStr::from_ptr(result_ptr) }
-        .to_str()
-        .expect("Response should always succeed to load to a &str");
-
-    let response: JsonResponse<MessageId> =
-        serde_json::from_str(result).expect("JsonResponse should always succeed to deserialize");
-
-    unsafe {
-        waku_sys::waku_utils_free(result_ptr);
-    }
-
-    response.into()
+    decode_response(result_ptr)
 }
 
 /// Optionally sign, encrypt using asymmetric encryption and publish a message using Waku Lightpush
@@ -127,16 +117,7 @@ pub fn waku_lightpush_publish_encrypt_asymmetric(
         res
     };
 
-    let result = unsafe { CStr::from_ptr(result_ptr) }
-        .to_str()
-        .expect("Response should always succeed to load to a &str");
-
-    let message_id: JsonResponse<MessageId> =
-        serde_json::from_str(result).expect("JsonResponse should always succeed to deserialize");
-    unsafe {
-        waku_sys::waku_utils_free(result_ptr);
-    }
-    message_id.into()
+    decode_response(result_ptr)
 }
 
 /// Optionally sign, encrypt using symmetric encryption and publish a message using Waku Lightpush
@@ -198,16 +179,5 @@ pub fn waku_lightpush_publish_encrypt_symmetric(
         res
     };
 
-    let result = unsafe { CStr::from_ptr(result_ptr) }
-        .to_str()
-        .expect("Response should always succeed to load to a &str");
-
-    let message_id: JsonResponse<MessageId> =
-        serde_json::from_str(result).expect("JsonResponse should always succeed to deserialize");
-
-    unsafe {
-        waku_sys::waku_utils_free(result_ptr);
-    }
-
-    message_id.into()
+    decode_response(result_ptr)
 }
