@@ -107,7 +107,7 @@ fn setup_node_handle() -> std::result::Result<WakuNodeHandle<Running>, Box<dyn E
     let node_handle = node_handle.start()?;
     for address in NODES.iter().map(|a| Multiaddr::from_str(a).unwrap()) {
         let peerid = node_handle.add_peer(&address, ProtocolId::Relay)?;
-        node_handle.connect_peer_with_id(peerid, None)?;
+        node_handle.connect_peer_with_id(&peerid, None)?;
     }
     node_handle.relay_subscribe(None)?;
     Ok(node_handle)
