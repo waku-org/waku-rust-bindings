@@ -16,23 +16,33 @@ pub fn waku_decode_symmetric(
     symmetric_key: &Key<Aes256Gcm>,
 ) -> Result<DecodedPayload> {
     let symk = hex::encode(symmetric_key.as_slice());
-    let result = unsafe {
-        CStr::from_ptr(waku_sys::waku_decode_symmetric(
-            CString::new(
-                serde_json::to_string(&message)
-                    .expect("WakuMessages should always be able to success serializing"),
-            )
-            .expect("CString should build properly from the serialized waku message")
-            .into_raw(),
-            CString::new(symk)
-                .expect("CString should build properly from hex encoded symmetric key")
-                .into_raw(),
-        ))
-    }
-    .to_str()
-    .expect("Response should always succeed to load to a &str");
+
+    let message_ptr = CString::new(
+        serde_json::to_string(&message)
+            .expect("WakuMessages should always be able to success serializing"),
+    )
+    .expect("CString should build properly from the serialized waku message")
+    .into_raw();
+    let symk_ptr = CString::new(symk)
+        .expect("CString should build properly from hex encoded symmetric key")
+        .into_raw();
+
+    let result_ptr = unsafe {
+        let res = waku_sys::waku_decode_symmetric(message_ptr, symk_ptr);
+        drop(CString::from_raw(message_ptr));
+        drop(CString::from_raw(symk_ptr));
+        res
+    };
+
+    let result = unsafe { CStr::from_ptr(result_ptr) }
+        .to_str()
+        .expect("Response should always succeed to load to a &str");
+
     let response: JsonResponse<DecodedPayload> =
         serde_json::from_str(result).map_err(|e| format!("{e}"))?;
+
+    unsafe { waku_sys::waku_utils_free(result_ptr) };
+
     response.into()
 }
 
@@ -44,22 +54,32 @@ pub fn waku_decode_asymmetric(
     asymmetric_key: &SecretKey,
 ) -> Result<DecodedPayload> {
     let sk = hex::encode(asymmetric_key.secret_bytes());
-    let result = unsafe {
-        CStr::from_ptr(waku_sys::waku_decode_asymmetric(
-            CString::new(
-                serde_json::to_string(&message)
-                    .expect("WakuMessages should always be able to success serializing"),
-            )
-            .expect("CString should build properly from the serialized waku message")
-            .into_raw(),
-            CString::new(sk)
-                .expect("CString should build properly from hex encoded symmetric key")
-                .into_raw(),
-        ))
-    }
-    .to_str()
-    .expect("Response should always succeed to load to a &str");
+
+    let message_ptr = CString::new(
+        serde_json::to_string(&message)
+            .expect("WakuMessages should always be able to success serializing"),
+    )
+    .expect("CString should build properly from the serialized waku message")
+    .into_raw();
+    let sk_ptr = CString::new(sk)
+        .expect("CString should build properly from hex encoded symmetric key")
+        .into_raw();
+
+    let result_ptr = unsafe {
+        let res = waku_sys::waku_decode_asymmetric(message_ptr, sk_ptr);
+        drop(CString::from_raw(message_ptr));
+        drop(CString::from_raw(sk_ptr));
+        res
+    };
+
+    let result = unsafe { CStr::from_ptr(result_ptr) }
+        .to_str()
+        .expect("Response should always succeed to load to a &str");
+
     let response: JsonResponse<DecodedPayload> =
         serde_json::from_str(result).map_err(|e| format!("{e}"))?;
+
+    unsafe { waku_sys::waku_utils_free(result_ptr) };
+
     response.into()
 }
