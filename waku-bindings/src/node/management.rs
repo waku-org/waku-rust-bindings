@@ -61,7 +61,7 @@ pub fn waku_start() -> Result<bool> {
 /// Stops a Waku node
 /// as per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_stop)
 pub fn waku_stop() -> Result<bool> {
-    let response_ptr = unsafe { waku_sys::waku_start() };
+    let response_ptr = unsafe { waku_sys::waku_stop() };
     let response = unsafe { CStr::from_ptr(response_ptr) }
         .to_str()
         .expect("Response should always succeed to load to a &str");
@@ -79,7 +79,7 @@ pub fn waku_stop() -> Result<bool> {
 /// If the execution is successful, the result is the peer ID as a string (base58 encoded)
 /// as per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_stop)
 pub fn waku_peer_id() -> Result<PeerId> {
-    let response_ptr = unsafe { waku_sys::waku_start() };
+    let response_ptr = unsafe { waku_sys::waku_peerid() };
     let response = unsafe { CStr::from_ptr(response_ptr) }
         .to_str()
         .expect("Response should always succeed to load to a &str");
@@ -97,7 +97,7 @@ pub fn waku_peer_id() -> Result<PeerId> {
 /// Get the multiaddresses the Waku node is listening to
 /// as per [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_listen_addresses)
 pub fn waku_listen_addresses() -> Result<Vec<Multiaddr>> {
-    let response_ptr = unsafe { waku_sys::waku_start() };
+    let response_ptr = unsafe { waku_sys::waku_listen_addresses() };
     let response = unsafe { CStr::from_ptr(response_ptr) }
         .to_str()
         .expect("Response should always succeed to load to a &str");
