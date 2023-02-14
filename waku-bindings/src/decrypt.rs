@@ -1,12 +1,13 @@
 //! Symmetric and asymmetric waku messages [decrypting](https://rfc.vac.dev/spec/36/#decrypting-messages) methods
 
 // std
-use std::ffi::{CStr, CString};
+use std::ffi::CString;
 // crates
 use aes_gcm::{Aes256Gcm, Key};
 use secp256k1::SecretKey;
 // internal
-use crate::general::{DecodedPayload, JsonResponse, Result, WakuMessage};
+use crate::general::{DecodedPayload, Result, WakuMessage};
+use crate::utils::decode_and_free_response;
 
 /// Decrypt a message using a symmetric key
 ///
@@ -34,16 +35,7 @@ pub fn waku_decode_symmetric(
         res
     };
 
-    let result = unsafe { CStr::from_ptr(result_ptr) }
-        .to_str()
-        .expect("Response should always succeed to load to a &str");
-
-    let response: JsonResponse<DecodedPayload> =
-        serde_json::from_str(result).map_err(|e| format!("{e}"))?;
-
-    unsafe { waku_sys::waku_utils_free(result_ptr) };
-
-    response.into()
+    decode_and_free_response(result_ptr)
 }
 
 /// Decrypt a message using a symmetric key
@@ -72,14 +64,5 @@ pub fn waku_decode_asymmetric(
         res
     };
 
-    let result = unsafe { CStr::from_ptr(result_ptr) }
-        .to_str()
-        .expect("Response should always succeed to load to a &str");
-
-    let response: JsonResponse<DecodedPayload> =
-        serde_json::from_str(result).map_err(|e| format!("{e}"))?;
-
-    unsafe { waku_sys::waku_utils_free(result_ptr) };
-
-    response.into()
+    decode_and_free_response(result_ptr)
 }
