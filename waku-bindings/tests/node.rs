@@ -162,7 +162,7 @@ async fn discv5_echo() -> Result<(), String> {
     for node_address in NODES {
         let address: Multiaddr = node_address.parse().unwrap();
         let peer_id = node.add_peer(&address, ProtocolId::Relay)?;
-        node.connect_peer_with_id(peer_id, None)?;
+        node.connect_peer_with_id(&peer_id, None)?;
     }
 
     assert!(node.peers()?.len() >= NODES.len());
@@ -213,7 +213,7 @@ async fn default_echo() -> Result<(), String> {
     for node_address in NODES {
         let address: Multiaddr = node_address.parse().unwrap();
         let peer_id = node.add_peer(&address, ProtocolId::Relay)?;
-        node.connect_peer_with_id(peer_id, None)?;
+        node.connect_peer_with_id(&peer_id, None)?;
     }
 
     assert!(node.peers()?.len() >= NODES.len());
