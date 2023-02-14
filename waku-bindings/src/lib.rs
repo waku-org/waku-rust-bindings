@@ -5,6 +5,7 @@ mod decrypt;
 mod events;
 mod general;
 mod node;
+mod utils;
 
 pub use node::{
     waku_create_content_topic, waku_create_pubsub_topic, waku_dafault_pubsub_topic, waku_new,
