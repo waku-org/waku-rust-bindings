@@ -85,6 +85,7 @@ fn generate_bindgen_code() {
         .expect("Couldn't write bindings!");
 }
 
+#[cfg(not(doc))]
 fn main() {
     let go_bin = get_go_bin();
 
