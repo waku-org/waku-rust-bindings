@@ -46,3 +46,21 @@ pub fn waku_store_query(
 
     decode_and_free_response(result_ptr)
 }
+
+/// Retrieves locally stored historical messages on specific content topics from the local archive system. This method may be called with [`PagingOptions`](`crate::general::PagingOptions`),
+/// to retrieve historical messages on a per-page basis. If the request included [`PagingOptions`](`crate::general::PagingOptions`),
+/// the node must return messages on a per-page basis and include [`PagingOptions`](`crate::general::PagingOptions`) in the response.
+/// These [`PagingOptions`](`crate::general::PagingOptions`) must contain a cursor pointing to the Index from which a new page can be requested
+pub fn waku_local_store_query(query: &StoreQuery) -> Result<StoreResponse> {
+    let query_ptr = CString::new(
+        serde_json::to_string(query).expect("StoreQuery should always be able to be serialized"),
+    )
+    .expect("CString should build properly from the serialized filter subscription")
+    .into_raw();
+    let result_ptr = unsafe {
+        let res = waku_sys::waku_store_local_query(query_ptr);
+        drop(CString::from_raw(query_ptr));
+        res
+    };
+    decode_and_free_response(result_ptr)
+}

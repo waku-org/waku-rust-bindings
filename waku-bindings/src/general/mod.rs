@@ -249,9 +249,9 @@ pub struct StoreQuery {
 pub struct StoreResponse {
     /// Array of retrieved historical messages in [`WakuMessage`] format
     #[serde(default)]
-    messages: Vec<WakuMessage>,
+    pub messages: Vec<WakuMessage>,
     /// Paging information in [`PagingOptions`] format from which to resume further historical queries
-    paging_options: Option<PagingOptions>,
+    pub paging_options: Option<PagingOptions>,
 }
 
 impl StoreResponse {
