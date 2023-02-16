@@ -86,7 +86,7 @@ pub fn waku_create_pubsub_topic(topic_name: &str, encoding: Encoding) -> WakuPub
 pub fn waku_dafault_pubsub_topic() -> WakuPubSubTopic {
     let result_ptr = unsafe { waku_sys::waku_default_pubsub_topic() };
 
-    let result = unsafe { CString::from_raw(result_ptr) }
+    let result = unsafe { CStr::from_ptr(result_ptr) }
         .to_str()
         .expect("&str from result should always be extracted")
         .parse()
