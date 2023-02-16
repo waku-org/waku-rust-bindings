@@ -7,9 +7,7 @@ use std::time::Duration;
 use aes_gcm::{Aes256Gcm, Key};
 use secp256k1::{PublicKey, SecretKey};
 // internal
-use crate::general::{
-    Encoding, JsonResponse, MessageId, Result, WakuContentTopic, WakuMessage, WakuPubSubTopic,
-};
+use crate::general::{Encoding, MessageId, Result, WakuContentTopic, WakuMessage, WakuPubSubTopic};
 use crate::utils::decode_and_free_response;
 
 /// Create a content topic according to [RFC 23](https://rfc.vac.dev/spec/23/)
@@ -272,16 +270,7 @@ pub fn waku_enough_peers(pubsub_topic: Option<WakuPubSubTopic>) -> Result<bool> 
         res
     };
 
-    let result = unsafe { CStr::from_ptr(result_ptr) }
-        .to_str()
-        .expect("&str from result should always be extracted");
-
-    let enough_peers: JsonResponse<bool> =
-        serde_json::from_str(result).expect("JsonResponse should always succeed to deserialize");
-
-    unsafe { waku_sys::waku_utils_free(result_ptr) };
-
-    enough_peers.into()
+    decode_and_free_response(result_ptr)
 }
 
 pub fn waku_relay_subscribe(pubsub_topic: Option<WakuPubSubTopic>) -> Result<()> {

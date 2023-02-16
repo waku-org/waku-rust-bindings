@@ -1,13 +1,13 @@
 //! Waku [peer handling and connection](https://rfc.vac.dev/spec/36/#connecting-to-peers) methods
 
 // std
-use std::ffi::{CStr, CString};
+use std::ffi::CString;
 use std::time::Duration;
 // crates
 use multiaddr::Multiaddr;
 use serde::Deserialize;
 // internal
-use crate::general::{JsonResponse, PeerId, ProtocolId, Result};
+use crate::general::{PeerId, ProtocolId, Result};
 use crate::utils::decode_and_free_response;
 
 /// Add a node multiaddress and protocol to the waku node’s peerstore.
@@ -27,18 +27,7 @@ pub fn waku_add_peers(address: &Multiaddr, protocol_id: ProtocolId) -> Result<Pe
         res
     };
 
-    let response = unsafe { CStr::from_ptr(response_ptr) }
-        .to_str()
-        .expect("&str should build properly from the returning response");
-
-    let result: JsonResponse<PeerId> =
-        serde_json::from_str(response).expect("JsonResponse should always succeed to deserialize");
-
-    unsafe {
-        waku_sys::waku_utils_free(response_ptr);
-    }
-
-    result.into()
+    decode_and_free_response(response_ptr)
 }
 
 /// Dial peer using a multiaddress
@@ -64,18 +53,7 @@ pub fn waku_connect_peer_with_address(
         res
     };
 
-    let response = unsafe { CStr::from_ptr(response_ptr) }
-        .to_str()
-        .expect("&str should build properly from the returning response");
-
-    let result: JsonResponse<bool> =
-        serde_json::from_str(response).expect("JsonResponse should always succeed to deserialize");
-
-    unsafe {
-        waku_sys::waku_utils_free(response_ptr);
-    }
-
-    Result::from(result).map(|_| ())
+    decode_and_free_response::<bool>(response_ptr).map(|_| ())
 }
 
 /// Dial peer using a peer id
@@ -87,7 +65,7 @@ pub fn waku_connect_peer_with_id(peer_id: &PeerId, timeout: Option<Duration>) ->
     let peer_id_ptr = CString::new(peer_id.as_bytes())
         .expect("CString should build properly from peer id")
         .into_raw();
-    let response_ptr = unsafe {
+    let result_ptr = unsafe {
         let res = waku_sys::waku_connect_peerid(
             peer_id_ptr,
             timeout
@@ -98,18 +76,7 @@ pub fn waku_connect_peer_with_id(peer_id: &PeerId, timeout: Option<Duration>) ->
         res
     };
 
-    let response = unsafe { CStr::from_ptr(response_ptr) }
-        .to_str()
-        .expect("&str should build properly from the returning response");
-
-    let result: JsonResponse<bool> =
-        serde_json::from_str(response).expect("JsonResponse should always succeed to deserialize");
-
-    unsafe {
-        waku_sys::waku_utils_free(response_ptr);
-    }
-
-    Result::from(result).map(|_| ())
+    decode_and_free_response::<bool>(result_ptr).map(|_| ())
 }
 
 /// Disconnect a peer using its peer id
@@ -124,37 +91,14 @@ pub fn waku_disconnect_peer_with_id(peer_id: &PeerId) -> Result<()> {
         drop(CString::from_raw(peer_id_ptr));
         res
     };
-    let response = unsafe { CStr::from_ptr(response_ptr) }
-        .to_str()
-        .expect("&str should build properly from the returning response");
-
-    let result: JsonResponse<bool> =
-        serde_json::from_str(response).expect("JsonResponse should always succeed to deserialize");
-
-    unsafe {
-        waku_sys::waku_utils_free(response_ptr);
-    }
-
-    Result::from(result).map(|_| ())
+    decode_and_free_response::<bool>(response_ptr).map(|_| ())
 }
 
 /// Get number of connected peers
 /// As per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_peer_count)
 pub fn waku_peer_count() -> Result<usize> {
     let response_ptr = unsafe { waku_sys::waku_peer_cnt() };
-
-    let response = unsafe { CStr::from_ptr(response_ptr) }
-        .to_str()
-        .expect("&str should build properly from the returning response");
-
-    let result: JsonResponse<usize> =
-        serde_json::from_str(response).expect("JsonResponse should always succeed to deserialize");
-
-    unsafe {
-        waku_sys::waku_utils_free(response_ptr);
-    }
-
-    result.into()
+    decode_and_free_response(response_ptr)
 }
 
 /// Waku peer supported protocol
