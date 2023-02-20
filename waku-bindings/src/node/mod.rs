@@ -17,7 +17,6 @@ use std::marker::PhantomData;
 use std::sync::Mutex;
 use std::time::Duration;
 // crates
-use url::{Host, Url};
 // internal
 
 use crate::general::{
@@ -26,9 +25,10 @@ use crate::general::{
 };
 
 pub use config::{WakuLogLevel, WakuNodeConfig};
+pub use discovery::{waku_dns_discovery, DnsInfo};
 pub use peers::{Protocol, WakuPeerData, WakuPeers};
 pub use relay::{waku_create_content_topic, waku_create_pubsub_topic, waku_dafault_pubsub_topic};
-pub use store::waku_store_query;
+pub use store::{waku_local_store_query, waku_store_query};
 
 /// Shared flag to check if a waku node is already running in the current process
 static WAKU_NODE_INITIALIZED: Mutex<bool> = Mutex::new(false);
@@ -306,15 +306,6 @@ impl WakuNodeHandle<Running> {
         timeout: Duration,
     ) -> Result<()> {
         filter::waku_filter_unsubscribe(filter_subscription, timeout)
-    }
-
-    pub fn dns_discovery(
-        &self,
-        url: &Url,
-        nameserver: Option<&Host>,
-        timeout: Option<Duration>,
-    ) -> Result<Vec<Multiaddr>> {
-        discovery::waku_dns_discovery(url, nameserver, timeout)
     }
 }
 

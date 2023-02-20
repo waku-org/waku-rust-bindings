@@ -1,11 +1,12 @@
 //! Waku [general](https://rfc.vac.dev/spec/36/#general) types
 
-use std::borrow::Cow;
 // std
+use std::borrow::Cow;
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;
 // crates
 use aes_gcm::{Aes256Gcm, Key};
+use base64::Engine;
 use secp256k1::{ecdsa::Signature, PublicKey, SecretKey};
 use serde::{de::Error, Deserialize, Deserializer, Serialize, Serializer};
 use sscanf::{scanf, RegexRepresentation};
@@ -312,14 +313,17 @@ impl Display for Encoding {
 }
 
 impl FromStr for Encoding {
-    type Err = String;
+    type Err = std::io::Error;
 
     fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
         match s.to_lowercase().as_str() {
             "proto" => Ok(Self::Proto),
             "rlp" => Ok(Self::Rlp),
             "rfc26" => Ok(Self::Rfc26),
-            encoding => Err(format!("Unrecognized encoding: {encoding}")),
+            encoding => Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidInput,
+                format!("Unrecognized encoding: {encoding}"),
+            )),
         }
     }
 }
@@ -477,6 +481,7 @@ impl<'de> Deserialize<'de> for WakuPubSubTopic {
 }
 
 mod base64_serde {
+    use base64::Engine;
     use serde::de::Error;
     use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
@@ -484,7 +489,9 @@ mod base64_serde {
     where
         S: Serializer,
     {
-        base64::encode(value).serialize(serializer)
+        base64::engine::general_purpose::STANDARD
+            .encode(value)
+            .serialize(serializer)
     }
 
     pub fn deserialize<'de, D>(deserializer: D) -> std::result::Result<Vec<u8>, D::Error>
@@ -492,7 +499,9 @@ mod base64_serde {
         D: Deserializer<'de>,
     {
         let base64_str: String = String::deserialize(deserializer)?;
-        base64::decode(base64_str).map_err(D::Error::custom)
+        base64::engine::general_purpose::STANDARD
+            .decode(base64_str)
+            .map_err(D::Error::custom)
     }
 }
 
@@ -505,7 +514,9 @@ where
     let base64_str: Option<String> = Option::<String>::deserialize(deserializer)?;
     base64_str
         .map(|base64_str| {
-            let raw_bytes = base64::decode(base64_str).map_err(D::Error::custom)?;
+            let raw_bytes = base64::engine::general_purpose::STANDARD
+                .decode(base64_str)
+                .map_err(D::Error::custom)?;
             PublicKey::from_slice(&raw_bytes).map_err(D::Error::custom)
         })
         .transpose()
