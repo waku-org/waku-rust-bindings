@@ -249,10 +249,9 @@ async fn default_echo() -> Result<(), String> {
     Ok(())
 }
 
-#[ignore]
-#[tokio::test]
+#[test]
 #[serial]
-async fn gossipsub_config() -> Result<(), String> {
+fn gossipsub_config() -> Result<(), String> {
     let params = GossipSubParams {
         d: Some(6),
         dlo: Some(3),

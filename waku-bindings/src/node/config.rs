@@ -185,10 +185,10 @@ pub struct GossipSubParams {
     /// Maximum number of IHAVE messages to accept from a peer within a heartbeat.
     #[serde(rename = "maxIHaveMessages")]
     pub max_ihave_messages: Option<i32>,
-    #[serde(rename = "iwantFollowupTimeSeconds")]
     /// Time to wait for a message requested through IWANT following an IHAVE advertisement.
     /// If the message is not received within this window, a broken promise is declared and
     /// the router may apply bahavioural penalties.
+    #[serde(rename = "iwantFollowupTimeSeconds")]
     pub iwant_followup_time_seconds: Option<i32>,
 }
 
