@@ -291,8 +291,34 @@ fn gossipsub_config() -> Result<(), String> {
 
     let node = waku_new(Some(config))?;
     let node = node.start()?;
-    println!("Node peer id: {}", node.peer_id()?);
+    node.stop()?;
+    Ok(())
+}
 
+#[test]
+#[serial]
+fn loglevel_error() -> Result<(), String> {
+    let config = WakuNodeConfig {
+        log_level: Some(WakuLogLevel::Error),
+        ..Default::default()
+    };
+
+    let node = waku_new(Some(config))?;
+    let node = node.start()?;
+    node.stop()?;
+    Ok(())
+}
+
+#[test]
+#[serial]
+fn loglevel_info() -> Result<(), String> {
+    let config = WakuNodeConfig {
+        log_level: Some(WakuLogLevel::Info),
+        ..Default::default()
+    };
+
+    let node = waku_new(Some(config))?;
+    let node = node.start()?;
     node.stop()?;
     Ok(())
 }
