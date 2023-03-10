@@ -24,7 +24,7 @@ use crate::general::{
     WakuMessage, WakuPubSubTopic,
 };
 
-pub use config::{WakuLogLevel, WakuNodeConfig};
+pub use config::{GossipSubParams, WakuLogLevel, WakuNodeConfig};
 pub use discovery::{waku_dns_discovery, DnsInfo};
 pub use peers::{Protocol, WakuPeerData, WakuPeers};
 pub use relay::{waku_create_content_topic, waku_create_pubsub_topic, waku_dafault_pubsub_topic};
