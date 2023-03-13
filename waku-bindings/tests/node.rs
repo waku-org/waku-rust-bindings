@@ -10,8 +10,9 @@ use std::{collections::HashSet, str::from_utf8};
 use tokio::sync::mpsc::{self, Sender};
 use tokio::time;
 use waku_bindings::{
-    waku_new, waku_set_event_callback, Encoding, Event, Key, MessageId, ProtocolId, Running,
-    WakuContentTopic, WakuLogLevel, WakuMessage, WakuNodeConfig, WakuNodeHandle,
+    waku_new, waku_set_event_callback, Encoding, Event, GossipSubParams, Key, MessageId,
+    ProtocolId, Running, WakuContentTopic, WakuLogLevel, WakuMessage, WakuNodeConfig,
+    WakuNodeHandle,
 };
 
 const ECHO_TIMEOUT: u64 = 10;
@@ -244,6 +245,80 @@ async fn default_echo() -> Result<(), String> {
         }
     }
 
+    node.stop()?;
+    Ok(())
+}
+
+#[test]
+#[serial]
+fn gossipsub_config() -> Result<(), String> {
+    let params = GossipSubParams {
+        d: Some(6),
+        dlo: Some(3),
+        dhi: Some(12),
+        dscore: Some(10),
+        dout: Some(8),
+        history_length: Some(500),
+        history_gossip: Some(3),
+        dlazy: Some(12),
+        gossip_factor: Some(0.25),
+        gossip_retransmission: Some(4),
+        heartbeat_initial_delay_ms: Some(500),
+        heartbeat_interval_seconds: Some(60),
+        slow_heartbeat_warning: Some(0.5),
+        fanout_ttl_seconds: Some(60),
+        prune_peers: Some(3),
+        prune_backoff_seconds: Some(900),
+        unsubscribe_backoff_seconds: Some(60),
+        connectors: Some(3),
+        max_pending_connections: Some(50),
+        connection_timeout_seconds: Some(15),
+        direct_connect_ticks: Some(5),
+        direct_connect_initial_delay_seconds: Some(5),
+        opportunistic_graft_ticks: Some(8),
+        opportunistic_graft_peers: Some(2),
+        graft_flood_threshold_seconds: Some(120),
+        max_ihave_length: Some(32),
+        max_ihave_messages: Some(8),
+        iwant_followup_time_seconds: Some(120),
+    };
+
+    let config = WakuNodeConfig {
+        gossipsub_params: params.into(),
+        log_level: Some(WakuLogLevel::Error),
+        ..Default::default()
+    };
+
+    let node = waku_new(Some(config))?;
+    let node = node.start()?;
+    node.stop()?;
+    Ok(())
+}
+
+#[test]
+#[serial]
+fn loglevel_error() -> Result<(), String> {
+    let config = WakuNodeConfig {
+        log_level: Some(WakuLogLevel::Error),
+        ..Default::default()
+    };
+
+    let node = waku_new(Some(config))?;
+    let node = node.start()?;
+    node.stop()?;
+    Ok(())
+}
+
+#[test]
+#[serial]
+fn loglevel_info() -> Result<(), String> {
+    let config = WakuNodeConfig {
+        log_level: Some(WakuLogLevel::Info),
+        ..Default::default()
+    };
+
+    let node = waku_new(Some(config))?;
+    let node = node.start()?;
     node.stop()?;
     Ok(())
 }
