@@ -10,9 +10,9 @@ use std::{collections::HashSet, str::from_utf8};
 use tokio::sync::mpsc::{self, Sender};
 use tokio::time;
 use waku_bindings::{
-    waku_new, waku_set_event_callback, Encoding, Event, GossipSubParams, Key, MessageId,
-    ProtocolId, Running, WakuContentTopic, WakuLogLevel, WakuMessage, WakuNodeConfig,
-    WakuNodeHandle,
+    waku_dafault_pubsub_topic, waku_new, waku_set_event_callback, Encoding, Event, GossipSubParams,
+    Key, MessageId, ProtocolId, Running, WakuContentTopic, WakuLogLevel, WakuMessage,
+    WakuNodeConfig, WakuNodeHandle, WakuPubSubTopic,
 };
 
 const ECHO_TIMEOUT: u64 = 10;
@@ -120,7 +120,7 @@ async fn test_echo_messages(
             .try_into()
             .unwrap(),
         Vec::new(),
-        false
+        false,
     );
 
     let (tx, mut rx) = mpsc::channel(1);
@@ -178,6 +178,13 @@ async fn discv5_echo() -> Result<(), String> {
     // Subscribe to default channel.
     node.relay_subscribe(None)?;
     let content_topic = WakuContentTopic::new("toychat", 2, "huilong", Encoding::Proto);
+
+    let topics = node.relay_topics()?;
+    let default_topic = waku_dafault_pubsub_topic();
+    assert!(topics.len() == 1);
+    let topic: WakuPubSubTopic = topics[0].parse().unwrap();
+
+    assert!(topic == default_topic);
 
     let sleep = time::sleep(Duration::from_secs(ECHO_TIMEOUT));
     tokio::pin!(sleep);
@@ -283,6 +290,7 @@ fn gossipsub_config() -> Result<(), String> {
         max_ihave_length: Some(32),
         max_ihave_messages: Some(8),
         iwant_followup_time_seconds: Some(120),
+        seen_messages_ttl_seconds: Some(120),
     };
 
     let config = WakuNodeConfig {

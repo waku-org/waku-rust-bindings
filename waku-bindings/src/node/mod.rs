@@ -212,6 +212,11 @@ impl WakuNodeHandle<Running> {
         relay::waku_relay_unsubscribe(pubsub_topic)
     }
 
+    /// Returns the list of pubsub topics the node is subscribed to in Waku Relay
+    pub fn relay_topics(&self) -> Result<Vec<String>> {
+        relay::waku_relay_topics()
+    }
+
     /// Retrieves historical messages on specific content topics. This method may be called with [`PagingOptions`](`crate::general::PagingOptions`),
     /// to retrieve historical messages on a per-page basis. If the request included [`PagingOptions`](`crate::general::PagingOptions`),
     /// the node must return messages on a per-page basis and include [`PagingOptions`](`crate::general::PagingOptions`) in the response.

@@ -201,7 +201,7 @@ fn run_app<B: Backend>(
                             1,
                             Utc::now().timestamp_nanos() as usize,
                             meta,
-                            false
+                            false,
                         );
                         if let Err(e) =
                             app.node_handle

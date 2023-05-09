@@ -104,7 +104,7 @@ impl WakuMessage {
         version: WakuMessageVersion,
         timestamp: usize,
         meta: META,
-        ephemeral: bool
+        ephemeral: bool,
     ) -> Self {
         let payload = payload.as_ref().to_vec();
         let meta = meta.as_ref().to_vec();

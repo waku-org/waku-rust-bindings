@@ -97,6 +97,13 @@ pub fn waku_dafault_pubsub_topic() -> WakuPubSubTopic {
     result
 }
 
+/// Get the list of subscribed pubsub topics in Waku Relay.
+/// As per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_relay_topics)
+pub fn waku_relay_topics() -> Result<Vec<String>> {
+    let result_ptr = unsafe { waku_sys::waku_relay_topics() };
+    decode_and_free_response(result_ptr)
+}
+
 /// Publish a message using Waku Relay
 /// As per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_relay_publishchar-messagejson-char-pubsubtopic-int-timeoutms)
 pub fn waku_relay_publish_message(
