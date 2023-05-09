@@ -119,6 +119,8 @@ async fn test_echo_messages(
             .as_millis()
             .try_into()
             .unwrap(),
+        Vec::new(),
+        false
     );
 
     let (tx, mut rx) = mpsc::channel(1);
