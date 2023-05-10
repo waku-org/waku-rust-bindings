@@ -193,12 +193,15 @@ fn run_app<B: Backend>(
                         let message_content: String = app.input.drain(..).collect();
                         let message = Chat2Message::new(&app.nick, &message_content);
                         let mut buff = Vec::new();
+                        let meta = Vec::new();
                         Message::encode(&message, &mut buff)?;
                         let waku_message = WakuMessage::new(
                             buff,
                             TOY_CHAT_CONTENT_TOPIC.clone(),
                             1,
                             Utc::now().timestamp_nanos() as usize,
+                            meta,
+                            false,
                         );
                         if let Err(e) =
                             app.node_handle

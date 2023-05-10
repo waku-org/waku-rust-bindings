@@ -89,25 +89,33 @@ pub struct WakuMessage {
     version: WakuMessageVersion,
     /// Unix timestamp in nanoseconds
     timestamp: usize,
+    #[serde(with = "base64_serde")]
+    meta: Vec<u8>,
+    ephemeral: bool,
     // TODO: implement RLN fields
     #[serde(flatten)]
     _extras: serde_json::Value,
 }
 
 impl WakuMessage {
-    pub fn new<PAYLOAD: AsRef<[u8]>>(
+    pub fn new<PAYLOAD: AsRef<[u8]>, META: AsRef<[u8]>>(
         payload: PAYLOAD,
         content_topic: WakuContentTopic,
         version: WakuMessageVersion,
         timestamp: usize,
+        meta: META,
+        ephemeral: bool,
     ) -> Self {
         let payload = payload.as_ref().to_vec();
+        let meta = meta.as_ref().to_vec();
 
         Self {
             payload,
             content_topic,
             version,
             timestamp,
+            meta,
+            ephemeral,
             _extras: Default::default(),
         }
     }
@@ -126,6 +134,14 @@ impl WakuMessage {
 
     pub fn timestamp(&self) -> usize {
         self.timestamp
+    }
+
+    pub fn meta(&self) -> &[u8] {
+        &self.meta
+    }
+
+    pub fn ephemeral(&self) -> bool {
+        self.ephemeral
     }
 
     /// Try decode the message with an expected symmetric key
@@ -555,7 +571,7 @@ mod tests {
 
     #[test]
     fn deserialize_waku_message() {
-        let message = "{\"payload\":\"SGkgZnJvbSDwn6aAIQ==\",\"contentTopic\":\"/toychat/2/huilong/proto\",\"timestamp\":1665580926660}";
+        let message = "{\"payload\":\"SGkgZnJvbSDwn6aAIQ==\",\"contentTopic\":\"/toychat/2/huilong/proto\",\"timestamp\":1665580926660,\"ephemeral\":true,\"meta\":\"SGkgZnJvbSDwn6aAIQ==\"}";
         let _: WakuMessage = serde_json::from_str(message).unwrap();
     }
 }

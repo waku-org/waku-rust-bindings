@@ -190,6 +190,9 @@ pub struct GossipSubParams {
     /// the router may apply bahavioural penalties.
     #[serde(rename = "iwantFollowupTimeSeconds")]
     pub iwant_followup_time_seconds: Option<i32>,
+    // Time until a previously seen message ID can be forgotten about.
+    #[serde(rename = "seenMessagesTTLSeconds")]
+    pub seen_messages_ttl_seconds: Option<i32>,
 }
 
 #[derive(Clone, Default, Serialize, Deserialize, Debug)]
