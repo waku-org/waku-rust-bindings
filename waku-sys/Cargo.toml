@@ -11,6 +11,10 @@ repository = "https://github.com/waku-org/waku-rust-bindings"
 keywords = ["waku", "peer-to-peer", "libp2p", "networking"]
 categories = ["network-programming"]
 
+exclude = [
+    "vendor/examples/*",
+    "vendor/docs/*"
+]
 
 [lib]
 crate-type = ["rlib"]
