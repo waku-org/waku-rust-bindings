@@ -89,7 +89,7 @@ pub struct WakuMessage {
     version: WakuMessageVersion,
     /// Unix timestamp in nanoseconds
     timestamp: usize,
-    #[serde(with = "base64_serde")]
+    #[serde(with = "base64_serde", default = "Vec::new")]
     meta: Vec<u8>,
     ephemeral: bool,
     // TODO: implement RLN fields
