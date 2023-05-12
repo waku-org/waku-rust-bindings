@@ -79,7 +79,7 @@ impl<T> From<JsonResponse<T>> for Result<T> {
 #[derive(Clone, Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct WakuMessage {
-    #[serde(with = "base64_serde")]
+    #[serde(with = "base64_serde", default = "Vec::new")]
     payload: Vec<u8>,
     /// The content topic to be set on the message
     content_topic: WakuContentTopic,
