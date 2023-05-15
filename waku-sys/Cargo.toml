@@ -20,8 +20,6 @@ exclude = [
     "vendor/tests/*",
     "vendor/ci/*",
     "vendor/cmd/*",
-    "vendor/mobile/*",
-    "vendor/library/*",
     "**/*.md",
     "**/*.lock",
     "**/*.nix",
