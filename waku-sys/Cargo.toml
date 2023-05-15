@@ -13,7 +13,20 @@ categories = ["network-programming"]
 
 exclude = [
     "vendor/examples/*",
-    "vendor/docs/*"
+    "vendor/docs/*",
+    "vendor/coverage/*",
+    "vendor/pkg/*",
+    "vendor/scripts/*",
+    "vendor/tests/*",
+    "vendor/ci/*",
+    "vendor/cmd/*",
+    "vendor/mobile/*",
+    "vendor/library/*",
+    "**/*.md",
+    "**/*.lock",
+    "**/*.nix",
+    "**/Makefile",
+    "**/Dockerfile",
 ]
 
 [lib]
