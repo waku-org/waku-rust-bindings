@@ -135,7 +135,7 @@ fn main() -> std::result::Result<(), Box<dyn Error>> {
     waku_set_event_callback(move |signal| match signal.event() {
         waku_bindings::Event::WakuMessage(event) => {
             if event.waku_message().content_topic() != &TOY_CHAT_CONTENT_TOPIC {
-                return
+                return;
             }
 
             match <Chat2Message as Message>::decode(event.waku_message().payload()) {

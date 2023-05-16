@@ -91,6 +91,7 @@ pub struct WakuMessage {
     timestamp: usize,
     #[serde(with = "base64_serde", default = "Vec::new")]
     meta: Vec<u8>,
+    #[serde(default)]
     ephemeral: bool,
     // TODO: implement RLN fields
     #[serde(flatten)]
@@ -310,11 +311,12 @@ pub struct MessageIndex {
 }
 
 /// WakuMessage encoding scheme
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Encoding {
     Proto,
     Rlp,
     Rfc26,
+    Unknown(String),
 }
 
 impl Display for Encoding {
@@ -323,6 +325,7 @@ impl Display for Encoding {
             Encoding::Proto => "proto",
             Encoding::Rlp => "rlp",
             Encoding::Rfc26 => "rfc26",
+            Encoding::Unknown(value) => value,
         };
         f.write_str(s)
     }
@@ -336,10 +339,7 @@ impl FromStr for Encoding {
             "proto" => Ok(Self::Proto),
             "rlp" => Ok(Self::Rlp),
             "rfc26" => Ok(Self::Rfc26),
-            encoding => Err(std::io::Error::new(
-                std::io::ErrorKind::InvalidInput,
-                format!("Unrecognized encoding: {encoding}"),
-            )),
+            encoding => Ok(Self::Unknown(encoding.to_string())),
         }
     }
 }
