@@ -134,6 +134,10 @@ fn main() -> std::result::Result<(), Box<dyn Error>> {
     let shared_messages = Arc::clone(&app.messages);
     waku_set_event_callback(move |signal| match signal.event() {
         waku_bindings::Event::WakuMessage(event) => {
+            if event.waku_message().content_topic() != &TOY_CHAT_CONTENT_TOPIC {
+                return;
+            }
+
             match <Chat2Message as Message>::decode(event.waku_message().payload()) {
                 Ok(chat_message) => {
                     shared_messages.write().unwrap().push(chat_message);
