@@ -59,6 +59,26 @@ pub fn waku_dns_discovery(
     decode_and_free_response(result_ptr)
 }
 
+/// Update the bootnodes used by DiscoveryV5 by passing a list of ENRs
+pub fn waku_discv5_update_bootnodes(
+    bootnodes: Vec<String>
+) -> Result<()> {
+    let bootnodes_ptr = CString::new(
+        serde_json::to_string(&bootnodes)
+            .expect("Serialization from properly built bootnode array should never fail"),
+    )
+    .expect("CString should build properly from the string vector")
+    .into_raw();
+
+    let result_ptr = unsafe {
+        let res = waku_sys::waku_discv5_update_bootnodes(bootnodes_ptr);
+        drop(CString::from_raw(bootnodes_ptr));
+        res
+    };
+
+    decode_and_free_response::<bool>(result_ptr).map(|_| ())
+}
+
 #[cfg(test)]
 mod test {
     use url::Url;

@@ -25,7 +25,7 @@ use crate::general::{
 };
 
 pub use config::{GossipSubParams, WakuLogLevel, WakuNodeConfig};
-pub use discovery::{waku_dns_discovery, DnsInfo};
+pub use discovery::{waku_dns_discovery, waku_discv5_update_bootnodes, DnsInfo};
 pub use peers::{Protocol, WakuPeerData, WakuPeers};
 pub use relay::{waku_create_content_topic, waku_create_pubsub_topic, waku_dafault_pubsub_topic};
 pub use store::{waku_local_store_query, waku_store_query};
@@ -312,6 +312,15 @@ impl WakuNodeHandle<Running> {
     ) -> Result<()> {
         filter::waku_filter_unsubscribe(filter_subscription, timeout)
     }
+
+
+    /// Update the bootnodes used by DiscoveryV5 by passing a list of ENRs
+    pub fn discv5_update_bootnodes(
+        bootnodes: Vec<String>
+    ) -> Result<()> {
+        discovery::waku_discv5_update_bootnodes(bootnodes)
+    }
+
 }
 
 /// Spawn a new Waku node with the given configuration (default configuration if `None` provided)
