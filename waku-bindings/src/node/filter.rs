@@ -28,7 +28,7 @@ pub fn waku_filter_subscribe(
         .into_raw();
 
     let result_ptr = unsafe {
-        let result_ptr = waku_sys::waku_filter_subscribe(
+        let result_ptr = waku_sys::waku_legacy_filter_subscribe(
             filter_subscription_ptr,
             peer_id_ptr,
             timeout
@@ -56,7 +56,7 @@ pub fn waku_filter_unsubscribe(
     .expect("CString should build properly from the serialized filter subscription")
     .into_raw();
     let result_ptr = unsafe {
-        let res = waku_sys::waku_filter_unsubscribe(
+        let res = waku_sys::waku_legacy_filter_unsubscribe(
             filter_subscription_ptr,
             timeout
                 .as_millis()

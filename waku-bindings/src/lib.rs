@@ -9,9 +9,9 @@ mod utils;
 
 pub use node::{
     waku_create_content_topic, waku_create_pubsub_topic, waku_dafault_pubsub_topic,
-    waku_dns_discovery, waku_discv5_update_bootnodes, waku_new, Aes256Gcm, DnsInfo, GossipSubParams, Initialized, Key, Multiaddr,
-    Protocol, PublicKey, Running, SecretKey, WakuLogLevel, WakuNodeConfig, WakuNodeHandle,
-    WakuPeerData, WakuPeers,
+    waku_discv5_update_bootnodes, waku_dns_discovery, waku_new, Aes256Gcm, DnsInfo,
+    GossipSubParams, Initialized, Key, Multiaddr, Protocol, PublicKey, Running, SecretKey,
+    WakuLogLevel, WakuNodeConfig, WakuNodeHandle, WakuPeerData, WakuPeers, WebsocketParams,
 };
 
 pub use general::{

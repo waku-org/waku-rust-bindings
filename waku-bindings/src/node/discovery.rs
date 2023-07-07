@@ -60,9 +60,7 @@ pub fn waku_dns_discovery(
 }
 
 /// Update the bootnodes used by DiscoveryV5 by passing a list of ENRs
-pub fn waku_discv5_update_bootnodes(
-    bootnodes: Vec<String>
-) -> Result<()> {
+pub fn waku_discv5_update_bootnodes(bootnodes: Vec<String>) -> Result<()> {
     let bootnodes_ptr = CString::new(
         serde_json::to_string(&bootnodes)
             .expect("Serialization from properly built bootnode array should never fail"),
