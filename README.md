@@ -46,4 +46,4 @@ This makes it ideal for running a p2p protocol on mobile, or in other similarly 
 
 
 
-Read the [Waku docs](https://docs.wakuconnect.dev/)
+Read the [Waku docs](https://docs.waku.org/)
