@@ -69,6 +69,12 @@ pub struct WakuNodeConfig {
     pub discv5_udp_port: Option<u16>,
     /// Gossipsub custom configuration.
     pub gossipsub_params: Option<GossipSubParams>,
+    /// The domain name resolving to the node's public IPv4 address.
+    #[serde(rename = "dns4DomainName")]
+    pub dns4_domain_name: Option<String>,
+    /// Custom websocket support parameters
+    #[serde(rename = "websockets")]
+    pub websocket_params: Option<WebsocketParams>,
 }
 
 #[derive(Clone, SmartDefault, Serialize, Deserialize, Debug)]
@@ -193,6 +199,26 @@ pub struct GossipSubParams {
     // Time until a previously seen message ID can be forgotten about.
     #[serde(rename = "seenMessagesTTLSeconds")]
     pub seen_messages_ttl_seconds: Option<i32>,
+}
+
+#[derive(Clone, SmartDefault, Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct WebsocketParams {
+    /// Indicates if websockets support will be enabled
+    #[default(Some(false))]
+    pub enabled: Option<bool>,
+    /// Listening address for websocket connections. Default `0.0.0.0`
+    #[default(Some(std::net::IpAddr::V4(std::net::Ipv4Addr::new(0, 0, 0, 0))))]
+    pub host: Option<std::net::IpAddr>,
+    /// TCP listening port for websocket connection. Use `0` for **random**. Default `60001`, if secure websockets support is enabled, the default is `6443“`
+    pub port: Option<usize>,
+    /// Enable secure websockets support
+    #[default(Some(false))]
+    pub secure: Option<bool>,
+    /// Secure websocket certificate path. Mandatory if secure websockets support is enabled.
+    pub cert_path: Option<String>,
+    /// Secure websocket key path. Mandatory if secure websockets support is enabled.
+    pub key_path: Option<String>,
 }
 
 #[derive(Clone, Default, Serialize, Deserialize, Debug)]
