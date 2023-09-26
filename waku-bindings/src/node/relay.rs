@@ -3,9 +3,6 @@
 // std
 use std::ffi::{CStr, CString};
 use std::time::Duration;
-// crates
-use aes_gcm::{Aes256Gcm, Key};
-use secp256k1::{PublicKey, SecretKey};
 // internal
 use crate::general::{Encoding, MessageId, Result, WakuContentTopic, WakuMessage, WakuPubSubTopic};
 use crate::utils::decode_and_free_response;
@@ -83,7 +80,7 @@ pub fn waku_create_pubsub_topic(topic_name: &str, encoding: Encoding) -> WakuPub
 }
 
 /// Default pubsub topic used for exchanging waku messages defined in [RFC 10](https://rfc.vac.dev/spec/10/)
-pub fn waku_dafault_pubsub_topic() -> WakuPubSubTopic {
+pub fn waku_default_pubsub_topic() -> WakuPubSubTopic {
     let result_ptr = unsafe { waku_sys::waku_default_pubsub_topic() };
 
     let result = unsafe { CStr::from_ptr(result_ptr) }
@@ -112,7 +109,7 @@ pub fn waku_relay_publish_message(
     timeout: Option<Duration>,
 ) -> Result<MessageId> {
     let pubsub_topic = pubsub_topic
-        .unwrap_or_else(waku_dafault_pubsub_topic)
+        .unwrap_or_else(waku_default_pubsub_topic)
         .to_string();
 
     let message_ptr = CString::new(
@@ -146,125 +143,9 @@ pub fn waku_relay_publish_message(
     decode_and_free_response(result_ptr)
 }
 
-/// Optionally sign, encrypt using asymmetric encryption and publish a message using Waku Relay
-/// As per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_relay_publish_enc_asymmetricchar-messagejson-char-pubsubtopic-char-publickey-char-optionalsigningkey-int-timeoutms)
-pub fn waku_relay_publish_encrypt_asymmetric(
-    message: &WakuMessage,
-    pubsub_topic: Option<WakuPubSubTopic>,
-    public_key: &PublicKey,
-    signing_key: Option<&SecretKey>,
-    timeout: Option<Duration>,
-) -> Result<MessageId> {
-    let pk = hex::encode(public_key.serialize_uncompressed());
-    let sk = signing_key
-        .map(|signing_key| hex::encode(signing_key.secret_bytes()))
-        .unwrap_or_else(String::new);
-    let pubsub_topic = pubsub_topic
-        .unwrap_or_else(waku_dafault_pubsub_topic)
-        .to_string();
-
-    let message_ptr = CString::new(
-        serde_json::to_string(&message)
-            .expect("WakuMessages should always be able to success serializing"),
-    )
-    .expect("CString should build properly from the serialized waku message")
-    .into_raw();
-    let pubsub_topic_ptr = CString::new(pubsub_topic)
-        .expect("CString should build properly from pubsub topic")
-        .into_raw();
-    let pk_ptr = CString::new(pk)
-        .expect("CString should build properly from hex encoded public key")
-        .into_raw();
-    let sk_ptr = CString::new(sk)
-        .expect("CString should build properly from hex encoded signing key")
-        .into_raw();
-
-    let result_ptr = unsafe {
-        let res = waku_sys::waku_relay_publish_enc_asymmetric(
-            message_ptr,
-            pubsub_topic_ptr,
-            pk_ptr,
-            sk_ptr,
-            timeout
-                .map(|timeout| {
-                    timeout
-                        .as_millis()
-                        .try_into()
-                        .expect("Duration as milliseconds should fit in a i32")
-                })
-                .unwrap_or(0),
-        );
-        drop(CString::from_raw(message_ptr));
-        drop(CString::from_raw(pubsub_topic_ptr));
-        drop(CString::from_raw(pk_ptr));
-        drop(CString::from_raw(sk_ptr));
-        res
-    };
-
-    decode_and_free_response(result_ptr)
-}
-
-/// Optionally sign, encrypt using symmetric encryption and publish a message using Waku Relay
-/// As per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_relay_publish_enc_symmetricchar-messagejson-char-pubsubtopic-char-symmetrickey-char-optionalsigningkey-int-timeoutms)
-pub fn waku_relay_publish_encrypt_symmetric(
-    message: &WakuMessage,
-    pubsub_topic: Option<WakuPubSubTopic>,
-    symmetric_key: &Key<Aes256Gcm>,
-    signing_key: Option<&SecretKey>,
-    timeout: Option<Duration>,
-) -> Result<MessageId> {
-    let symk = hex::encode(symmetric_key.as_slice());
-    let sk = signing_key
-        .map(|signing_key| hex::encode(signing_key.secret_bytes()))
-        .unwrap_or_else(String::new);
-    let pubsub_topic = pubsub_topic
-        .unwrap_or_else(waku_dafault_pubsub_topic)
-        .to_string();
-
-    let message_ptr = CString::new(
-        serde_json::to_string(&message)
-            .expect("WakuMessages should always be able to success serializing"),
-    )
-    .expect("CString should build properly from the serialized waku message")
-    .into_raw();
-    let pubsub_topic_ptr = CString::new(pubsub_topic)
-        .expect("CString should build properly from pubsub topic")
-        .into_raw();
-    let symk_ptr = CString::new(symk)
-        .expect("CString should build properly from hex encoded symmetric key")
-        .into_raw();
-    let sk_ptr = CString::new(sk)
-        .expect("CString should build properly from hex encoded signing key")
-        .into_raw();
-
-    let result_ptr = unsafe {
-        let res = waku_sys::waku_relay_publish_enc_symmetric(
-            message_ptr,
-            pubsub_topic_ptr,
-            symk_ptr,
-            sk_ptr,
-            timeout
-                .map(|timeout| {
-                    timeout
-                        .as_millis()
-                        .try_into()
-                        .expect("Duration as milliseconds should fit in a i32")
-                })
-                .unwrap_or(0),
-        );
-        drop(CString::from_raw(message_ptr));
-        drop(CString::from_raw(pubsub_topic_ptr));
-        drop(CString::from_raw(symk_ptr));
-        drop(CString::from_raw(sk_ptr));
-        res
-    };
-
-    decode_and_free_response(result_ptr)
-}
-
 pub fn waku_enough_peers(pubsub_topic: Option<WakuPubSubTopic>) -> Result<bool> {
     let pubsub_topic = pubsub_topic
-        .unwrap_or_else(waku_dafault_pubsub_topic)
+        .unwrap_or_else(waku_default_pubsub_topic)
         .to_string();
 
     let pubsub_topic_ptr = CString::new(pubsub_topic)
@@ -282,7 +163,7 @@ pub fn waku_enough_peers(pubsub_topic: Option<WakuPubSubTopic>) -> Result<bool> 
 
 pub fn waku_relay_subscribe(pubsub_topic: Option<WakuPubSubTopic>) -> Result<()> {
     let pubsub_topic = pubsub_topic
-        .unwrap_or_else(waku_dafault_pubsub_topic)
+        .unwrap_or_else(waku_default_pubsub_topic)
         .to_string();
 
     let pubsub_topic_ptr = CString::new(pubsub_topic)
@@ -300,7 +181,7 @@ pub fn waku_relay_subscribe(pubsub_topic: Option<WakuPubSubTopic>) -> Result<()>
 
 pub fn waku_relay_unsubscribe(pubsub_topic: Option<WakuPubSubTopic>) -> Result<()> {
     let pubsub_topic = pubsub_topic
-        .unwrap_or_else(waku_dafault_pubsub_topic)
+        .unwrap_or_else(waku_default_pubsub_topic)
         .to_string();
 
     let pubsub_topic_ptr = CString::new(pubsub_topic)
