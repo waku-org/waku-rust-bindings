@@ -84,7 +84,7 @@ mod test {
     #[test]
     fn test_dns_discovery() {
         let enrtree: Url =
-            "enrtree://AOGECG2SPND25EEFMAJ5WF3KSGJNSGV356DSTL2YVLLZWIV6SAYBM@test.waku.nodes.status.im".parse().unwrap();
+            "enrtree://AO47IDOLBKH72HIZZOXQP6NMRESAN7CHYWIBNXDXWRJRZWLODKII6@test.wakuv2.nodes.status.im".parse().unwrap();
         let result = super::waku_dns_discovery(&enrtree, None, None);
         assert!(result.is_ok());
         assert!(!result.as_ref().unwrap().is_empty());
