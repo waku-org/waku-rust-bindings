@@ -1,7 +1,7 @@
 use aes_gcm::{Aes256Gcm, KeyInit};
 use multiaddr::Multiaddr;
 use rand::thread_rng;
-use secp256k1::{PublicKey, Secp256k1, SecretKey};
+use secp256k1::SecretKey;
 use serial_test::serial;
 use std::net::IpAddr;
 use std::str::FromStr;
@@ -10,7 +10,7 @@ use std::{collections::HashSet, str::from_utf8};
 use tokio::sync::mpsc::{self, Sender};
 use tokio::time;
 use waku_bindings::{
-    waku_dafault_pubsub_topic, waku_new, waku_set_event_callback, Encoding, Event, GossipSubParams,
+    waku_default_pubsub_topic, waku_new, waku_set_event_callback, Encoding, Event, GossipSubParams,
     Key, MessageId, ProtocolId, Running, WakuContentTopic, WakuLogLevel, WakuMessage,
     WakuNodeConfig, WakuNodeHandle, WakuPubSubTopic,
 };
@@ -27,28 +27,16 @@ const NODES: &[&str] = &[
 fn try_publish_relay_messages(
     node: &WakuNodeHandle<Running>,
     msg: &WakuMessage,
-    sk: &SecretKey,
-    ssk: &Key<Aes256Gcm>,
 ) -> Result<HashSet<MessageId>, String> {
-    let pk = PublicKey::from_secret_key(&Secp256k1::new(), sk);
-
-    Ok(HashSet::from([
-        node.relay_publish_message(msg, None, None)?,
-        node.relay_publish_encrypt_asymmetric(msg, None, &pk, None, None)?,
-        node.relay_publish_encrypt_symmetric(msg, None, ssk, None, None)?,
-        node.relay_publish_encrypt_asymmetric(msg, None, &pk, Some(sk), None)?,
-        node.relay_publish_encrypt_symmetric(msg, None, ssk, Some(sk), None)?,
-    ]))
+    Ok(HashSet::from(
+        [node.relay_publish_message(msg, None, None)?],
+    ))
 }
 
 fn try_publish_lightpush_messages(
     node: &WakuNodeHandle<Running>,
     msg: &WakuMessage,
-    sk: &SecretKey,
-    ssk: &Key<Aes256Gcm>,
 ) -> Result<HashSet<MessageId>, String> {
-    let pk = PublicKey::from_secret_key(&Secp256k1::new(), sk);
-
     let peer_id = node
         .peers()
         .unwrap()
@@ -59,11 +47,7 @@ fn try_publish_lightpush_messages(
         .clone();
 
     Ok(HashSet::from([
-        node.lightpush_publish(msg, None, peer_id.clone(), None)?,
-        node.lightpush_publish_encrypt_asymmetric(msg, None, peer_id.clone(), &pk, None, None)?,
-        node.lightpush_publish_encrypt_asymmetric(msg, None, peer_id.clone(), &pk, Some(sk), None)?,
-        node.lightpush_publish_encrypt_symmetric(msg, None, peer_id.clone(), ssk, None, None)?,
-        node.lightpush_publish_encrypt_symmetric(msg, None, peer_id, ssk, Some(sk), None)?,
+        node.lightpush_publish(msg, None, peer_id, None)?
     ]))
 }
 
@@ -126,12 +110,9 @@ async fn test_echo_messages(
     let (tx, mut rx) = mpsc::channel(1);
     set_callback(tx, sk, ssk);
 
-    let mut ids =
-        try_publish_relay_messages(node, &message, &sk, &ssk).expect("send relay messages");
+    let mut ids = try_publish_relay_messages(node, &message).expect("send relay messages");
 
-    ids.extend(
-        try_publish_lightpush_messages(node, &message, &sk, &ssk).expect("send lightpush messages"),
-    );
+    ids.extend(try_publish_lightpush_messages(node, &message).expect("send lightpush messages"));
 
     while let Some(res) = rx.recv().await {
         if ids.take(&res.id).is_some() {
@@ -180,7 +161,7 @@ async fn discv5_echo() -> Result<(), String> {
     let content_topic = WakuContentTopic::new("toychat", 2, "huilong", Encoding::Proto);
 
     let topics = node.relay_topics()?;
-    let default_topic = waku_dafault_pubsub_topic();
+    let default_topic = waku_default_pubsub_topic();
     assert!(topics.len() == 1);
     let topic: WakuPubSubTopic = topics[0].parse().unwrap();
 

@@ -27,7 +27,7 @@ use crate::general::{
 pub use config::{GossipSubParams, WakuLogLevel, WakuNodeConfig, WebsocketParams};
 pub use discovery::{waku_discv5_update_bootnodes, waku_dns_discovery, DnsInfo};
 pub use peers::{Protocol, WakuPeerData, WakuPeers};
-pub use relay::{waku_create_content_topic, waku_create_pubsub_topic, waku_dafault_pubsub_topic};
+pub use relay::{waku_create_content_topic, waku_create_pubsub_topic, waku_default_pubsub_topic};
 pub use store::{waku_local_store_query, waku_store_query};
 
 /// Shared flag to check if a waku node is already running in the current process
@@ -159,44 +159,6 @@ impl WakuNodeHandle<Running> {
         relay::waku_relay_publish_message(message, pubsub_topic, timeout)
     }
 
-    /// Optionally sign, encrypt using asymmetric encryption and publish a message using Waku Relay
-    /// As per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_relay_publish_enc_asymmetricchar-messagejson-char-pubsubtopic-char-publickey-char-optionalsigningkey-int-timeoutms)
-    pub fn relay_publish_encrypt_asymmetric(
-        &self,
-        message: &WakuMessage,
-        pubsub_topic: Option<WakuPubSubTopic>,
-        public_key: &PublicKey,
-        signing_key: Option<&SecretKey>,
-        timeout: Option<Duration>,
-    ) -> Result<MessageId> {
-        relay::waku_relay_publish_encrypt_asymmetric(
-            message,
-            pubsub_topic,
-            public_key,
-            signing_key,
-            timeout,
-        )
-    }
-
-    /// Optionally sign, encrypt using symmetric encryption and publish a message using Waku Relay
-    /// As per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_relay_publish_enc_symmetricchar-messagejson-char-pubsubtopic-char-symmetrickey-char-optionalsigningkey-int-timeoutms)
-    pub fn relay_publish_encrypt_symmetric(
-        &self,
-        message: &WakuMessage,
-        pubsub_topic: Option<WakuPubSubTopic>,
-        symmetric_key: &Key<Aes256Gcm>,
-        signing_key: Option<&SecretKey>,
-        timeout: Option<Duration>,
-    ) -> Result<MessageId> {
-        relay::waku_relay_publish_encrypt_symmetric(
-            message,
-            pubsub_topic,
-            symmetric_key,
-            signing_key,
-            timeout,
-        )
-    }
-
     /// Determine if there are enough peers to publish a message on a given pubsub topic
     pub fn relay_enough_peers(&self, pubsub_topic: Option<WakuPubSubTopic>) -> Result<bool> {
         relay::waku_enough_peers(pubsub_topic)
@@ -248,48 +210,6 @@ impl WakuNodeHandle<Running> {
         timeout: Option<Duration>,
     ) -> Result<MessageId> {
         lightpush::waku_lightpush_publish(message, pubsub_topic, peer_id, timeout)
-    }
-
-    /// Optionally sign, encrypt using asymmetric encryption and publish a message using Waku Lightpush
-    /// As per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_lightpush_publish_enc_asymmetricchar-messagejson-char-pubsubtopic-char-peerid-char-publickey-char-optionalsigningkey-int-timeoutms)
-    pub fn lightpush_publish_encrypt_asymmetric(
-        &self,
-        message: &WakuMessage,
-        pubsub_topic: Option<WakuPubSubTopic>,
-        peer_id: PeerId,
-        public_key: &PublicKey,
-        signing_key: Option<&SecretKey>,
-        timeout: Option<Duration>,
-    ) -> Result<MessageId> {
-        lightpush::waku_lightpush_publish_encrypt_asymmetric(
-            message,
-            pubsub_topic,
-            peer_id,
-            public_key,
-            signing_key,
-            timeout,
-        )
-    }
-
-    /// Optionally sign, encrypt using symmetric encryption and publish a message using Waku Lightpush
-    /// As per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_lightpush_publish_enc_symmetricchar-messagejson-char-pubsubtopic-char-peerid-char-symmetrickey-char-optionalsigningkey-int-timeoutms)
-    pub fn lightpush_publish_encrypt_symmetric(
-        &self,
-        message: &WakuMessage,
-        pubsub_topic: Option<WakuPubSubTopic>,
-        peer_id: PeerId,
-        symmetric_key: &Key<Aes256Gcm>,
-        signing_key: Option<&SecretKey>,
-        timeout: Option<Duration>,
-    ) -> Result<MessageId> {
-        lightpush::waku_lightpush_publish_encrypt_symmetric(
-            message,
-            pubsub_topic,
-            peer_id,
-            symmetric_key,
-            signing_key,
-            timeout,
-        )
     }
 
     /// Creates a subscription in a lightnode for messages that matches a content filter and optionally a [`WakuPubSubTopic`](`crate::general::WakuPubSubTopic`)

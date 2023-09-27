@@ -39,9 +39,10 @@ fn build_go_waku_lib(go_bin: &str, project_dir: &Path) {
     cmd.env("CGO_ENABLED", "1")
         .arg("build")
         .arg("-buildmode=c-archive")
+        .arg("-tags=gowaku_no_rln")
         .arg("-o")
         .arg(out_dir.join("libgowaku.a"))
-        .arg("./library");
+        .arg("./library/c");
 
     // Setting `GOCACHE=/tmp/` for crates.io job that builds documentation
     // when a crate is being published or updated.

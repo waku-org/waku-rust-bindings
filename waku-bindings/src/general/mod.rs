@@ -12,6 +12,7 @@ use serde::{de::Error, Deserialize, Deserializer, Serialize, Serializer};
 use sscanf::{scanf, RegexRepresentation};
 // internal
 use crate::decrypt::{waku_decode_asymmetric, waku_decode_symmetric};
+use crate::encrypt::{waku_encode_asymmetric, waku_encode_symmetric};
 
 /// Waku message version
 pub type WakuMessageVersion = usize;
@@ -145,11 +146,29 @@ impl WakuMessage {
         self.ephemeral
     }
 
+    /// Optionally sign and encrypt a message using symmetric encryption
+    pub fn encode_symmetric(
+        &self,
+        symmetric_key: &Key<Aes256Gcm>,
+        signing_key: Option<&SecretKey>,
+    ) -> Result<WakuMessage> {
+        waku_encode_symmetric(self, symmetric_key, signing_key)
+    }
+
     /// Try decode the message with an expected symmetric key
     ///
     /// As per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_decode_symmetricchar-messagejson-char-symmetrickey)
     pub fn try_decode_symmetric(&self, symmetric_key: &Key<Aes256Gcm>) -> Result<DecodedPayload> {
         waku_decode_symmetric(self, symmetric_key)
+    }
+
+    /// Optionally sign and encrypt a message using asymmetric encryption
+    pub fn encode_asymmetric(
+        &self,
+        public_key: &PublicKey,
+        signing_key: Option<&SecretKey>,
+    ) -> Result<WakuMessage> {
+        waku_encode_asymmetric(self, public_key, signing_key)
     }
 
     /// Try decode the message with an expected asymmetric key
@@ -563,6 +582,8 @@ where
 mod tests {
     use super::*;
     use crate::WakuPubSubTopic;
+    use secp256k1::{rand, Secp256k1};
+    use std::time::SystemTime;
     #[test]
     fn parse_waku_topic() {
         let s = "/waku/2/default-waku/proto";
@@ -573,5 +594,39 @@ mod tests {
     fn deserialize_waku_message() {
         let message = "{\"payload\":\"SGkgZnJvbSDwn6aAIQ==\",\"contentTopic\":\"/toychat/2/huilong/proto\",\"timestamp\":1665580926660,\"ephemeral\":true,\"meta\":\"SGkgZnJvbSDwn6aAIQ==\"}";
         let _: WakuMessage = serde_json::from_str(message).unwrap();
+    }
+
+    #[test]
+    fn encode_decode() {
+        let content_topic = WakuContentTopic::new("hello", 2, "world", Encoding::Proto);
+        let message = WakuMessage::new(
+            "hello",
+            content_topic,
+            1,
+            SystemTime::now()
+                .duration_since(SystemTime::UNIX_EPOCH)
+                .unwrap()
+                .as_millis()
+                .try_into()
+                .unwrap(),
+            Vec::new(),
+            false,
+        );
+
+        let secp = Secp256k1::new();
+        let signing_key = SecretKey::new(&mut rand::thread_rng());
+        let encrypt_key = SecretKey::new(&mut rand::thread_rng());
+        let public_key = PublicKey::from_secret_key(&secp, &encrypt_key);
+
+        let encoded_message = message
+            .encode_asymmetric(&public_key, Some(&signing_key))
+            .expect("could not encode");
+        let decoded_message = encoded_message
+            .try_decode_asymmetric(&encrypt_key)
+            .expect("could not decode");
+
+        assert!(message.payload() != encoded_message.payload());
+        assert!(encoded_message.version() == 1);
+        assert!(message.payload() == decoded_message.data());
     }
 }

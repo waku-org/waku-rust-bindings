@@ -7,10 +7,15 @@ use std::ffi::{c_char, CStr};
 pub fn decode_and_free_response<T: DeserializeOwned>(response_ptr: *mut c_char) -> Result<T> {
     let response = unsafe { CStr::from_ptr(response_ptr) }
         .to_str()
-        .expect("Response should always succeed to load to a &str");
+        .map_err(|err| {
+            format!(
+                "could not retrieve response from pointer returned by waku: {}",
+                err
+            )
+        })?;
 
-    let response: JsonResponse<T> =
-        serde_json::from_str(response).expect("JsonResponse should always succeed to deserialize");
+    let response: JsonResponse<T> = serde_json::from_str(response)
+        .map_err(|err| format!("could not deserialize waku JsonResponse: {}", err))?;
 
     unsafe {
         waku_sys::waku_utils_free(response_ptr);
