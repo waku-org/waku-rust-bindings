@@ -3,10 +3,12 @@
 // std
 use std::ffi::CString;
 use std::time::Duration;
+// crates
+use libc::*;
 // internal
 use crate::general::{MessageId, PeerId, Result, WakuMessage, WakuPubSubTopic};
 use crate::node::waku_default_pubsub_topic;
-use crate::utils::decode_and_free_response;
+use crate::utils::{get_trampoline, handle_response};
 
 /// Publish a message using Waku Lightpush
 /// As per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_lightpush_publishchar-messagejson-char-topic-char-peerid-int-timeoutms)
@@ -31,8 +33,13 @@ pub fn waku_lightpush_publish(
     let peer_id_ptr = CString::new(peer_id)
         .expect("CString should build properly from peer id")
         .into_raw();
-    let result_ptr = unsafe {
-        let res = waku_sys::waku_lightpush_publish(
+
+    let mut result: String = Default::default();
+    let result_cb = |v: &str| result = v.to_string();
+    let code = unsafe {
+        let mut closure = result_cb;
+        let cb = get_trampoline(&closure);
+        let out = waku_sys::waku_lightpush_publish(
             message_ptr,
             topic_ptr,
             peer_id_ptr,
@@ -44,12 +51,16 @@ pub fn waku_lightpush_publish(
                         .expect("Duration as milliseconds should fit in a i32")
                 })
                 .unwrap_or(0),
+            cb,
+            &mut closure as *mut _ as *mut c_void,
         );
+
         drop(CString::from_raw(message_ptr));
         drop(CString::from_raw(topic_ptr));
         drop(CString::from_raw(peer_id_ptr));
-        res
+
+        out
     };
 
-    decode_and_free_response(result_ptr)
+    handle_response(code, &result)
 }

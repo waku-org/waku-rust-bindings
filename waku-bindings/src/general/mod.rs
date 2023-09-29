@@ -51,28 +51,8 @@ impl Display for ProtocolId {
     }
 }
 
-/// JsonResponse wrapper.
-/// `go-waku` ffi returns this type as a `char *` as per the [specification](https://rfc.vac.dev/spec/36/#jsonresponse-type)
-/// This is internal, as it is better to use rust plain `Result` type.
-#[derive(Deserialize, Debug)]
-#[serde(rename_all = "snake_case")]
-pub(crate) enum JsonResponse<T> {
-    Result(T),
-    Error(String),
-}
-
 /// Waku response, just a `Result` with an `String` error.
 pub type Result<T> = std::result::Result<T, String>;
-
-/// Convenient we can transform a [`JsonResponse`] into a [`std::result::Result`]
-impl<T> From<JsonResponse<T>> for Result<T> {
-    fn from(response: JsonResponse<T>) -> Self {
-        match response {
-            JsonResponse::Result(t) => Ok(t),
-            JsonResponse::Error(e) => Err(e),
-        }
-    }
-}
 
 // TODO: Properly type and deserialize payload form base64 encoded string
 /// Waku message in JSON format.

@@ -1,5 +1,6 @@
 use std::env;
 use std::env::set_current_dir;
+use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
@@ -57,14 +58,23 @@ fn build_go_waku_lib(go_bin: &str, project_dir: &Path) {
     set_current_dir(project_dir).expect("Going back to project dir");
 }
 
+fn patch_gowaku_lib() {
+    // Replacing cgo_utils.h as it is only needed when compiling go-waku bindings
+    let lib_dir: PathBuf = env::var_os("OUT_DIR").unwrap().into();
+    let file_path = lib_dir.join("libgowaku.h");
+    let data = fs::read_to_string(&file_path).expect("Unable to read file");
+    let new_data = data.replace("#include <cgo_utils.h>", "");
+    fs::write(&file_path, new_data).expect("Unable to write file");
+}
+
 fn generate_bindgen_code() {
     let lib_dir: PathBuf = env::var_os("OUT_DIR").unwrap().into();
-
-    // let lib_dir = project_dir.join("vendor/build/lib");
 
     println!("cargo:rustc-link-search={}", lib_dir.display());
     println!("cargo:rustc-link-lib=static=gowaku");
     println!("cargo:rerun-if-changed=libgowaku.h");
+
+    patch_gowaku_lib();
 
     // Generate waku bindings with bindgen
     let bindings = bindgen::Builder::default()

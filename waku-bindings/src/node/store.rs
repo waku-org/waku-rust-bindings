@@ -4,9 +4,10 @@
 use std::ffi::CString;
 use std::time::Duration;
 // crates
+use libc::*;
 // internal
 use crate::general::{PeerId, Result, StoreQuery, StoreResponse};
-use crate::utils::decode_and_free_response;
+use crate::utils::{get_trampoline, handle_json_response};
 
 /// Retrieves historical messages on specific content topics. This method may be called with [`PagingOptions`](`crate::general::PagingOptions`),
 /// to retrieve historical messages on a per-page basis. If the request included [`PagingOptions`](`crate::general::PagingOptions`),
@@ -26,8 +27,12 @@ pub fn waku_store_query(
         .expect("CString should build properly from peer id")
         .into_raw();
 
-    let result_ptr = unsafe {
-        let res = waku_sys::waku_store_query(
+    let mut result: String = Default::default();
+    let result_cb = |v: &str| result = v.to_string();
+    let code = unsafe {
+        let mut closure = result_cb;
+        let cb = get_trampoline(&closure);
+        let out = waku_sys::waku_store_query(
             query_ptr,
             peer_id_ptr,
             timeout
@@ -38,13 +43,17 @@ pub fn waku_store_query(
                         .expect("Duration as milliseconds should fit in a i32")
                 })
                 .unwrap_or(0),
+            cb,
+            &mut closure as *mut _ as *mut c_void,
         );
+
         drop(CString::from_raw(query_ptr));
         drop(CString::from_raw(peer_id_ptr));
-        res
+
+        out
     };
 
-    decode_and_free_response(result_ptr)
+    handle_json_response(code, &result)
 }
 
 /// Retrieves locally stored historical messages on specific content topics from the local archive system. This method may be called with [`PagingOptions`](`crate::general::PagingOptions`),
@@ -57,10 +66,19 @@ pub fn waku_local_store_query(query: &StoreQuery) -> Result<StoreResponse> {
     )
     .expect("CString should build properly from the serialized filter subscription")
     .into_raw();
-    let result_ptr = unsafe {
-        let res = waku_sys::waku_store_local_query(query_ptr);
+
+    let mut result: String = Default::default();
+    let result_cb = |v: &str| result = v.to_string();
+    let code = unsafe {
+        let mut closure = result_cb;
+        let cb = get_trampoline(&closure);
+        let out =
+            waku_sys::waku_store_local_query(query_ptr, cb, &mut closure as *mut _ as *mut c_void);
+
         drop(CString::from_raw(query_ptr));
-        res
+
+        out
     };
-    decode_and_free_response(result_ptr)
+
+    handle_json_response(code, &result)
 }

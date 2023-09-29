@@ -5,7 +5,7 @@
 //! When an event is emitted, this callback will be triggered receiving a [`Signal`]
 
 // std
-use std::ffi::{c_char, CStr};
+use std::ffi::{c_char, c_void, CStr};
 use std::ops::Deref;
 use std::sync::Mutex;
 // crates
@@ -79,7 +79,7 @@ fn set_callback<F: FnMut(Signal) + Send + Sync + 'static>(f: F) {
 
 /// Wrapper callback, it transformst the `*const c_char` into a [`Signal`]
 /// and executes the [`CALLBACK`] funtion with it
-extern "C" fn callback(data: *const c_char) {
+extern "C" fn callback(data: *const c_char, _user_data: *mut c_void) {
     let raw_response = unsafe { CStr::from_ptr(data) }
         .to_str()
         .expect("Not null ptr");
@@ -95,7 +95,7 @@ extern "C" fn callback(data: *const c_char) {
 /// which are used to react to asynchronous events in Waku
 pub fn waku_set_event_callback<F: FnMut(Signal) + Send + Sync + 'static>(f: F) {
     set_callback(f);
-    unsafe { waku_sys::waku_set_event_callback(callback as *mut std::ffi::c_void) };
+    unsafe { waku_sys::waku_set_event_callback(Some(callback)) };
 }
 
 #[cfg(test)]

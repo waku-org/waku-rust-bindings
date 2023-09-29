@@ -4,11 +4,12 @@
 use std::ffi::CString;
 use std::time::Duration;
 // crates
+use libc::*;
 use multiaddr::Multiaddr;
 use serde::Deserialize;
 // internal
 use crate::general::{PeerId, ProtocolId, Result};
-use crate::utils::decode_and_free_response;
+use crate::utils::{get_trampoline, handle_json_response, handle_no_response, handle_response};
 
 /// Add a node multiaddress and protocol to the waku node’s peerstore.
 /// As per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_add_peerchar-address-char-protocolid)
@@ -20,14 +21,25 @@ pub fn waku_add_peers(address: &Multiaddr, protocol_id: ProtocolId) -> Result<Pe
         .expect("CString should build properly from the protocol id")
         .into_raw();
 
-    let response_ptr = unsafe {
-        let res = waku_sys::waku_add_peer(address_ptr, protocol_id_ptr);
+    let mut result: String = Default::default();
+    let result_cb = |v: &str| result = v.to_string();
+    let code = unsafe {
+        let mut closure = result_cb;
+        let cb = get_trampoline(&closure);
+        let out = waku_sys::waku_add_peer(
+            address_ptr,
+            protocol_id_ptr,
+            cb,
+            &mut closure as *mut _ as *mut c_void,
+        );
+
         drop(CString::from_raw(address_ptr));
         drop(CString::from_raw(protocol_id_ptr));
-        res
+
+        out
     };
 
-    decode_and_free_response(response_ptr)
+    handle_response(code, &result)
 }
 
 /// Dial peer using a multiaddress
@@ -42,18 +54,27 @@ pub fn waku_connect_peer_with_address(
     let address_ptr = CString::new(address.to_string())
         .expect("CString should build properly from multiaddress")
         .into_raw();
-    let response_ptr = unsafe {
-        let res = waku_sys::waku_connect(
+
+    let mut error: String = Default::default();
+    let error_cb = |v: &str| error = v.to_string();
+    let code = unsafe {
+        let mut closure = error_cb;
+        let cb = get_trampoline(&closure);
+        let out = waku_sys::waku_connect(
             address_ptr,
             timeout
                 .map(|duration| duration.as_millis().try_into().unwrap_or(i32::MAX))
                 .unwrap_or(0),
+            cb,
+            &mut closure as *mut _ as *mut c_void,
         );
+
         drop(CString::from_raw(address_ptr));
-        res
+
+        out
     };
 
-    decode_and_free_response::<bool>(response_ptr).map(|_| ())
+    handle_no_response(code, &error)
 }
 
 /// Dial peer using a peer id
@@ -65,18 +86,27 @@ pub fn waku_connect_peer_with_id(peer_id: &PeerId, timeout: Option<Duration>) ->
     let peer_id_ptr = CString::new(peer_id.as_bytes())
         .expect("CString should build properly from peer id")
         .into_raw();
-    let result_ptr = unsafe {
-        let res = waku_sys::waku_connect_peerid(
+
+    let mut error: String = Default::default();
+    let error_cb = |v: &str| error = v.to_string();
+    let code = unsafe {
+        let mut closure = error_cb;
+        let cb = get_trampoline(&closure);
+        let out = waku_sys::waku_connect_peerid(
             peer_id_ptr,
             timeout
                 .map(|duration| duration.as_millis().try_into().unwrap_or(i32::MAX))
                 .unwrap_or(0),
+            cb,
+            &mut closure as *mut _ as *mut c_void,
         );
+
         drop(CString::from_raw(peer_id_ptr));
-        res
+
+        out
     };
 
-    decode_and_free_response::<bool>(result_ptr).map(|_| ())
+    handle_no_response(code, &error)
 }
 
 /// Disconnect a peer using its peer id
@@ -86,23 +116,33 @@ pub fn waku_disconnect_peer_with_id(peer_id: &PeerId) -> Result<()> {
         .expect("CString should build properly from peer id")
         .into_raw();
 
-    let response_ptr = unsafe {
-        let res = waku_sys::waku_disconnect(peer_id_ptr);
+    let mut error: String = Default::default();
+    let error_cb = |v: &str| error = v.to_string();
+    let code = unsafe {
+        let mut closure = error_cb;
+        let cb = get_trampoline(&closure);
+        let out = waku_sys::waku_disconnect(peer_id_ptr, cb, &mut closure as *mut _ as *mut c_void);
+
         drop(CString::from_raw(peer_id_ptr));
-        res
+
+        out
     };
-    decode_and_free_response::<bool>(response_ptr).map(|_| ())
+
+    handle_no_response(code, &error)
 }
 
 /// Get number of connected peers
 /// As per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_peer_count)
 pub fn waku_peer_count() -> Result<usize> {
-    let response_ptr = unsafe { waku_sys::waku_peer_cnt() };
-    let num_str = decode_and_free_response::<String>(response_ptr)?;
-    let num = num_str
-        .parse::<u32>()
-        .map_err(|_| "could not convert peer count into u32".to_string())?;
-    usize::try_from(num).map_err(|_| "could not convert peer count into usize".to_string())
+    let mut result: String = Default::default();
+    let result_cb = |v: &str| result = v.to_string();
+    let code = unsafe {
+        let mut closure = result_cb;
+        let cb = get_trampoline(&closure);
+        waku_sys::waku_peer_cnt(cb, &mut closure as *mut _ as *mut c_void)
+    };
+
+    handle_response(code, &result)
 }
 
 /// Waku peer supported protocol
@@ -153,8 +193,15 @@ pub type WakuPeers = Vec<WakuPeerData>;
 /// Retrieve the list of peers known by the Waku node
 /// As per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_peers)
 pub fn waku_peers() -> Result<WakuPeers> {
-    let response_ptr = unsafe { waku_sys::waku_peers() };
-    decode_and_free_response(response_ptr)
+    let mut result: String = Default::default();
+    let result_cb = |v: &str| result = v.to_string();
+    let code = unsafe {
+        let mut closure = result_cb;
+        let cb = get_trampoline(&closure);
+        waku_sys::waku_peers(cb, &mut closure as *mut _ as *mut c_void)
+    };
+
+    handle_json_response(code, &result)
 }
 
 #[cfg(test)]
