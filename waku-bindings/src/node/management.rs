@@ -62,6 +62,7 @@ pub fn waku_listen_addresses() -> Result<Vec<Multiaddr>> {
 mod test {
     use super::waku_new;
     use crate::node::management::{waku_listen_addresses, waku_peer_id, waku_start, waku_stop};
+    use crate::node::peers::waku_peer_count;
     use serial_test::serial;
 
     #[test]
@@ -73,6 +74,9 @@ mod test {
         let id = waku_peer_id().unwrap();
         dbg!(&id);
         assert!(!id.is_empty());
+
+        let peer_cnt = waku_peer_count().unwrap();
+        dbg!(peer_cnt);
 
         // test addresses, since we cannot start different instances of the node
         let addresses = waku_listen_addresses().unwrap();
