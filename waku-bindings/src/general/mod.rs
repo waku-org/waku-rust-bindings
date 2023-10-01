@@ -217,15 +217,16 @@ impl ContentFilter {
 /// The criteria to create subscription to a light node in JSON Format
 /// as per the [specification](https://rfc.vac.dev/spec/36/#filtersubscription-type)
 #[derive(Clone, Serialize, Deserialize, Debug)]
+#[deprecated]
 #[serde(rename_all = "camelCase")]
-pub struct FilterSubscription {
+pub struct LegacyFilterSubscription {
     /// Array of [`ContentFilter`] being subscribed to / unsubscribed from
     content_filters: Vec<ContentFilter>,
     /// Optional pubsub topic
     pubsub_topic: Option<WakuPubSubTopic>,
 }
 
-impl FilterSubscription {
+impl LegacyFilterSubscription {
     pub fn new(content_filters: Vec<ContentFilter>, pubsub_topic: Option<WakuPubSubTopic>) -> Self {
         Self {
             content_filters,
@@ -235,6 +236,37 @@ impl FilterSubscription {
 
     pub fn content_filters(&self) -> &[ContentFilter] {
         &self.content_filters
+    }
+
+    pub fn pubsub_topic(&self) -> Option<&WakuPubSubTopic> {
+        self.pubsub_topic.as_ref()
+    }
+}
+
+/// The criteria to create subscription to a filter full node matching a content filter.
+/// as per the [specification](https://rfc.vac.dev/spec/36/#filtersubscription-type)
+#[derive(Clone, Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct FilterSubscription {
+    /// mandatory, at least one required, with a max of 10
+    content_topics: Vec<WakuContentTopic>,
+    /// optional if using autosharding, mandatory if using static or named sharding.
+    pubsub_topic: Option<WakuPubSubTopic>,
+}
+
+impl FilterSubscription {
+    pub fn new(
+        content_topics: Vec<WakuContentTopic>,
+        pubsub_topic: Option<WakuPubSubTopic>,
+    ) -> Self {
+        Self {
+            content_topics,
+            pubsub_topic,
+        }
+    }
+
+    pub fn content_topics(&self) -> &[WakuContentTopic] {
+        &self.content_topics
     }
 
     pub fn pubsub_topic(&self) -> Option<&WakuPubSubTopic> {

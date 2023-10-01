@@ -16,9 +16,9 @@ pub use node::{
 };
 
 pub use general::{
-    ContentFilter, DecodedPayload, Encoding, FilterSubscription, MessageId, MessageIndex,
-    PagingOptions, PeerId, ProtocolId, Result, StoreQuery, StoreResponse, WakuContentTopic,
-    WakuMessage, WakuMessageVersion, WakuPubSubTopic,
+    ContentFilter, DecodedPayload, Encoding, FilterSubscription, LegacyFilterSubscription,
+    MessageId, MessageIndex, PagingOptions, PeerId, ProtocolId, Result, StoreQuery, StoreResponse,
+    WakuContentTopic, WakuMessage, WakuMessageVersion, WakuPubSubTopic,
 };
 
 pub use events::{waku_set_event_callback, Event, Signal, WakuMessageEvent};
