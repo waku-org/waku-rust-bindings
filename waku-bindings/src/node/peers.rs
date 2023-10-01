@@ -98,7 +98,11 @@ pub fn waku_disconnect_peer_with_id(peer_id: &PeerId) -> Result<()> {
 /// As per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_peer_count)
 pub fn waku_peer_count() -> Result<usize> {
     let response_ptr = unsafe { waku_sys::waku_peer_cnt() };
-    decode_and_free_response(response_ptr)
+    let num_str = decode_and_free_response::<String>(response_ptr)?;
+    let num = num_str
+        .parse::<u32>()
+        .map_err(|_| "could not convert peer count into u32".to_string())?;
+    usize::try_from(num).map_err(|_| "could not convert peer count into usize".to_string())
 }
 
 /// Waku peer supported protocol
