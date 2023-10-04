@@ -52,6 +52,7 @@ pub struct WakuNodeConfig {
     pub min_peers_to_publish: Option<usize>,
     /// Enable filter protocol. Default `false`
     #[default(Some(false))]
+    #[serde(rename = "legacyFilter")]
     pub filter: Option<bool>,
     /// Set the log level. Default `INFO`. Allowed values "DEBUG", "INFO", "WARN", "ERROR", "DPANIC", "PANIC", "FATAL"
     #[default(Some(WakuLogLevel::Info))]
