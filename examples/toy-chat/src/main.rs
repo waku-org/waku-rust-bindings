@@ -23,8 +23,8 @@ use tui::{
 };
 use unicode_width::UnicodeWidthStr;
 use waku_bindings::{
-    waku_new, waku_set_event_callback, ContentFilter, Multiaddr, PagingOptions, ProtocolId,
-    Running, StoreQuery, WakuMessage, WakuNodeHandle,
+    waku_default_pubsub_topic, waku_new, waku_set_event_callback, ContentFilter, Multiaddr,
+    PagingOptions, ProtocolId, Running, StoreQuery, WakuMessage, WakuNodeHandle,
 };
 
 enum InputMode {
@@ -76,7 +76,7 @@ fn retrieve_history(
     let result = node_handle.store_query(
         &StoreQuery {
             pubsub_topic: None,
-            content_filters: vec![ContentFilter::new(TOY_CHAT_CONTENT_TOPIC.clone())],
+            content_topics: vec![TOY_CHAT_CONTENT_TOPIC.clone()],
             start_time: Some(
                 (Duration::from_secs(Utc::now().timestamp() as u64)
                     - Duration::from_secs(60 * 60 * 24))
@@ -110,7 +110,9 @@ fn setup_node_handle() -> std::result::Result<WakuNodeHandle<Running>, Box<dyn E
         let peerid = node_handle.add_peer(&address, ProtocolId::Relay)?;
         node_handle.connect_peer_with_id(&peerid, None)?;
     }
-    node_handle.relay_subscribe(None)?;
+
+    let content_filter = ContentFilter::new(Some(waku_default_pubsub_topic()), vec![]);
+    node_handle.relay_subscribe(&content_filter)?;
     Ok(node_handle)
 }
 
@@ -207,10 +209,11 @@ fn run_app<B: Backend>(
                             meta,
                             false,
                         );
-                        if let Err(e) =
-                            app.node_handle
-                                .relay_publish_message(&waku_message, None, None)
-                        {
+                        if let Err(e) = app.node_handle.relay_publish_message(
+                            &waku_message,
+                            Some(waku_default_pubsub_topic()),
+                            None,
+                        ) {
                             let mut out = std::io::stderr();
                             write!(out, "{e:?}").unwrap();
                         }

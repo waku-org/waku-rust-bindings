@@ -199,12 +199,12 @@ impl DecodedPayload {
 /// as per the [specification](https://rfc.vac.dev/spec/36/#contentfilter-type)
 #[derive(Clone, Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
-pub struct ContentFilter {
+pub struct LegacyContentFilter {
     /// The content topic of a Waku message
     content_topic: WakuContentTopic,
 }
 
-impl ContentFilter {
+impl LegacyContentFilter {
     pub fn new(content_topic: WakuContentTopic) -> Self {
         Self { content_topic }
     }
@@ -217,7 +217,6 @@ impl ContentFilter {
 /// The criteria to create subscription to a light node in JSON Format
 /// as per the [specification](https://rfc.vac.dev/spec/36/#filtersubscription-type)
 #[derive(Clone, Serialize, Deserialize, Debug)]
-#[deprecated]
 #[serde(rename_all = "camelCase")]
 pub struct LegacyFilterSubscription {
     /// Array of [`ContentFilter`] being subscribed to / unsubscribed from
@@ -244,20 +243,19 @@ impl LegacyFilterSubscription {
 }
 
 /// The criteria to create subscription to a filter full node matching a content filter.
-/// as per the [specification](https://rfc.vac.dev/spec/36/#filtersubscription-type)
 #[derive(Clone, Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
-pub struct FilterSubscription {
-    /// mandatory, at least one required, with a max of 10
-    content_topics: Vec<WakuContentTopic>,
+pub struct ContentFilter {
     /// optional if using autosharding, mandatory if using static or named sharding.
     pubsub_topic: Option<WakuPubSubTopic>,
+    /// mandatory, at least one required, with a max of 10
+    content_topics: Vec<WakuContentTopic>,
 }
 
-impl FilterSubscription {
+impl ContentFilter {
     pub fn new(
-        content_topics: Vec<WakuContentTopic>,
         pubsub_topic: Option<WakuPubSubTopic>,
+        content_topics: Vec<WakuContentTopic>,
     ) -> Self {
         Self {
             content_topics,
@@ -274,14 +272,73 @@ impl FilterSubscription {
     }
 }
 
+#[derive(Clone, Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct FilterSubscriptionDetail {
+    #[serde(rename = "peerID")]
+    peer_id: PeerId,
+    content_topics: Vec<WakuContentTopic>,
+    pubsub_topic: WakuPubSubTopic,
+}
+
+impl FilterSubscriptionDetail {
+    pub fn new(
+        peer_id: PeerId,
+        content_topics: Vec<WakuContentTopic>,
+        pubsub_topic: WakuPubSubTopic,
+    ) -> Self {
+        Self {
+            peer_id,
+            content_topics,
+            pubsub_topic,
+        }
+    }
+
+    pub fn peer_id(&self) -> &PeerId {
+        &self.peer_id
+    }
+
+    pub fn content_topics(&self) -> &[WakuContentTopic] {
+        &self.content_topics
+    }
+
+    pub fn pubsub_topic(&self) -> &WakuPubSubTopic {
+        &self.pubsub_topic
+    }
+}
+
+#[derive(Clone, Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct FilterSubscriptionResult {
+    subscriptions: Vec<FilterSubscriptionDetail>,
+    error: Option<String>,
+}
+
+impl FilterSubscriptionResult {
+    pub fn new(subscriptions: Vec<FilterSubscriptionDetail>, error: Option<String>) -> Self {
+        Self {
+            subscriptions,
+            error,
+        }
+    }
+
+    pub fn subscriptions(&self) -> &[FilterSubscriptionDetail] {
+        &self.subscriptions
+    }
+
+    pub fn error(&self) -> &Option<String> {
+        &self.error
+    }
+}
+
 /// Criteria used to retrieve historical messages
 #[derive(Clone, Serialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct StoreQuery {
     /// The pubsub topic on which messages are published
     pub pubsub_topic: Option<WakuPubSubTopic>,
-    /// Array of [`ContentFilter`] to query for historical messages
-    pub content_filters: Vec<ContentFilter>,
+    /// Array of [`WakuContentTopic`] to query for historical messages
+    pub content_topics: Vec<WakuContentTopic>,
     /// The inclusive lower bound on the timestamp of queried messages.
     /// This field holds the Unix epoch time in nanoseconds
     pub start_time: Option<usize>,

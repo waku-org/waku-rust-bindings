@@ -12,7 +12,6 @@ use crate::utils::{get_trampoline, handle_no_response};
 
 /// Creates a subscription in a lightnode for messages that matches a content filter and optionally a [`WakuPubSubTopic`](`crate::general::WakuPubSubTopic`)
 /// As per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_legacy_filter_subscribechar-filterjson-char-peerid-int-timeoutms)
-#[deprecated]
 pub fn waku_legacy_filter_subscribe(
     filter_subscription: &LegacyFilterSubscription,
     peer_id: PeerId,
@@ -55,7 +54,6 @@ pub fn waku_legacy_filter_subscribe(
 
 /// Removes subscriptions in a light node matching a content filter and, optionally, a [`WakuPubSubTopic`](`crate::general::WakuPubSubTopic`)
 /// As per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_filter_unsubscribechar-filterjson-int-timeoutms)
-#[deprecated]
 pub fn waku_legacy_filter_unsubscribe(
     filter_subscription: &LegacyFilterSubscription,
     timeout: Duration,
