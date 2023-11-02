@@ -1674,13 +1674,14 @@ checksum = "49874b5167b65d7193b8aba1567f5c7d93d001cafc34600cee003eda787e483f"
 
 [[package]]
 name = "waku-bindings"
-version = "0.3.1"
+version = "0.4.0"
 dependencies = [
  "aes-gcm",
  "base64 0.21.0",
  "enr",
  "futures",
  "hex",
+ "libc",
  "multiaddr",
  "once_cell",
  "rand",

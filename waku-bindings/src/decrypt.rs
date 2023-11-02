@@ -4,10 +4,11 @@
 use std::ffi::CString;
 // crates
 use aes_gcm::{Aes256Gcm, Key};
+use libc::*;
 use secp256k1::SecretKey;
 // internal
 use crate::general::{DecodedPayload, Result, WakuMessage};
-use crate::utils::decode_and_free_response;
+use crate::utils::{get_trampoline, handle_json_response};
 
 /// Decrypt a message using a symmetric key
 ///
@@ -28,14 +29,25 @@ pub fn waku_decode_symmetric(
         .expect("CString should build properly from hex encoded symmetric key")
         .into_raw();
 
-    let result_ptr = unsafe {
-        let res = waku_sys::waku_decode_symmetric(message_ptr, symk_ptr);
+    let mut result: String = Default::default();
+    let result_cb = |v: &str| result = v.to_string();
+    let code = unsafe {
+        let mut closure = result_cb;
+        let cb = get_trampoline(&closure);
+        let out = waku_sys::waku_decode_symmetric(
+            message_ptr,
+            symk_ptr,
+            cb,
+            &mut closure as *mut _ as *mut c_void,
+        );
+
         drop(CString::from_raw(message_ptr));
         drop(CString::from_raw(symk_ptr));
-        res
+
+        out
     };
 
-    decode_and_free_response(result_ptr)
+    handle_json_response(code, &result)
 }
 
 /// Decrypt a message using a symmetric key
@@ -57,12 +69,23 @@ pub fn waku_decode_asymmetric(
         .expect("CString should build properly from hex encoded symmetric key")
         .into_raw();
 
-    let result_ptr = unsafe {
-        let res = waku_sys::waku_decode_asymmetric(message_ptr, sk_ptr);
+    let mut result: String = Default::default();
+    let result_cb = |v: &str| result = v.to_string();
+    let code = unsafe {
+        let mut closure = result_cb;
+        let cb = get_trampoline(&closure);
+        let out = waku_sys::waku_decode_asymmetric(
+            message_ptr,
+            sk_ptr,
+            cb,
+            &mut closure as *mut _ as *mut c_void,
+        );
+
         drop(CString::from_raw(message_ptr));
         drop(CString::from_raw(sk_ptr));
-        res
+
+        out
     };
 
-    decode_and_free_response(result_ptr)
+    handle_json_response(code, &result)
 }
