@@ -20,6 +20,8 @@ pub type WakuMessageVersion = usize;
 pub type PeerId = String;
 /// Waku message id, hex encoded sha256 digest of the message
 pub type MessageId = String;
+/// Waku pubsub topic
+pub type WakuPubSubTopic = String;
 
 /// Protocol identifiers
 #[non_exhaustive]
@@ -511,75 +513,6 @@ impl<'de> Deserialize<'de> for WakuContentTopic {
         let as_string: String = String::deserialize(deserializer)?;
         as_string
             .parse::<WakuContentTopic>()
-            .map_err(D::Error::custom)
-    }
-}
-
-/// A waku pubsub topic in the form of `/waku/v2/{topic_name}/{encoding}`
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub struct WakuPubSubTopic {
-    pub topic_name: Cow<'static, str>,
-    pub encoding: Encoding,
-}
-
-impl WakuPubSubTopic {
-    pub const fn new(topic_name: &'static str, encoding: Encoding) -> Self {
-        Self {
-            topic_name: Cow::Borrowed(topic_name),
-            encoding,
-        }
-    }
-
-    pub fn with_topic_name(topic_name: String, encoding: Encoding) -> Self {
-        Self {
-            topic_name: Cow::Owned(topic_name),
-            encoding,
-        }
-    }
-}
-
-impl FromStr for WakuPubSubTopic {
-    type Err = String;
-
-    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-        if let Ok((topic_name, encoding)) = scanf!(s, "/waku/2/{}/{:/.+?/}", String, Encoding) {
-            Ok(WakuPubSubTopic {
-                topic_name: Cow::Owned(topic_name),
-                encoding,
-            })
-        } else {
-            Err(
-                format!(
-                    "Wrong pub-sub topic format. Should be `/waku/2/{{topic-name}}/{{encoding}}`. Got: {s}"
-                )
-            )
-        }
-    }
-}
-
-impl Display for WakuPubSubTopic {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "/waku/2/{}/{}", self.topic_name, self.encoding)
-    }
-}
-
-impl Serialize for WakuPubSubTopic {
-    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        self.to_string().serialize(serializer)
-    }
-}
-
-impl<'de> Deserialize<'de> for WakuPubSubTopic {
-    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        let as_string: String = String::deserialize(deserializer)?;
-        as_string
-            .parse::<WakuPubSubTopic>()
             .map_err(D::Error::custom)
     }
 }
