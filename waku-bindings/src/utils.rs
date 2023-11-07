@@ -10,21 +10,27 @@ pub fn decode<T: DeserializeOwned>(input: &str) -> Result<T> {
 }
 
 unsafe extern "C" fn trampoline<F>(
+    _ret_code: ::std::os::raw::c_int,
     data: *const ::std::os::raw::c_char,
     user_data: *mut ::std::os::raw::c_void,
 ) where
     F: FnMut(&str),
 {
     let user_data = &mut *(user_data as *mut F);
-    let response = unsafe { CStr::from_ptr(data) }
-        .to_str()
-        .map_err(|err| {
-            format!(
-                "could not retrieve response from pointer returned by waku: {}",
-                err
-            )
-        })
-        .expect("could not retrieve response");
+
+    let response = if data.is_null() {
+        ""
+    } else {
+        unsafe { CStr::from_ptr(data) }
+            .to_str()
+            .map_err(|err| {
+                format!(
+                    "could not retrieve response from pointer returned by waku: {}",
+                    err
+                )
+            })
+            .expect("could not retrieve response")
+    };
 
     user_data(response);
 }

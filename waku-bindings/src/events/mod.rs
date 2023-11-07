@@ -5,7 +5,7 @@
 //! When an event is emitted, this callback will be triggered receiving a [`Signal`]
 
 // std
-use std::ffi::{c_char, c_void, CStr};
+use std::ffi::{c_char, c_int, c_void, CStr};
 use std::ops::Deref;
 use std::sync::Mutex;
 // crates
@@ -79,7 +79,7 @@ fn set_callback<F: FnMut(Signal) + Send + Sync + 'static>(f: F) {
 
 /// Wrapper callback, it transformst the `*const c_char` into a [`Signal`]
 /// and executes the [`CALLBACK`] funtion with it
-extern "C" fn callback(data: *const c_char, _user_data: *mut c_void) {
+extern "C" fn callback(_ret_code: c_int, data: *const c_char, _user_data: *mut c_void) {
     let raw_response = unsafe { CStr::from_ptr(data) }
         .to_str()
         .expect("Not null ptr");

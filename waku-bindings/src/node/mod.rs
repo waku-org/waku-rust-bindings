@@ -3,6 +3,7 @@
 mod config;
 mod discovery;
 mod filter;
+mod legacyfilter;
 mod lightpush;
 mod management;
 mod peers;
@@ -20,14 +21,14 @@ use std::time::Duration;
 // internal
 
 use crate::general::{
-    FilterSubscription, MessageId, PeerId, ProtocolId, Result, StoreQuery, StoreResponse,
-    WakuMessage, WakuPubSubTopic,
+    ContentFilter, FilterSubscriptionResult, LegacyFilterSubscription, MessageId, PeerId,
+    ProtocolId, Result, StoreQuery, StoreResponse, WakuMessage, WakuPubSubTopic,
 };
 
 pub use config::{GossipSubParams, WakuLogLevel, WakuNodeConfig, WebsocketParams};
 pub use discovery::{waku_discv5_update_bootnodes, waku_dns_discovery, DnsInfo};
 pub use peers::{Protocol, WakuPeerData, WakuPeers};
-pub use relay::{waku_create_content_topic, waku_create_pubsub_topic, waku_default_pubsub_topic};
+pub use relay::{waku_create_content_topic, waku_default_pubsub_topic};
 pub use store::{waku_local_store_query, waku_store_query};
 
 /// Shared flag to check if a waku node is already running in the current process
@@ -148,8 +149,9 @@ impl WakuNodeHandle<Running> {
         peers::waku_peers()
     }
 
-    /// Publish a message using Waku Relay
+    /// Publish a message using Waku Relay.
     /// As per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_relay_publishchar-messagejson-char-pubsubtopic-int-timeoutms)
+    /// The pubsub_topic parameter is optional and if not specified it will be derived from the contentTopic.
     pub fn relay_publish_message(
         &self,
         message: &WakuMessage,
@@ -164,14 +166,14 @@ impl WakuNodeHandle<Running> {
         relay::waku_enough_peers(pubsub_topic)
     }
 
-    /// Subscribe to a Waku Relay pubsub topic to receive messages
-    pub fn relay_subscribe(&self, pubsub_topic: Option<WakuPubSubTopic>) -> Result<()> {
-        relay::waku_relay_subscribe(pubsub_topic)
+    /// Subscribe to WakuRelay to receive messages matching a content filter.
+    pub fn relay_subscribe(&self, content_filter: &ContentFilter) -> Result<()> {
+        relay::waku_relay_subscribe(content_filter)
     }
 
-    /// Closes the pubsub subscription to a pubsub topic. No more messages will be received from this pubsub topic
-    pub fn relay_unsubscribe(&self, pubsub_topic: Option<WakuPubSubTopic>) -> Result<()> {
-        relay::waku_relay_unsubscribe(pubsub_topic)
+    /// Closes the pubsub subscription to stop receiving messages matching a content filter. No more messages will be received from this pubsub topic
+    pub fn relay_unsubscribe(&self, content_filter: &ContentFilter) -> Result<()> {
+        relay::waku_relay_unsubscribe(content_filter)
     }
 
     /// Returns the list of pubsub topics the node is subscribed to in Waku Relay
@@ -200,8 +202,9 @@ impl WakuNodeHandle<Running> {
         store::waku_local_store_query(query)
     }
 
-    /// Publish a message using Waku Lightpush
+    /// Publish a message using Waku Lightpush.
     /// As per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_lightpush_publishchar-messagejson-char-topic-char-peerid-int-timeoutms)
+    /// The pubsub_topic parameter is optional and if not specified it will be derived from the contentTopic.
     pub fn lightpush_publish(
         &self,
         message: &WakuMessage,
@@ -214,23 +217,62 @@ impl WakuNodeHandle<Running> {
 
     /// Creates a subscription in a lightnode for messages that matches a content filter and optionally a [`WakuPubSubTopic`](`crate::general::WakuPubSubTopic`)
     /// As per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_filter_subscribechar-filterjson-char-peerid-int-timeoutms)
-    pub fn filter_subscribe(
+    #[deprecated]
+    pub fn legacy_filter_subscribe(
         &self,
-        filter_subscription: &FilterSubscription,
+        filter_subscription: &LegacyFilterSubscription,
         peer_id: PeerId,
         timeout: Duration,
     ) -> Result<()> {
-        filter::waku_filter_subscribe(filter_subscription, peer_id, timeout)
+        legacyfilter::waku_legacy_filter_subscribe(filter_subscription, peer_id, timeout)
     }
 
     /// Removes subscriptions in a light node matching a content filter and, optionally, a [`WakuPubSubTopic`](`crate::general::WakuPubSubTopic`)
     /// As per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_filter_unsubscribechar-filterjson-int-timeoutms)
-    pub fn filter_unsubscribe(
+    #[deprecated]
+    pub fn legacy_filter_unsubscribe(
         &self,
-        filter_subscription: &FilterSubscription,
+        filter_subscription: &LegacyFilterSubscription,
         timeout: Duration,
     ) -> Result<()> {
-        filter::waku_filter_unsubscribe(filter_subscription, timeout)
+        legacyfilter::waku_legacy_filter_unsubscribe(filter_subscription, timeout)
+    }
+
+    /// Creates a subscription to a filter full node matching a content filter.
+    /// Returns the PeerId on which the filter subscription was created
+    pub fn filter_subscribe(
+        &self,
+        content_filter: &ContentFilter,
+        peer_id: Option<PeerId>,
+        timeout: Option<Duration>,
+    ) -> Result<FilterSubscriptionResult> {
+        filter::waku_filter_subscribe(content_filter, peer_id, timeout)
+    }
+
+    /// Used to know if a service node has an active subscription for this client
+    pub fn filter_ping(&self, peer_id: PeerId, timeout: Option<Duration>) -> Result<()> {
+        filter::waku_filter_ping(peer_id, timeout)
+    }
+
+    /// Sends a requests to a service node to stop pushing messages matching this filter to this client.
+    /// It might be used to modify an existing subscription by providing a subset of the original filter
+    /// criteria
+    pub fn filter_unsubscribe(
+        &self,
+        content_filter: &ContentFilter,
+        peer_id: PeerId,
+        timeout: Option<Duration>,
+    ) -> Result<()> {
+        filter::waku_filter_unsubscribe(content_filter, peer_id, timeout)
+    }
+
+    /// Sends a requests to a service node (or all service nodes) to stop pushing messages
+    pub fn filter_unsubscribe_all(
+        &self,
+        peer_id: Option<PeerId>,
+        timeout: Option<Duration>,
+    ) -> Result<()> {
+        filter::waku_filter_unsubscribe_all(peer_id, timeout)
     }
 
     /// Update the bootnodes used by DiscoveryV5 by passing a list of ENRs

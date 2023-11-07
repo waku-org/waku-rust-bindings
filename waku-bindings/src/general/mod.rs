@@ -20,6 +20,8 @@ pub type WakuMessageVersion = usize;
 pub type PeerId = String;
 /// Waku message id, hex encoded sha256 digest of the message
 pub type MessageId = String;
+/// Waku pubsub topic
+pub type WakuPubSubTopic = String;
 
 /// Protocol identifiers
 #[non_exhaustive]
@@ -199,12 +201,12 @@ impl DecodedPayload {
 /// as per the [specification](https://rfc.vac.dev/spec/36/#contentfilter-type)
 #[derive(Clone, Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
-pub struct ContentFilter {
+pub struct LegacyContentFilter {
     /// The content topic of a Waku message
     content_topic: WakuContentTopic,
 }
 
-impl ContentFilter {
+impl LegacyContentFilter {
     pub fn new(content_topic: WakuContentTopic) -> Self {
         Self { content_topic }
     }
@@ -218,14 +220,14 @@ impl ContentFilter {
 /// as per the [specification](https://rfc.vac.dev/spec/36/#filtersubscription-type)
 #[derive(Clone, Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
-pub struct FilterSubscription {
+pub struct LegacyFilterSubscription {
     /// Array of [`ContentFilter`] being subscribed to / unsubscribed from
     content_filters: Vec<ContentFilter>,
     /// Optional pubsub topic
     pubsub_topic: Option<WakuPubSubTopic>,
 }
 
-impl FilterSubscription {
+impl LegacyFilterSubscription {
     pub fn new(content_filters: Vec<ContentFilter>, pubsub_topic: Option<WakuPubSubTopic>) -> Self {
         Self {
             content_filters,
@@ -242,14 +244,103 @@ impl FilterSubscription {
     }
 }
 
+/// The criteria to create subscription to a filter full node matching a content filter.
+#[derive(Clone, Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct ContentFilter {
+    /// optional if using autosharding, mandatory if using static or named sharding.
+    pubsub_topic: Option<WakuPubSubTopic>,
+    /// mandatory, at least one required, with a max of 10
+    content_topics: Vec<WakuContentTopic>,
+}
+
+impl ContentFilter {
+    pub fn new(
+        pubsub_topic: Option<WakuPubSubTopic>,
+        content_topics: Vec<WakuContentTopic>,
+    ) -> Self {
+        Self {
+            content_topics,
+            pubsub_topic,
+        }
+    }
+
+    pub fn content_topics(&self) -> &[WakuContentTopic] {
+        &self.content_topics
+    }
+
+    pub fn pubsub_topic(&self) -> Option<&WakuPubSubTopic> {
+        self.pubsub_topic.as_ref()
+    }
+}
+
+#[derive(Clone, Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct FilterSubscriptionDetail {
+    #[serde(rename = "peerID")]
+    peer_id: PeerId,
+    content_topics: Vec<WakuContentTopic>,
+    pubsub_topic: WakuPubSubTopic,
+}
+
+impl FilterSubscriptionDetail {
+    pub fn new(
+        peer_id: PeerId,
+        content_topics: Vec<WakuContentTopic>,
+        pubsub_topic: WakuPubSubTopic,
+    ) -> Self {
+        Self {
+            peer_id,
+            content_topics,
+            pubsub_topic,
+        }
+    }
+
+    pub fn peer_id(&self) -> &PeerId {
+        &self.peer_id
+    }
+
+    pub fn content_topics(&self) -> &[WakuContentTopic] {
+        &self.content_topics
+    }
+
+    pub fn pubsub_topic(&self) -> &WakuPubSubTopic {
+        &self.pubsub_topic
+    }
+}
+
+#[derive(Clone, Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct FilterSubscriptionResult {
+    subscriptions: Vec<FilterSubscriptionDetail>,
+    error: Option<String>,
+}
+
+impl FilterSubscriptionResult {
+    pub fn new(subscriptions: Vec<FilterSubscriptionDetail>, error: Option<String>) -> Self {
+        Self {
+            subscriptions,
+            error,
+        }
+    }
+
+    pub fn subscriptions(&self) -> &[FilterSubscriptionDetail] {
+        &self.subscriptions
+    }
+
+    pub fn error(&self) -> &Option<String> {
+        &self.error
+    }
+}
+
 /// Criteria used to retrieve historical messages
 #[derive(Clone, Serialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct StoreQuery {
     /// The pubsub topic on which messages are published
     pub pubsub_topic: Option<WakuPubSubTopic>,
-    /// Array of [`ContentFilter`] to query for historical messages
-    pub content_filters: Vec<ContentFilter>,
+    /// Array of [`WakuContentTopic`] to query for historical messages
+    pub content_topics: Vec<WakuContentTopic>,
     /// The inclusive lower bound on the timestamp of queried messages.
     /// This field holds the Unix epoch time in nanoseconds
     pub start_time: Option<usize>,
@@ -422,75 +513,6 @@ impl<'de> Deserialize<'de> for WakuContentTopic {
         let as_string: String = String::deserialize(deserializer)?;
         as_string
             .parse::<WakuContentTopic>()
-            .map_err(D::Error::custom)
-    }
-}
-
-/// A waku pubsub topic in the form of `/waku/v2/{topic_name}/{encoding}`
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub struct WakuPubSubTopic {
-    pub topic_name: Cow<'static, str>,
-    pub encoding: Encoding,
-}
-
-impl WakuPubSubTopic {
-    pub const fn new(topic_name: &'static str, encoding: Encoding) -> Self {
-        Self {
-            topic_name: Cow::Borrowed(topic_name),
-            encoding,
-        }
-    }
-
-    pub fn with_topic_name(topic_name: String, encoding: Encoding) -> Self {
-        Self {
-            topic_name: Cow::Owned(topic_name),
-            encoding,
-        }
-    }
-}
-
-impl FromStr for WakuPubSubTopic {
-    type Err = String;
-
-    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-        if let Ok((topic_name, encoding)) = scanf!(s, "/waku/2/{}/{:/.+?/}", String, Encoding) {
-            Ok(WakuPubSubTopic {
-                topic_name: Cow::Owned(topic_name),
-                encoding,
-            })
-        } else {
-            Err(
-                format!(
-                    "Wrong pub-sub topic format. Should be `/waku/2/{{topic-name}}/{{encoding}}`. Got: {s}"
-                )
-            )
-        }
-    }
-}
-
-impl Display for WakuPubSubTopic {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "/waku/2/{}/{}", self.topic_name, self.encoding)
-    }
-}
-
-impl Serialize for WakuPubSubTopic {
-    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        self.to_string().serialize(serializer)
-    }
-}
-
-impl<'de> Deserialize<'de> for WakuPubSubTopic {
-    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        let as_string: String = String::deserialize(deserializer)?;
-        as_string
-            .parse::<WakuPubSubTopic>()
             .map_err(D::Error::custom)
     }
 }

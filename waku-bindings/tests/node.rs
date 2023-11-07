@@ -10,9 +10,9 @@ use std::{collections::HashSet, str::from_utf8};
 use tokio::sync::mpsc::{self, Sender};
 use tokio::time;
 use waku_bindings::{
-    waku_default_pubsub_topic, waku_new, waku_set_event_callback, Encoding, Event, GossipSubParams,
-    Key, MessageId, ProtocolId, Running, WakuContentTopic, WakuLogLevel, WakuMessage,
-    WakuNodeConfig, WakuNodeHandle, WakuPubSubTopic,
+    waku_default_pubsub_topic, waku_new, waku_set_event_callback, ContentFilter, Encoding, Event,
+    GossipSubParams, Key, MessageId, ProtocolId, Running, WakuContentTopic, WakuLogLevel,
+    WakuMessage, WakuNodeConfig, WakuNodeHandle, WakuPubSubTopic,
 };
 
 const ECHO_TIMEOUT: u64 = 10;
@@ -157,7 +157,8 @@ async fn discv5_echo() -> Result<(), String> {
     let ssk = Aes256Gcm::generate_key(&mut thread_rng());
 
     // Subscribe to default channel.
-    node.relay_subscribe(None)?;
+    let content_filter = ContentFilter::new(Some(waku_default_pubsub_topic()), vec![]);
+    node.relay_subscribe(&content_filter)?;
     let content_topic = WakuContentTopic::new("toychat", 2, "huilong", Encoding::Proto);
 
     let topics = node.relay_topics()?;
@@ -215,7 +216,8 @@ async fn default_echo() -> Result<(), String> {
     let ssk = Aes256Gcm::generate_key(&mut thread_rng());
 
     // subscribe to default channel
-    node.relay_subscribe(None)?;
+    let content_filter = ContentFilter::new(Some(waku_default_pubsub_topic()), vec![]);
+    node.relay_subscribe(&content_filter)?;
     let content_topic = WakuContentTopic::new("toychat", 2, "huilong", Encoding::Proto);
 
     let sleep = time::sleep(Duration::from_secs(ECHO_TIMEOUT));

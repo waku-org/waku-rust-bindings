@@ -6,7 +6,9 @@ use std::time::Duration;
 // crates
 use libc::*;
 // internal
-use crate::general::{Encoding, MessageId, Result, WakuContentTopic, WakuMessage, WakuPubSubTopic};
+use crate::general::{
+    ContentFilter, Encoding, MessageId, Result, WakuContentTopic, WakuMessage, WakuPubSubTopic,
+};
 use crate::utils::{get_trampoline, handle_json_response, handle_no_response, handle_response};
 
 /// Create a content topic according to [RFC 23](https://rfc.vac.dev/spec/23/)
@@ -53,37 +55,6 @@ pub fn waku_create_content_topic(
 
     handle_response::<WakuContentTopic>(code, &result)
         .expect("&str from result should always be extracted")
-}
-
-/// Create a pubsub topic according to [RFC 23](https://rfc.vac.dev/spec/23/)
-/// As per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_pubsub_topicchar-name-char-encoding)
-pub fn waku_create_pubsub_topic(topic_name: &str, encoding: Encoding) -> WakuPubSubTopic {
-    let topic_name_ptr = CString::new(topic_name)
-        .expect("Topic name should always transform to CString")
-        .into_raw();
-    let encoding_ptr = CString::new(encoding.to_string())
-        .expect("Encoding should always transform to CString")
-        .into_raw();
-
-    let mut result: String = Default::default();
-    let result_cb = |v: &str| result = v.to_string();
-    let code = unsafe {
-        let mut closure = result_cb;
-        let cb = get_trampoline(&closure);
-        let out = waku_sys::waku_pubsub_topic(
-            topic_name_ptr,
-            encoding_ptr,
-            cb,
-            &mut closure as *mut _ as *mut c_void,
-        );
-
-        drop(CString::from_raw(topic_name_ptr));
-        drop(CString::from_raw(encoding_ptr));
-
-        out
-    };
-
-    handle_response(code, &result).expect("&str from result should always be extracted")
 }
 
 /// Default pubsub topic used for exchanging waku messages defined in [RFC 10](https://rfc.vac.dev/spec/10/)
@@ -191,27 +162,25 @@ pub fn waku_enough_peers(pubsub_topic: Option<WakuPubSubTopic>) -> Result<bool> 
     handle_response(code, &result)
 }
 
-pub fn waku_relay_subscribe(pubsub_topic: Option<WakuPubSubTopic>) -> Result<()> {
-    let pubsub_topic = pubsub_topic
-        .unwrap_or_else(waku_default_pubsub_topic)
-        .to_string();
-
-    let pubsub_topic_ptr = CString::new(pubsub_topic)
-        .expect("CString should build properly from pubsub topic")
-        .into_raw();
-
+pub fn waku_relay_subscribe(content_filter: &ContentFilter) -> Result<()> {
+    let content_filter_ptr = CString::new(
+        serde_json::to_string(content_filter)
+            .expect("ContentFilter should always succeed to serialize"),
+    )
+    .expect("ContentFilter should always be able to be serialized")
+    .into_raw();
     let mut error: String = Default::default();
     let error_cb = |v: &str| error = v.to_string();
     let code = unsafe {
         let mut closure = error_cb;
         let cb = get_trampoline(&closure);
         let out = waku_sys::waku_relay_subscribe(
-            pubsub_topic_ptr,
+            content_filter_ptr,
             cb,
             &mut closure as *mut _ as *mut c_void,
         );
 
-        drop(CString::from_raw(pubsub_topic_ptr));
+        drop(CString::from_raw(content_filter_ptr));
 
         out
     };
@@ -219,27 +188,25 @@ pub fn waku_relay_subscribe(pubsub_topic: Option<WakuPubSubTopic>) -> Result<()>
     handle_no_response(code, &error)
 }
 
-pub fn waku_relay_unsubscribe(pubsub_topic: Option<WakuPubSubTopic>) -> Result<()> {
-    let pubsub_topic = pubsub_topic
-        .unwrap_or_else(waku_default_pubsub_topic)
-        .to_string();
-
-    let pubsub_topic_ptr = CString::new(pubsub_topic)
-        .expect("CString should build properly from pubsub topic")
-        .into_raw();
-
+pub fn waku_relay_unsubscribe(content_filter: &ContentFilter) -> Result<()> {
+    let content_filter_ptr = CString::new(
+        serde_json::to_string(content_filter)
+            .expect("ContentFilter should always succeed to serialize"),
+    )
+    .expect("ContentFilter should always be able to be serialized")
+    .into_raw();
     let mut error: String = Default::default();
     let error_cb = |v: &str| error = v.to_string();
     let code = unsafe {
         let mut closure = error_cb;
         let cb = get_trampoline(&closure);
         let out = waku_sys::waku_relay_subscribe(
-            pubsub_topic_ptr,
+            content_filter_ptr,
             cb,
             &mut closure as *mut _ as *mut c_void,
         );
 
-        drop(CString::from_raw(pubsub_topic_ptr));
+        drop(CString::from_raw(content_filter_ptr));
 
         out
     };

@@ -1497,12 +1497,13 @@ checksum = "49874b5167b65d7193b8aba1567f5c7d93d001cafc34600cee003eda787e483f"
 
 [[package]]
 name = "waku-bindings"
-version = "0.1.1"
+version = "0.5.0"
 dependencies = [
  "aes-gcm",
  "base64 0.21.0",
  "enr",
  "hex",
+ "libc",
  "multiaddr",
  "once_cell",
  "rand",
@@ -1517,7 +1518,7 @@ dependencies = [
 
 [[package]]
 name = "waku-sys"
-version = "0.1.0"
+version = "0.5.0"
 dependencies = [
  "bindgen",
 ]
