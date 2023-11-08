@@ -159,7 +159,7 @@ async fn discv5_echo() -> Result<(), String> {
     // Subscribe to default channel.
     let content_filter = ContentFilter::new(Some(waku_default_pubsub_topic()), vec![]);
     node.relay_subscribe(&content_filter)?;
-    let content_topic = WakuContentTopic::new("toychat", 2, "huilong", Encoding::Proto);
+    let content_topic = WakuContentTopic::new("toychat", "2", "huilong", Encoding::Proto);
 
     let topics = node.relay_topics()?;
     let default_topic = waku_default_pubsub_topic();
@@ -218,7 +218,7 @@ async fn default_echo() -> Result<(), String> {
     // subscribe to default channel
     let content_filter = ContentFilter::new(Some(waku_default_pubsub_topic()), vec![]);
     node.relay_subscribe(&content_filter)?;
-    let content_topic = WakuContentTopic::new("toychat", 2, "huilong", Encoding::Proto);
+    let content_topic = WakuContentTopic::new("toychat", "2", "huilong", Encoding::Proto);
 
     let sleep = time::sleep(Duration::from_secs(ECHO_TIMEOUT));
     tokio::pin!(sleep);
