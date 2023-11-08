@@ -69,8 +69,8 @@ fn retrieve_history(
     let peer = node_handle
         .peers()?
         .iter()
+        .find(|&peer| peer.peer_id() != &self_id)
         .cloned()
-        .find(|peer| peer.peer_id() != &self_id)
         .unwrap();
 
     let result = node_handle.store_query(
