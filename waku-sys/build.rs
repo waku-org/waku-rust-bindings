@@ -95,7 +95,8 @@ fn main() {
     let project_dir = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap());
 
     // Skip building go waku binary if in Rust Docs environment.
-    if std::env::var("DOCS_RS").is_err() {
+    // TODO: use DOCS_RS env var (proc-macro failure needs to be resolved).
+    if !cfg!(feature = "private-docs-rs") {
         let go_bin = get_go_bin();
         build_go_waku_lib(&go_bin, &project_dir);
     }

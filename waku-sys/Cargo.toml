@@ -30,6 +30,10 @@ exclude = [
 [lib]
 crate-type = ["rlib"]
 
+# Prevent building Waku go when building docs on docs.rs.
+[package.metadata.docs.rs]
+features = ["private-docs-rs"]
+
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]
 
