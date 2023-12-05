@@ -45,12 +45,6 @@ fn build_go_waku_lib(go_bin: &str, project_dir: &Path) {
         .arg(out_dir.join("libgowaku.a"))
         .arg("./library/c");
 
-    // Setting `GOCACHE=/tmp/` for crates.io job that builds documentation
-    // when a crate is being published or updated.
-    if std::env::var("DOCS_RS").is_ok() {
-        cmd.env("GOCACHE", "/tmp/");
-    }
-
     cmd.status()
         .map_err(|e| println!("cargo:warning=go build failed due to: {e}"))
         .unwrap();
@@ -98,10 +92,13 @@ fn generate_bindgen_code() {
 
 #[cfg(not(doc))]
 fn main() {
-    let go_bin = get_go_bin();
-
     let project_dir = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap());
 
-    build_go_waku_lib(&go_bin, &project_dir);
+    // Skip building go waku binary if in Rust Docs environment.
+    if std::env::var("DOCS_RS").is_err() {
+        let go_bin = get_go_bin();
+        build_go_waku_lib(&go_bin, &project_dir);
+    }
+
     generate_bindgen_code();
 }
