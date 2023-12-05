@@ -5,3 +5,5 @@ members = [
     "waku-sys",
     "examples/toy-chat"
 ]
+
+resolver = "2"
