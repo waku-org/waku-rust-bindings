@@ -15,16 +15,16 @@ use crate::utils::{get_trampoline, handle_json_response, handle_no_response, han
 /// As per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_content_topicchar-applicationname-unsigned-int-applicationversion-char-contenttopicname-char-encoding)
 pub fn waku_create_content_topic(
     application_name: &str,
-    application_version: usize,
+    application_version: &str,
     content_topic_name: &str,
     encoding: Encoding,
 ) -> WakuContentTopic {
     let application_name_ptr = CString::new(application_name)
         .expect("Application name should always transform to CString")
         .into_raw();
-    let application_version = application_version
-        .try_into()
-        .expect("Version should fit within an u32");
+    let application_version_ptr = CString::new(application_version)
+        .expect("Application version should always transform to CString")
+        .into_raw();
     let content_topic_name_ptr = CString::new(content_topic_name)
         .expect("Content topic should always transform to CString")
         .into_raw();
@@ -39,7 +39,7 @@ pub fn waku_create_content_topic(
         let cb = get_trampoline(&closure);
         let out = waku_sys::waku_content_topic(
             application_name_ptr,
-            application_version,
+            application_version_ptr,
             content_topic_name_ptr,
             encoding_ptr,
             cb,
@@ -47,6 +47,7 @@ pub fn waku_create_content_topic(
         );
 
         drop(CString::from_raw(application_name_ptr));
+        drop(CString::from_raw(application_version_ptr));
         drop(CString::from_raw(content_topic_name_ptr));
         drop(CString::from_raw(encoding_ptr));
 

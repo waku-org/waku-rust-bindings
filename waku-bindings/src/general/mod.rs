@@ -9,6 +9,7 @@ use aes_gcm::{Aes256Gcm, Key};
 use base64::Engine;
 use secp256k1::{ecdsa::Signature, PublicKey, SecretKey};
 use serde::{de::Error, Deserialize, Deserializer, Serialize, Serializer};
+use serde_aux::prelude::*;
 use sscanf::{scanf, RegexRepresentation};
 // internal
 use crate::decrypt::{waku_decode_asymmetric, waku_decode_symmetric};
@@ -71,6 +72,7 @@ pub struct WakuMessage {
     #[serde(default)]
     version: WakuMessageVersion,
     /// Unix timestamp in nanoseconds
+    #[serde(deserialize_with = "deserialize_number_from_string")]
     timestamp: usize,
     #[serde(with = "base64_serde", default = "Vec::new")]
     meta: Vec<u8>,
@@ -442,7 +444,7 @@ impl RegexRepresentation for Encoding {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct WakuContentTopic {
     pub application_name: Cow<'static, str>,
-    pub version: usize,
+    pub version: Cow<'static, str>,
     pub content_topic_name: Cow<'static, str>,
     pub encoding: Encoding,
 }
@@ -450,13 +452,13 @@ pub struct WakuContentTopic {
 impl WakuContentTopic {
     pub const fn new(
         application_name: &'static str,
-        version: usize,
+        version: &'static str,
         content_topic_name: &'static str,
         encoding: Encoding,
     ) -> Self {
         Self {
             application_name: Cow::Borrowed(application_name),
-            version,
+            version: Cow::Borrowed(version),
             content_topic_name: Cow::Borrowed(content_topic_name),
             encoding,
         }
@@ -468,11 +470,11 @@ impl FromStr for WakuContentTopic {
 
     fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
         if let Ok((application_name, version, content_topic_name, encoding)) =
-            scanf!(s, "/{}/{}/{}/{:/.+?/}", String, usize, String, Encoding)
+            scanf!(s, "/{}/{}/{}/{:/.+?/}", String, String, String, Encoding)
         {
             Ok(WakuContentTopic {
                 application_name: Cow::Owned(application_name),
-                version,
+                version: Cow::Owned(version),
                 content_topic_name: Cow::Owned(content_topic_name),
                 encoding,
             })
@@ -600,7 +602,7 @@ mod tests {
 
     #[test]
     fn encode_decode() {
-        let content_topic = WakuContentTopic::new("hello", 2, "world", Encoding::Proto);
+        let content_topic = WakuContentTopic::new("hello", "2", "world", Encoding::Proto);
         let message = WakuMessage::new(
             "hello",
             content_topic,

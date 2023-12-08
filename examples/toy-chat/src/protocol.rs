@@ -3,7 +3,7 @@ use prost::Message;
 use waku_bindings::{Encoding, WakuContentTopic};
 
 pub static TOY_CHAT_CONTENT_TOPIC: WakuContentTopic =
-    WakuContentTopic::new("toy-chat", 2, "huilong", Encoding::Proto);
+    WakuContentTopic::new("toy-chat", "2", "huilong", Encoding::Proto);
 
 #[derive(Clone, Message)]
 pub struct Chat2Message {
