@@ -9,6 +9,7 @@ use aes_gcm::{Aes256Gcm, Key};
 use base64::Engine;
 use secp256k1::{ecdsa::Signature, PublicKey, SecretKey};
 use serde::{de::Error, Deserialize, Deserializer, Serialize, Serializer};
+use serde_aux::prelude::*;
 use sscanf::{scanf, RegexRepresentation};
 // internal
 use crate::decrypt::{waku_decode_asymmetric, waku_decode_symmetric};
@@ -71,6 +72,7 @@ pub struct WakuMessage {
     #[serde(default)]
     version: WakuMessageVersion,
     /// Unix timestamp in nanoseconds
+    #[serde(deserialize_with = "deserialize_number_from_string")]
     timestamp: usize,
     #[serde(with = "base64_serde", default = "Vec::new")]
     meta: Vec<u8>,
