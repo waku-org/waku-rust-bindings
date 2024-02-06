@@ -29,7 +29,6 @@ pub use config::{GossipSubParams, WakuLogLevel, WakuNodeConfig, WebsocketParams}
 pub use discovery::{waku_discv5_update_bootnodes, waku_dns_discovery, DnsInfo};
 pub use peers::{Protocol, WakuPeerData, WakuPeers};
 pub use relay::{waku_create_content_topic, waku_default_pubsub_topic};
-pub use store::{waku_local_store_query, waku_store_query};
 
 /// Shared flag to check if a waku node is already running in the current process
 static WAKU_NODE_INITIALIZED: Mutex<bool> = Mutex::new(false);

@@ -68,6 +68,13 @@ pub struct WakuNodeConfig {
     #[default(Some(9000))]
     #[serde(rename = "discV5UDPPort")]
     pub discv5_udp_port: Option<u16>,
+    /// Array of DNS discovery URLs
+    #[serde(rename = "dnsDiscoveryURLs", default)]
+    pub dns_discovery_urls: Vec<String>,
+    /// Use custom nameserver. Default `` (uses the OS nameserver)
+    #[default(Some("".to_string()))]
+    #[serde(rename = "dnsDiscoveryNameServer")]
+    pub dns_discovery_nameserver: Option<String>,
     /// Gossipsub custom configuration.
     pub gossipsub_params: Option<GossipSubParams>,
     /// The domain name resolving to the node's public IPv4 address.
