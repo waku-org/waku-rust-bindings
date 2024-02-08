@@ -1,13 +1,12 @@
 //! Node lifcycle [mangement](https://rfc.vac.dev/spec/36/#node-management) related methods
 
 // std
-use multiaddr::Multiaddr;
 use std::ffi::CString;
 // crates
 use libc::*;
 // internal
 use super::config::WakuNodeConfig;
-use crate::general::{PeerId, Result};
+use crate::general::Result;
 use crate::utils::{get_trampoline, handle_json_response, handle_no_response, handle_response};
 
 /// Instantiates a Waku node
@@ -63,34 +62,6 @@ pub fn waku_stop() -> Result<()> {
     };
 
     handle_no_response(code, &error)
-}
-
-/// If the execution is successful, the result is the peer ID as a string (base58 encoded)
-/// as per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_stop)
-pub fn waku_peer_id() -> Result<PeerId> {
-    let mut result: String = Default::default();
-    let result_cb = |v: &str| result = v.to_string();
-    let code = unsafe {
-        let mut closure = result_cb;
-        let cb = get_trampoline(&closure);
-        waku_sys::waku_peerid(cb, &mut closure as *mut _ as *mut c_void)
-    };
-
-    handle_response(code, &result)
-}
-
-/// Get the multiaddresses the Waku node is listening to
-/// as per [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_listen_addresses)
-pub fn waku_listen_addresses() -> Result<Vec<Multiaddr>> {
-    let mut result: String = Default::default();
-    let result_cb = |v: &str| result = v.to_string();
-    let code = unsafe {
-        let mut closure = result_cb;
-        let cb = get_trampoline(&closure);
-        waku_sys::waku_listen_addresses(cb, &mut closure as *mut _ as *mut c_void)
-    };
-
-    handle_json_response(code, &result)
 }
 
 #[cfg(test)]

@@ -43,7 +43,7 @@ where
 }
 
 pub fn handle_no_response(code: i32, error: &str) -> Result<()> {
-    match code {
+    match code as u32 {
         RET_OK => Ok(()),
         RET_ERR => Err(format!("waku error: {}", error)),
         RET_MISSING_CALLBACK => Err("missing callback".to_string()),
@@ -52,7 +52,7 @@ pub fn handle_no_response(code: i32, error: &str) -> Result<()> {
 }
 
 pub fn handle_json_response<F: DeserializeOwned>(code: i32, result: &str) -> Result<F> {
-    match code {
+    match code as u32 {
         RET_OK => decode(result),
         RET_ERR => Err(format!("waku error: {}", result)),
         RET_MISSING_CALLBACK => Err("missing callback".to_string()),
@@ -61,7 +61,7 @@ pub fn handle_json_response<F: DeserializeOwned>(code: i32, result: &str) -> Res
 }
 
 pub fn handle_response<F: FromStr>(code: i32, result: &str) -> Result<F> {
-    match code {
+    match code as u32 {
         RET_OK => result
             .parse()
             .map_err(|_| format!("could not parse value: {}", result)),
