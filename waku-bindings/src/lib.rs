@@ -5,6 +5,10 @@ mod general;
 mod node;
 mod utils;
 
+// Required so functions inside libwaku can call RLN functions even if we
+// use it within the bindings functions
+#[allow(clippy::single_component_path_imports)]
+#[allow(unused)]
 use rln;
 
 pub use node::{

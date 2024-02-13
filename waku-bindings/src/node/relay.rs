@@ -11,6 +11,7 @@ use crate::utils::{get_trampoline, handle_json_response, handle_no_response, han
 
 /// Create a content topic according to [RFC 23](https://rfc.vac.dev/spec/23/)
 /// As per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_content_topicchar-applicationname-unsigned-int-applicationversion-char-contenttopicname-char-encoding)
+#[allow(clippy::not_unsafe_ptr_arg_deref)]
 pub fn waku_create_content_topic(
     ctx: *mut c_void,
     application_name: &str,
@@ -55,6 +56,7 @@ pub fn waku_create_content_topic(
 }
 
 /// Default pubsub topic used for exchanging waku messages defined in [RFC 10](https://rfc.vac.dev/spec/10/)
+#[allow(clippy::not_unsafe_ptr_arg_deref)]
 pub fn waku_default_pubsub_topic(ctx: *mut c_void) -> WakuPubSubTopic {
     let mut result: String = Default::default();
     let result_cb = |v: &str| result = v.to_string();

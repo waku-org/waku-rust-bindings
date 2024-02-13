@@ -2,7 +2,6 @@
 
 // std
 use std::ffi::CString;
-use std::ptr;
 // crates
 use libc::c_void;
 // internal
@@ -36,7 +35,7 @@ pub fn waku_new(config: Option<WakuNodeConfig>) -> Result<*mut c_void> {
 
     // TODO: create error handler function, format of err message is
     // {"message":"The actual message","eventType":"error"}
-    if error != "" {
+    if !error.is_empty() {
         return Err(error);
     }
 

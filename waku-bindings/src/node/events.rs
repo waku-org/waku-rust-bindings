@@ -5,11 +5,8 @@
 //! When an event is emitted, this callback will be triggered receiving a [`Signal`]
 
 // std
-use std::ffi::{c_char, c_int, c_void, CStr};
-use std::ops::Deref;
-use std::sync::Mutex;
+use std::ffi::c_void;
 // crates
-use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 // internal
 use crate::general::{WakuMessage, WakuPubSubTopic};
@@ -70,22 +67,20 @@ impl WakuMessageEvent {
 }
 
 /// Wrapper callback, it transformst the `*const c_char` into a [`Signal`]
-/// and executes the [`CALLBACK`] funtion with it
-fn callback() -> WakuCallBack {
+fn callback<F: FnMut(Signal) + Send + Sync>(mut f: F) -> WakuCallBack {
     let cb = |v: &str| {
-        print!("{}", v);
         let data: Signal = serde_json::from_str(v).expect("Parsing signal to succeed");
+        f(data);
     };
 
-    let mut closure = cb;
-    get_trampoline(&closure)
+    get_trampoline(&cb)
 }
 
 /// Register callback to act as event handler and receive application signals,
 /// which are used to react to asynchronous events in Waku
-pub fn waku_set_event_callback(ctx: *mut c_void) {
+pub fn waku_set_event_callback<F: FnMut(Signal) + Send + Sync>(ctx: *mut c_void, f: F) {
     // <F: FnMut(Signal) + Send + Sync + 'static> , , f: F
-    unsafe { waku_sys::waku_set_event_callback(ctx, callback(), std::ptr::null_mut()) };
+    unsafe { waku_sys::waku_set_event_callback(ctx, callback(f), std::ptr::null_mut()) };
 }
 
 #[cfg(test)]

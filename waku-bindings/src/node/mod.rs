@@ -70,8 +70,8 @@ impl WakuNodeHandle {
         relay::waku_relay_unsubscribe(self.ctx, pubsub_topic)
     }
 
-    pub fn set_event_callback(&self) {
-        events::waku_set_event_callback(self.ctx)
+    pub fn set_event_callback<F: FnMut(Signal) + Send + Sync>(&self, f: F) {
+        events::waku_set_event_callback(self.ctx, f)
     }
 }
 
