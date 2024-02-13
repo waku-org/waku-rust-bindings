@@ -7,12 +7,12 @@ mod node;
 mod utils;
 
 pub use node::{
-    waku_create_content_topic, waku_default_pubsub_topic, waku_new, Initialized, Key, Multiaddr,
-    PublicKey, Running, SecretKey, WakuNodeConfig, WakuNodeHandle,
+    waku_create_content_topic, waku_default_pubsub_topic, waku_new, Key, Multiaddr, PublicKey,
+    SecretKey, WakuNodeConfig, WakuNodeHandle,
 };
 
 pub use general::{
-    MessageId, Result, WakuContentTopic, WakuMessage, WakuMessageVersion, WakuPubSubTopic,
+    Encoding, MessageId, Result, WakuContentTopic, WakuMessage, WakuMessageVersion, WakuPubSubTopic,
 };
 
 pub use events::{waku_set_event_callback, Event, Signal, WakuMessageEvent};

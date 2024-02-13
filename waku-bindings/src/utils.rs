@@ -1,9 +1,10 @@
 use crate::general::Result;
 use core::str::FromStr;
 use serde::de::DeserializeOwned;
-use std::ffi::CStr;
+use std::{slice, str};
 use waku_sys::WakuCallBack;
 use waku_sys::{RET_ERR, RET_MISSING_CALLBACK, RET_OK};
+
 pub fn decode<T: DeserializeOwned>(input: &str) -> Result<T> {
     serde_json::from_str(input)
         .map_err(|err| format!("could not deserialize waku response: {}", err))
@@ -12,6 +13,7 @@ pub fn decode<T: DeserializeOwned>(input: &str) -> Result<T> {
 unsafe extern "C" fn trampoline<F>(
     _ret_code: ::std::os::raw::c_int,
     data: *const ::std::os::raw::c_char,
+    data_len: usize,
     user_data: *mut ::std::os::raw::c_void,
 ) where
     F: FnMut(&str),
@@ -21,14 +23,7 @@ unsafe extern "C" fn trampoline<F>(
     let response = if data.is_null() {
         ""
     } else {
-        unsafe { CStr::from_ptr(data) }
-            .to_str()
-            .map_err(|err| {
-                format!(
-                    "could not retrieve response from pointer returned by waku: {}",
-                    err
-                )
-            })
+        str::from_utf8(slice::from_raw_parts(data as *mut u8, data_len))
             .expect("could not retrieve response")
     };
 

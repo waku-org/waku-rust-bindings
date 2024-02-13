@@ -239,8 +239,7 @@ mod base64_serde {
 mod tests {
     use super::*;
     use crate::WakuPubSubTopic;
-    use secp256k1::{rand, Secp256k1};
-    use std::time::SystemTime;
+
     #[test]
     fn parse_waku_topic() {
         let s = "/waku/2/default-waku/proto";

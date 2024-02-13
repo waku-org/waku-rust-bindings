@@ -67,15 +67,6 @@ impl WakuMessageEvent {
     }
 }
 
-/// Shared callback slot. Callbacks are registered here so they can be accessed by the extern "C"
-#[allow(clippy::type_complexity)]
-static CALLBACK: Lazy<Mutex<Box<dyn FnMut(Signal) + Send + Sync>>> =
-    Lazy::new(|| Mutex::new(Box::new(|_| {})));
-
-/// Register global callback
-fn set_callback<F: FnMut(Signal) + Send + Sync + 'static>(f: F) {
-    *CALLBACK.lock().unwrap() = Box::new(f);
-}
 
 /// Wrapper callback, it transformst the `*const c_char` into a [`Signal`]
 /// and executes the [`CALLBACK`] funtion with it
@@ -94,7 +85,7 @@ extern "C" fn callback(_ret_code: c_int, data: *const c_char, _user_data: *mut c
 /// Register callback to act as event handler and receive application signals,
 /// which are used to react to asynchronous events in Waku
 pub fn waku_set_event_callback<F: FnMut(Signal) + Send + Sync + 'static>(f: F) {
-    set_callback(f);
+    // TODO: 
     unsafe { waku_sys::waku_set_event_callback(Some(callback)) };
 }
 

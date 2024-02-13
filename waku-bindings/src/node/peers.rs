@@ -15,7 +15,11 @@ use crate::utils::{get_trampoline, handle_json_response, handle_no_response, han
 /// If the function execution takes longer than `timeout` value, the execution will be canceled and an error returned.
 /// Use 0 for no timeout
 /// As per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_connect_peerchar-address-int-timeoutms)
-pub fn waku_connect(address: &Multiaddr, timeout: Option<Duration>) -> Result<()> {
+pub fn waku_connect(
+    ctx: *mut c_void,
+    address: &Multiaddr,
+    timeout: Option<Duration>,
+) -> Result<()> {
     let address_ptr = CString::new(address.to_string())
         .expect("CString should build properly from multiaddress")
         .into_raw();
@@ -26,9 +30,10 @@ pub fn waku_connect(address: &Multiaddr, timeout: Option<Duration>) -> Result<()
         let mut closure = error_cb;
         let cb = get_trampoline(&closure);
         let out = waku_sys::waku_connect(
+            ctx,
             address_ptr,
             timeout
-                .map(|duration| duration.as_millis().try_into().unwrap_or(i32::MAX))
+                .map(|duration| duration.as_millis().try_into().unwrap_or(u32::MAX))
                 .unwrap_or(0),
             cb,
             &mut closure as *mut _ as *mut c_void,
