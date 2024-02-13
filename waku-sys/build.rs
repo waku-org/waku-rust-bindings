@@ -3,6 +3,8 @@ use std::env::set_current_dir;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
+extern crate cc;
+
 fn build_nwaku_lib(project_dir: &Path) {
     let vendor_path = project_dir.join("vendor");
 
@@ -19,12 +21,25 @@ fn build_nwaku_lib(project_dir: &Path) {
 
 fn generate_bindgen_code(project_dir: &Path) {
     let vendor_path = project_dir.join("vendor");
-    let build_dir = vendor_path.join("build");
     let header_path = vendor_path.join("library/libwaku.h");
 
-    println!("cargo:rustc-link-search={}", build_dir.display());
-    println!("cargo:rustc-link-lib=static=waku");
+    cc::Build::new()
+    .object(vendor_path.join("vendor/nim-libbacktrace/libbacktrace_wrapper.o").display().to_string())
+    .compile("libbacktrace_wrapper");
+
     println!("cargo:rerun-if-changed={}", header_path.display());
+    println!("cargo:rustc-link-search={}", vendor_path.join("build").display());
+    println!("cargo:rustc-link-lib=static=waku");  
+    println!("cargo:rustc-link-search={}",  vendor_path.join("vendor/nim-nat-traversal/vendor/miniupnp/miniupnpc/build").display());
+    println!("cargo:rustc-link-lib=static=miniupnpc");
+    println!("cargo:rustc-link-search={}",  vendor_path.join("vendor/nim-nat-traversal/vendor/libnatpmp-upstream").display());
+    println!("cargo:rustc-link-lib=static=natpmp");
+    println!("cargo:rustc-link-lib=dl");
+    println!("cargo:rustc-link-lib=m");
+    println!("cargo:rustc-link-search=native={}", vendor_path.join("vendor/nim-libbacktrace/install/usr/lib").display());
+    println!("cargo:rustc-link-lib=static=backtrace");
+
+    // TODO: Determine if pthread is automatically included
 
     // Generate waku bindings with bindgen
     let bindings = bindgen::Builder::default()
