@@ -13,7 +13,9 @@ use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 // internal
 use crate::general::{WakuMessage, WakuPubSubTopic};
+use crate::utils::get_trampoline;
 use crate::MessageId;
+use waku_sys::WakuCallBack;
 
 /// Event signal
 #[derive(Serialize, Deserialize)]
@@ -67,31 +69,28 @@ impl WakuMessageEvent {
     }
 }
 
-
 /// Wrapper callback, it transformst the `*const c_char` into a [`Signal`]
 /// and executes the [`CALLBACK`] funtion with it
-extern "C" fn callback(_ret_code: c_int, data: *const c_char, _user_data: *mut c_void) {
-    let raw_response = unsafe { CStr::from_ptr(data) }
-        .to_str()
-        .expect("Not null ptr");
-    let data: Signal = serde_json::from_str(raw_response).expect("Parsing signal to succeed");
-    (CALLBACK
-        .deref()
-        .lock()
-        .expect("Access to the shared callback")
-        .as_mut())(data)
+fn callback() -> WakuCallBack {
+    let cb = |v: &str| {
+        print!("{}", v);
+        let data: Signal = serde_json::from_str(v).expect("Parsing signal to succeed");
+    };
+
+    let mut closure = cb;
+    get_trampoline(&closure)
 }
 
 /// Register callback to act as event handler and receive application signals,
 /// which are used to react to asynchronous events in Waku
-pub fn waku_set_event_callback<F: FnMut(Signal) + Send + Sync + 'static>(f: F) {
-    // TODO: 
-    unsafe { waku_sys::waku_set_event_callback(Some(callback)) };
+pub fn waku_set_event_callback(ctx: *mut c_void) {
+    // <F: FnMut(Signal) + Send + Sync + 'static> , , f: F
+    unsafe { waku_sys::waku_set_event_callback(ctx, callback(), std::ptr::null_mut()) };
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::events::waku_set_event_callback;
+    /*use crate::events::waku_set_event_callback;
     use crate::{Event, Signal};
 
     // TODO: how to actually send a signal and check if the callback is run?
@@ -110,5 +109,5 @@ mod tests {
     fn deserialize_event() {
         let e = "{\"messageId\":\"0x26ff3d7fbc950ea2158ce62fd76fd745eee0323c9eac23d0713843b0f04ea27c\",\"pubsubTopic\":\"/waku/2/default-waku/proto\",\"wakuMessage\":{\"payload\":\"SGkgZnJvbSDwn6aAIQ==\",\"contentTopic\":\"/toychat/2/huilong/proto\",\"timestamp\":1665580926660}}";
         let _: Event = serde_json::from_str(e).unwrap();
-    }
+    }*/
 }

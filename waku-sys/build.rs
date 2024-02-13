@@ -40,6 +40,7 @@ fn generate_bindgen_code(project_dir: &Path) {
     println!("cargo:rustc-link-lib=static=backtrace");
 
     // TODO: Determine if pthread is automatically included
+    // TODO: Test in other architectures
 
     // Generate waku bindings with bindgen
     let bindings = bindgen::Builder::default()

@@ -1,6 +1,7 @@
 //! Waku node implementation
 
 mod config;
+mod events;
 mod management;
 mod peers;
 mod relay;
@@ -17,6 +18,7 @@ use libc::c_void;
 use crate::general::{MessageId, Result, WakuMessage, WakuPubSubTopic};
 
 pub use config::WakuNodeConfig;
+pub use events::{Event, Signal, WakuMessageEvent};
 pub use relay::{waku_create_content_topic, waku_default_pubsub_topic};
 
 /// Handle to the underliying waku node
@@ -27,13 +29,13 @@ pub struct WakuNodeHandle {
 impl WakuNodeHandle {
     /// Start a Waku node mounting all the protocols that were enabled during the Waku node instantiation.
     /// as per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_start)
-    pub fn start(self) -> Result<()> {
+    pub fn start(&self) -> Result<()> {
         management::waku_start(self.ctx)
     }
 
     /// Stops a Waku node
     /// as per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_stop)
-    pub fn stop(self) -> Result<()> {
+    pub fn stop(&self) -> Result<()> {
         management::waku_stop(self.ctx)
     }
 
@@ -66,6 +68,10 @@ impl WakuNodeHandle {
     /// Closes the pubsub subscription to stop receiving messages matching a content filter. No more messages will be received from this pubsub topic
     pub fn relay_unsubscribe(&self, pubsub_topic: &WakuPubSubTopic) -> Result<()> {
         relay::waku_relay_unsubscribe(self.ctx, pubsub_topic)
+    }
+
+    pub fn set_event_callback(&self) {
+        events::waku_set_event_callback(self.ctx)
     }
 }
 

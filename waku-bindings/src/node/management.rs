@@ -2,6 +2,7 @@
 
 // std
 use std::ffi::CString;
+use std::ptr;
 // crates
 use libc::c_void;
 // internal
@@ -32,6 +33,12 @@ pub fn waku_new(config: Option<WakuNodeConfig>) -> Result<*mut c_void> {
 
         out
     };
+
+    // TODO: create error handler function, format of err message is
+    // {"message":"The actual message","eventType":"error"}
+    if error != "" {
+        return Err(error);
+    }
 
     Ok(node_ptr)
 }
@@ -68,12 +75,24 @@ pub fn waku_stop(ctx: *mut c_void) -> Result<()> {
 mod test {
     use super::waku_new;
     use crate::node::management::{waku_start, waku_stop};
+    use crate::WakuNodeConfig;
+    use secp256k1::SecretKey;
     use serial_test::serial;
+    use std::str::FromStr;
 
     #[test]
     #[serial]
     fn waku_flow() {
-        let node = waku_new(None).unwrap();
+        let node = waku_new(Some(WakuNodeConfig {
+            node_key: Some(
+                SecretKey::from_str(
+                    "05f381866cc21f6c1e2e80e07fa732008e36d942dce3206ad6dcd6793c98d609",
+                )
+                .unwrap(),
+            ), // TODO: consider making this optional
+            ..Default::default()
+        }))
+        .unwrap();
         waku_start(node).unwrap();
         waku_stop(node).unwrap();
     }
