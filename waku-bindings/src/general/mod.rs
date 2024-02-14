@@ -13,8 +13,6 @@ use sscanf::{scanf, RegexRepresentation};
 pub type WakuMessageVersion = usize;
 /// Waku message id, hex encoded sha256 digest of the message
 pub type MessageId = String;
-/// Waku pubsub topic
-pub type WakuPubSubTopic = String;
 
 /// Waku response, just a `Result` with an `String` error.
 pub type Result<T> = std::result::Result<T, String>;
@@ -29,7 +27,6 @@ pub struct WakuMessage {
     payload: Vec<u8>,
     /// The content topic to be set on the message
     content_topic: WakuContentTopic,
-    // TODO: check if missing default should be 0
     /// The Waku Message version number
     #[serde(default)]
     version: WakuMessageVersion,
@@ -238,13 +235,6 @@ mod base64_serde {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::WakuPubSubTopic;
-
-    #[test]
-    fn parse_waku_topic() {
-        let s = "/waku/2/default-waku/proto";
-        let _: WakuPubSubTopic = s.parse().unwrap();
-    }
 
     #[test]
     fn deserialize_waku_message() {
