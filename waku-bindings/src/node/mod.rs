@@ -15,10 +15,10 @@ use std::time::Duration;
 use libc::c_void;
 // internal
 
-use crate::general::{MessageId, Result, WakuMessage, WakuPubSubTopic};
+use crate::general::{MessageId, Result, WakuMessage};
 
 pub use config::WakuNodeConfig;
-pub use events::{Event, Signal, WakuMessageEvent};
+pub use events::{Event, WakuMessageEvent};
 pub use relay::{waku_create_content_topic, waku_default_pubsub_topic};
 
 /// Handle to the underliying waku node
@@ -54,23 +54,23 @@ impl WakuNodeHandle {
     pub fn relay_publish_message(
         &self,
         message: &WakuMessage,
-        pubsub_topic: &WakuPubSubTopic,
+        pubsub_topic: &String,
         timeout: Option<Duration>,
     ) -> Result<MessageId> {
         relay::waku_relay_publish_message(self.ctx, message, pubsub_topic, timeout)
     }
 
     /// Subscribe to WakuRelay to receive messages matching a content filter.
-    pub fn relay_subscribe(&self, pubsub_topic: &WakuPubSubTopic) -> Result<()> {
+    pub fn relay_subscribe(&self, pubsub_topic: &String) -> Result<()> {
         relay::waku_relay_subscribe(self.ctx, pubsub_topic)
     }
 
     /// Closes the pubsub subscription to stop receiving messages matching a content filter. No more messages will be received from this pubsub topic
-    pub fn relay_unsubscribe(&self, pubsub_topic: &WakuPubSubTopic) -> Result<()> {
+    pub fn relay_unsubscribe(&self, pubsub_topic: &String) -> Result<()> {
         relay::waku_relay_unsubscribe(self.ctx, pubsub_topic)
     }
 
-    pub fn set_event_callback<F: FnMut(Signal) + Send + Sync>(&self, f: F) {
+    pub fn set_event_callback<F: FnMut(Event) + Send + Sync + 'static>(&self, f: F) {
         events::waku_set_event_callback(self.ctx, f)
     }
 }

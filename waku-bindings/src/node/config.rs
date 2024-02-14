@@ -2,7 +2,6 @@
 
 // std
 // crates
-use crate::WakuPubSubTopic;
 use multiaddr::Multiaddr;
 use secp256k1::SecretKey;
 use serde::{Deserialize, Serialize};
@@ -29,7 +28,7 @@ pub struct WakuNodeConfig {
     /// Enable relay protocol. Default `true`
     #[default(Some(true))]
     pub relay: Option<bool>,
-    pub relay_topics: Vec<WakuPubSubTopic>,
+    pub relay_topics: Vec<String>,
     // /// Enable store protocol to persist message history
     // #[default(Some(false))]
     // pub store: Option<bool>,
