@@ -6,13 +6,17 @@
 
 // std
 use std::ffi::c_void;
+use once_cell::sync::Lazy;
 // crates
+use std::ops::Deref;
 use serde::{Deserialize, Serialize};
 // internal
 use crate::general::WakuMessage;
 use crate::utils::get_trampoline;
 use crate::MessageId;
 use waku_sys::WakuCallBack;
+
+use std::sync::Mutex;
 
 /// Waku event
 /// For now just WakuMessage is supported
@@ -51,34 +55,21 @@ impl WakuMessageEvent {
     }
 }
 
-/// Wrapper callback, it transformst the `*const c_char` into an [`Event`]
-fn callback<F: FnMut(Event) + Send + Sync>(mut f: F) -> WakuCallBack {
-    let cb = move |v: &str| {
-        let data: Event = serde_json::from_str(v).expect("Parsing event to succeed");
-        println!("EXEC CALLBACK");
-        f(data);
-        println!("SUCCESS!");
-    };
-
-    get_trampoline(&cb)
-}
-
 /// Register callback to act as event handler and receive application events,
 /// which are used to react to asynchronous events in Waku
-pub fn waku_set_event_callback<F: FnMut(Event) + Send + Sync>(ctx: *mut c_void, f: F) {
-    unsafe { waku_sys::waku_set_event_callback(ctx, callback(f), std::ptr::null_mut()) };
+pub fn waku_set_event_callback<F: FnMut(Event) + Send + Sync + 'static + ?Sized>(ctx: *mut c_void, b: &Lazy<Mutex<Box<F>>>) {
+   // TODO: call somehow `unsafe { waku_sys::waku_set_event_callback(ctx, cb) }`;
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::node::events::callback;
     use crate::Event;
 
     // TODO: how to actually send an event and check if the callback is run?
-    #[test]
-    fn set_callback() {
+    //#[test]
+    /*fn set_callback() {
         callback(|_event| {});
-    }
+    }*/
 
     #[test]
     fn deserialize_message_event() {

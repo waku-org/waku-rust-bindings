@@ -18,8 +18,6 @@ unsafe extern "C" fn trampoline<F>(
 ) where
     F: FnMut(&str),
 {
-    let user_data = &mut *(user_data as *mut F);
-
     let response = if data.is_null() {
         ""
     } else {
@@ -27,7 +25,10 @@ unsafe extern "C" fn trampoline<F>(
             .expect("could not retrieve response")
     };
 
-    user_data(response);
+    if !user_data.is_null() {
+        let user_data = &mut *(user_data as *mut F);
+        user_data(response);
+    }
 }
 
 pub fn get_trampoline<F>(_closure: &F) -> WakuCallBack
