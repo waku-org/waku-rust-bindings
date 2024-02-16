@@ -1,25 +1,19 @@
 //! # Waku
 //!
 //! Implementation on top of [`waku-bindings`](https://rfc.vac.dev/spec/36/)
-mod decrypt;
-mod encrypt;
-mod events;
 mod general;
 mod node;
 mod utils;
 
+// Required so functions inside libwaku can call RLN functions even if we
+// use it within the bindings functions
+#[allow(clippy::single_component_path_imports)]
+#[allow(unused)]
+use rln;
+
 pub use node::{
-    waku_create_content_topic, waku_default_pubsub_topic, waku_discv5_update_bootnodes,
-    waku_dns_discovery, waku_new, Aes256Gcm, DnsInfo, GossipSubParams, Initialized, Key, Multiaddr,
-    Protocol, PublicKey, Running, SecretKey, WakuLogLevel, WakuNodeConfig, WakuNodeHandle,
-    WakuPeerData, WakuPeers, WebsocketParams,
+    waku_create_content_topic, waku_default_pubsub_topic, waku_new, Event, Key, Multiaddr,
+    PublicKey, SecretKey, WakuMessageEvent, WakuNodeConfig, WakuNodeHandle,
 };
 
-pub use general::{
-    ContentFilter, DecodedPayload, Encoding, FilterSubscriptionDetail, FilterSubscriptionResult,
-    LegacyContentFilter, LegacyFilterSubscription, MessageId, MessageIndex, PagingOptions, PeerId,
-    ProtocolId, Result, StoreQuery, StoreResponse, WakuContentTopic, WakuMessage,
-    WakuMessageVersion, WakuPubSubTopic,
-};
-
-pub use events::{waku_set_event_callback, Event, Signal, WakuMessageEvent};
+pub use general::{Encoding, MessageId, Result, WakuContentTopic, WakuMessage, WakuMessageVersion};
