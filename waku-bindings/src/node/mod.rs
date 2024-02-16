@@ -9,10 +9,11 @@ mod relay;
 // std
 pub use aes_gcm::{Aes256Gcm, Key};
 pub use multiaddr::Multiaddr;
+use once_cell::sync::Lazy;
 pub use secp256k1::{PublicKey, SecretKey};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
-use once_cell::sync::Lazy;
+use tokio::sync::broadcast;
 // crates
 use libc::c_void;
 // internal
@@ -30,12 +31,12 @@ pub struct OpaqueWakunodePtr {
 unsafe impl Send for OpaqueWakunodePtr {}
 
 /// Handle to the underliying waku node
-pub struct WakuNodeHandle {
+pub struct WakuNodeHandle<Event> {
     ctx: Arc<Mutex<OpaqueWakunodePtr>>,
-    callback: Lazy<Mutex<Box<dyn FnMut(Event) + Send + Sync>>>,
+    events_channel: broadcast::Receiver<Event>,
 }
 
-impl WakuNodeHandle {
+impl<Event> WakuNodeHandle<Event> {
     /// Start a Waku node mounting all the protocols that were enabled during the Waku node instantiation.
     /// as per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_start)
     pub fn start(&self) -> Result<()> {
@@ -85,19 +86,24 @@ impl WakuNodeHandle {
         relay::waku_relay_unsubscribe(ctx.obj_ptr, pubsub_topic)
     }
 
-    pub fn set_event_callback<F: FnMut(Event) + Send + Sync + 'static>(&self, f: F) {
+    fn set_event_callback<F: FnMut(Event) + Send + Sync + 'static>(&self, f: F) {
         let mut ctx = self.ctx.lock().unwrap();
-        *self.callback.lock().unwrap() = Box::new(f);
-        events::waku_set_event_callback(ctx.obj_ptr, &self.callback)
+        events::waku_set_event_callback(ctx.obj_ptr, f)
     }
 }
 
 /// Spawn a new Waku node with the given configuration (default configuration if `None` provided)
 /// as per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_newchar-jsonconfig)
-pub fn waku_new(config: Option<WakuNodeConfig>) -> Result<WakuNodeHandle> {
+pub fn waku_new<Event>(config: Option<WakuNodeConfig>) -> Result<WakuNodeHandle<Event>> {
     let obj_ptr = management::waku_new(config)?;
-    Ok(WakuNodeHandle {
+    let (sender, receiver) = broadcast::channel(100);
+    let mut node = WakuNodeHandle::<Event> {
         ctx: Arc::new(Mutex::new(OpaqueWakunodePtr { obj_ptr })),
-        callback: Lazy::new(|| Mutex::new(Box::new(|_| {}))),
-    })
+        events_channel: receiver,
+    };
+    node.set_event_callback(move |event| {
+        // use channel here
+        sender;
+    });
+    Ok(node)
 }
