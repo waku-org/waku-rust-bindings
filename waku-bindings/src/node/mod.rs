@@ -90,6 +90,10 @@ impl<Event> WakuNodeHandle<Event> {
         let mut ctx = self.ctx.lock().unwrap();
         events::waku_set_event_callback(ctx.obj_ptr, f)
     }
+
+    pub fn events(&self) -> broadcast::Receiver<Event> {
+        self.events_channel.resubscribe()
+    }
 }
 
 /// Spawn a new Waku node with the given configuration (default configuration if `None` provided)
