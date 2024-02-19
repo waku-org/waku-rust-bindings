@@ -3,7 +3,6 @@
 mod config;
 mod discovery;
 mod filter;
-mod legacyfilter;
 mod lightpush;
 mod management;
 mod peers;
@@ -21,8 +20,8 @@ use std::time::Duration;
 // internal
 
 use crate::general::{
-    ContentFilter, FilterSubscriptionResult, LegacyFilterSubscription, MessageId, PeerId,
-    ProtocolId, Result, StoreQuery, StoreResponse, WakuMessage, WakuPubSubTopic,
+    ContentFilter, FilterSubscriptionResult, MessageId, PeerId, ProtocolId, Result, StoreQuery,
+    StoreResponse, WakuMessage, WakuPubSubTopic,
 };
 
 pub use config::{GossipSubParams, WakuLogLevel, WakuNodeConfig, WebsocketParams};
@@ -212,29 +211,6 @@ impl WakuNodeHandle<Running> {
         timeout: Option<Duration>,
     ) -> Result<MessageId> {
         lightpush::waku_lightpush_publish(message, pubsub_topic, peer_id, timeout)
-    }
-
-    /// Creates a subscription in a lightnode for messages that matches a content filter and optionally a [`WakuPubSubTopic`](`crate::general::WakuPubSubTopic`)
-    /// As per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_filter_subscribechar-filterjson-char-peerid-int-timeoutms)
-    #[deprecated]
-    pub fn legacy_filter_subscribe(
-        &self,
-        filter_subscription: &LegacyFilterSubscription,
-        peer_id: PeerId,
-        timeout: Duration,
-    ) -> Result<()> {
-        legacyfilter::waku_legacy_filter_subscribe(filter_subscription, peer_id, timeout)
-    }
-
-    /// Removes subscriptions in a light node matching a content filter and, optionally, a [`WakuPubSubTopic`](`crate::general::WakuPubSubTopic`)
-    /// As per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_filter_unsubscribechar-filterjson-int-timeoutms)
-    #[deprecated]
-    pub fn legacy_filter_unsubscribe(
-        &self,
-        filter_subscription: &LegacyFilterSubscription,
-        timeout: Duration,
-    ) -> Result<()> {
-        legacyfilter::waku_legacy_filter_unsubscribe(filter_subscription, timeout)
     }
 
     /// Creates a subscription to a filter full node matching a content filter.

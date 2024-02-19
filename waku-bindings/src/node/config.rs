@@ -50,10 +50,6 @@ pub struct WakuNodeConfig {
     /// The minimum number of peers required on a topic to allow broadcasting a message. Default `0`
     #[default(Some(0))]
     pub min_peers_to_publish: Option<usize>,
-    /// Enable filter protocol. Default `false`
-    #[default(Some(false))]
-    #[serde(rename = "legacyFilter")]
-    pub filter: Option<bool>,
     /// Set the log level. Default `INFO`. Allowed values "DEBUG", "INFO", "WARN", "ERROR", "DPANIC", "PANIC", "FATAL"
     #[default(Some(WakuLogLevel::Info))]
     pub log_level: Option<WakuLogLevel>,
