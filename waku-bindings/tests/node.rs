@@ -13,6 +13,7 @@ use waku_bindings::{
 const ECHO_TIMEOUT: u64 = 10;
 const ECHO_MESSAGE: &str = "Hi from 🦀!";
 
+const TEST_PUBSUBTOPIC: &str = "test";
 const NODES: &[&str] =
 &["/dns4/node-01.do-ams3.status.prod.statusim.net/tcp/30303/p2p/16Uiu2HAm6HZZr7aToTvEBPpiys4UxajCTU97zj5v7RNR2gbniy1D"];
 
@@ -20,7 +21,7 @@ fn try_publish_relay_messages(
     node: &WakuNodeHandle,
     msg: &WakuMessage,
 ) -> Result<HashSet<MessageId>, String> {
-    let topic = "test".to_string();
+    let topic = TEST_PUBSUBTOPIC.to_string();
     node.relay_publish_message(msg, &topic, None)?;
     node.relay_publish_message(msg, &topic, None)?;
 
@@ -42,15 +43,11 @@ fn set_callback(node: &WakuNodeHandle, tx: Sender<Response>) {
             let message = message.waku_message();
             let payload = message.payload().to_vec();
 
-            println!("===============");
-            println!("ID: {}", id);
-            println!("Sending to channel....");
             tx.send(Response {
                 id: id.to_string(),
                 payload,
             })
             .expect("send response to the receiver");
-            println!("Sent!");
         }
     });
 }
@@ -98,7 +95,7 @@ async fn default_echo() -> Result<(), String> {
         node_key: Some(
             SecretKey::from_str("05f381866cc21f6c1e2e80e07fa732008e36d942dce3206ad6dcd6793c98d609")
                 .unwrap(),
-        ), // TODO: consider making this optional
+        ),
         ..Default::default()
     };
 
@@ -112,7 +109,7 @@ async fn default_echo() -> Result<(), String> {
     }
 
     // subscribe to default channel
-    let topic = "test".to_string();
+    let topic = TEST_PUBSUBTOPIC.to_string();
 
     node.relay_subscribe(&topic)?;
 
@@ -140,7 +137,7 @@ fn node_restart() {
         node_key: Some(
             SecretKey::from_str("05f381866cc21f6c1e2e80e07fa732008e36d942dce3206ad6dcd6793c98d609")
                 .unwrap(),
-        ), // TODO: consider making this optional
+        ),
         ..Default::default()
     };
 

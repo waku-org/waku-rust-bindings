@@ -18,10 +18,6 @@ pub struct WakuNodeConfig {
     /// Libp2p TCP listening port. Default `60000`. Use `0` for **random**
     #[default(Some(60000))]
     pub port: Option<usize>,
-    /// External address to advertise to other nodes. Can be ip4, ip6 or dns4, dns6.
-    /// If null, the multiaddress(es) generated from the ip and port specified in the config (or default ones) will be used.
-    /// Default: null
-    pub advertise_addr: Option<Multiaddr>,
     /// Secp256k1 private key in Hex format (`0x123...abc`). Default random
     #[serde(with = "secret_key_serde", rename = "key")]
     pub node_key: Option<SecretKey>,
@@ -29,18 +25,6 @@ pub struct WakuNodeConfig {
     #[default(Some(true))]
     pub relay: Option<bool>,
     pub relay_topics: Vec<String>,
-    // /// Enable store protocol to persist message history
-    // #[default(Some(false))]
-    // pub store: Option<bool>,
-    // /// Url connection string. Accepts SQLite and PostgreSQL connection strings
-    // #[default(Some("sqlite3://store.db".to_string()))]
-    // pub database_url: Option<String>,
-    // /// Max number of messages to store in the databas
-    // #[default(Some(1000))]
-    // pub store_retention_max_messages: Option<usize>,
-    // /// Max number of seconds that a message will be persisted in the database, default 1 day
-    // #[default(Some(86400))]
-    // pub store_retention_max_seconds: Option<usize>,
 }
 
 mod secret_key_serde {

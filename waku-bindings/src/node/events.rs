@@ -12,9 +12,6 @@ use serde::{Deserialize, Serialize};
 use crate::general::WakuMessage;
 use crate::utils::get_trampoline;
 use crate::MessageId;
-use core::str::FromStr;
-
-use waku_sys::WakuCallBack;
 
 /// Waku event
 /// For now just WakuMessage is supported
@@ -58,9 +55,7 @@ impl WakuMessageEvent {
 pub fn waku_set_event_callback<F: FnMut(Event) + Send + Sync>(ctx: *mut c_void, mut f: F) {
     let cb = |v: &str| {
         let data: Event = serde_json::from_str(v).expect("Parsing event to succeed");
-        println!("EXEC CALLBACK");
         f(data);
-        println!("SUCCESS!");
     };
 
     unsafe {
@@ -74,12 +69,6 @@ pub fn waku_set_event_callback<F: FnMut(Event) + Send + Sync>(ctx: *mut c_void, 
 #[cfg(test)]
 mod tests {
     use crate::Event;
-
-    // TODO: how to actually send an event and check if the callback is run?
-    //#[test]
-    /*fn set_callback() {
-        callback(|_event| {});
-    }*/
 
     #[test]
     fn deserialize_message_event() {

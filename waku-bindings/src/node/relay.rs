@@ -55,20 +55,6 @@ pub fn waku_create_content_topic(
         .expect("&str from result should always be extracted")
 }
 
-/// Default pubsub topic used for exchanging waku messages defined in [RFC 10](https://rfc.vac.dev/spec/10/)
-#[allow(clippy::not_unsafe_ptr_arg_deref)]
-pub fn waku_default_pubsub_topic(ctx: *mut c_void) -> String {
-    let mut result: String = Default::default();
-    let result_cb = |v: &str| result = v.to_string();
-    let code = unsafe {
-        let mut closure = result_cb;
-        let cb = get_trampoline(&closure);
-        waku_sys::waku_default_pubsub_topic(ctx, cb, &mut closure as *mut _ as *mut c_void)
-    };
-
-    handle_response(code, &result).expect("&str from result should always be extracted")
-}
-
 /// Publish a message using Waku Relay
 /// As per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_relay_publishchar-messagejson-char-pubsubtopic-int-timeoutms)
 pub fn waku_relay_publish_message(

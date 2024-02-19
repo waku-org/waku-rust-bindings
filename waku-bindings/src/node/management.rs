@@ -70,29 +70,41 @@ pub fn waku_stop(ctx: *mut c_void) -> Result<()> {
     handle_no_response(code, &error)
 }
 
+/// nwaku version
+#[allow(clippy::not_unsafe_ptr_arg_deref)]
+pub fn waku_version(ctx: *mut c_void) -> Result<String> {
+    let mut result: String = Default::default();
+    let result_cb = |v: &str| result = v.to_string();
+    let code = unsafe {
+        let mut closure = result_cb;
+        let cb = get_trampoline(&closure);
+        waku_sys::waku_version(ctx, cb, &mut closure as *mut _ as *mut c_void)
+    };
+
+    handle_response(code, &result)
+}
+
 #[cfg(test)]
 mod test {
     use super::waku_new;
-    use crate::node::management::{waku_start, waku_stop};
-    use crate::WakuNodeConfig;
-    use secp256k1::SecretKey;
+    use crate::node::management::{waku_start, waku_stop, waku_version};
     use serial_test::serial;
-    use std::str::FromStr;
 
     #[test]
     #[serial]
     fn waku_flow() {
-        let node = waku_new(Some(WakuNodeConfig {
-            node_key: Some(
-                SecretKey::from_str(
-                    "05f381866cc21f6c1e2e80e07fa732008e36d942dce3206ad6dcd6793c98d609",
-                )
-                .unwrap(),
-            ), // TODO: consider making this optional
-            ..Default::default()
-        }))
-        .unwrap();
+        let node = waku_new(None).unwrap();
+
         waku_start(node).unwrap();
+
         waku_stop(node).unwrap();
+    }
+
+    #[test]
+    #[serial]
+    fn nwaku_version() {
+        let node = waku_new(None).unwrap();
+        let version = waku_version(node).expect("should return the version");
+        assert!(!version.is_empty());
     }
 }

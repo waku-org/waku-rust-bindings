@@ -19,7 +19,7 @@ use crate::general::{MessageId, Result, WakuMessage};
 
 pub use config::WakuNodeConfig;
 pub use events::{Event, WakuMessageEvent};
-pub use relay::{waku_create_content_topic, waku_default_pubsub_topic};
+pub use relay::waku_create_content_topic;
 
 /// Handle to the underliying waku node
 pub struct WakuNodeHandle {
@@ -37,6 +37,11 @@ impl WakuNodeHandle {
     /// as per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_stop)
     pub fn stop(&self) -> Result<()> {
         management::waku_stop(self.ctx)
+    }
+
+    /// Get the nwaku version
+    pub fn version(&self) -> Result<String> {
+        management::waku_version(self.ctx)
     }
 
     /// Dial peer using a multiaddress

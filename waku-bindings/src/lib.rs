@@ -12,8 +12,8 @@ mod utils;
 use rln;
 
 pub use node::{
-    waku_create_content_topic, waku_default_pubsub_topic, waku_new, Event, Key, Multiaddr,
-    PublicKey, SecretKey, WakuMessageEvent, WakuNodeConfig, WakuNodeHandle,
+    waku_create_content_topic, waku_new, Event, Key, Multiaddr, PublicKey, SecretKey,
+    WakuMessageEvent, WakuNodeConfig, WakuNodeHandle,
 };
 
 pub use general::{Encoding, MessageId, Result, WakuContentTopic, WakuMessage, WakuMessageVersion};
