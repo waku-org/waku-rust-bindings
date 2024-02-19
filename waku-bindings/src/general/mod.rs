@@ -199,53 +199,6 @@ impl DecodedPayload {
     }
 }
 
-/// The content topic of a Waku message
-/// as per the [specification](https://rfc.vac.dev/spec/36/#contentfilter-type)
-#[derive(Clone, Serialize, Deserialize, Debug)]
-#[serde(rename_all = "camelCase")]
-pub struct LegacyContentFilter {
-    /// The content topic of a Waku message
-    content_topic: WakuContentTopic,
-}
-
-impl LegacyContentFilter {
-    pub fn new(content_topic: WakuContentTopic) -> Self {
-        Self { content_topic }
-    }
-
-    pub fn content_topic(&self) -> &WakuContentTopic {
-        &self.content_topic
-    }
-}
-
-/// The criteria to create subscription to a light node in JSON Format
-/// as per the [specification](https://rfc.vac.dev/spec/36/#filtersubscription-type)
-#[derive(Clone, Serialize, Deserialize, Debug)]
-#[serde(rename_all = "camelCase")]
-pub struct LegacyFilterSubscription {
-    /// Array of [`ContentFilter`] being subscribed to / unsubscribed from
-    content_filters: Vec<ContentFilter>,
-    /// Optional pubsub topic
-    pubsub_topic: Option<WakuPubSubTopic>,
-}
-
-impl LegacyFilterSubscription {
-    pub fn new(content_filters: Vec<ContentFilter>, pubsub_topic: Option<WakuPubSubTopic>) -> Self {
-        Self {
-            content_filters,
-            pubsub_topic,
-        }
-    }
-
-    pub fn content_filters(&self) -> &[ContentFilter] {
-        &self.content_filters
-    }
-
-    pub fn pubsub_topic(&self) -> Option<&WakuPubSubTopic> {
-        self.pubsub_topic.as_ref()
-    }
-}
-
 /// The criteria to create subscription to a filter full node matching a content filter.
 #[derive(Clone, Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
