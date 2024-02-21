@@ -4,6 +4,7 @@
 use std::ffi::CString;
 // crates
 use libc::c_void;
+use multiaddr::Multiaddr;
 // internal
 use super::config::WakuNodeConfig;
 use crate::general::Result;
@@ -33,13 +34,11 @@ pub fn waku_new(config: Option<WakuNodeConfig>) -> Result<*mut c_void> {
         out
     };
 
-    // TODO: create error handler function, format of err message is
-    // {"message":"The actual message","eventType":"error"}
-    if !error.is_empty() {
-        return Err(error);
+    return if !error.is_empty() {
+        Err(error)
+    } else {
+        Ok(node_ptr)
     }
-
-    Ok(node_ptr)
 }
 
 /// Start a Waku node mounting all the protocols that were enabled during the Waku node instantiation.
@@ -84,10 +83,24 @@ pub fn waku_version(ctx: *mut c_void) -> Result<String> {
     handle_response(code, &result)
 }
 
+/// Get the multiaddresses the Waku node is listening to
+/// as per [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_listen_addresses)
+pub fn waku_listen_addresses(ctx: *mut c_void) -> Result<Vec<Multiaddr>> {
+    let mut result: String = Default::default();
+    let result_cb = |v: &str| result = v.to_string();
+    let code = unsafe {
+        let mut closure = result_cb;
+        let cb = get_trampoline(&closure);
+        waku_sys::waku_listen_addresses(ctx, cb, &mut closure as *mut _ as *mut c_void)
+    };
+
+    handle_json_response(code, &result)
+}
+
 #[cfg(test)]
 mod test {
     use super::waku_new;
-    use crate::node::management::{waku_start, waku_stop, waku_version};
+    use crate::node::management::{waku_start, waku_stop, waku_listen_addresses, waku_version};
     use serial_test::serial;
 
     #[test]
@@ -96,6 +109,11 @@ mod test {
         let node = waku_new(None).unwrap();
 
         waku_start(node).unwrap();
+
+         // test addresses
+         let addresses = waku_listen_addresses(node).unwrap();
+         dbg!(&addresses);
+         assert!(!addresses.is_empty());
 
         waku_stop(node).unwrap();
     }

@@ -39,6 +39,12 @@ impl WakuNodeHandle {
         management::waku_stop(self.ctx)
     }
 
+    /// Get the multiaddresses the Waku node is listening to
+    /// as per [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_listen_addresses)
+    pub fn listen_addresses(&self) -> Result<Vec<Multiaddr>> {
+        management::waku_listen_addresses(self.ctx)
+    }
+
     /// Get the nwaku version
     pub fn version(&self) -> Result<String> {
         management::waku_version(self.ctx)
