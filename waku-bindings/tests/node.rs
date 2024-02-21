@@ -1,4 +1,3 @@
-use multiaddr::Multiaddr;
 use secp256k1::SecretKey;
 use serial_test::serial;
 use std::str::FromStr;
@@ -6,25 +5,20 @@ use std::time::{Duration, SystemTime};
 use std::{collections::HashSet, str::from_utf8};
 use tokio::sync::broadcast::{self, Sender};
 use tokio::time;
+use tokio::time::sleep;
 use waku_bindings::{
     waku_new, Encoding, Event, MessageId, WakuContentTopic, WakuMessage, WakuNodeConfig,
     WakuNodeHandle,
 };
 const ECHO_TIMEOUT: u64 = 10;
 const ECHO_MESSAGE: &str = "Hi from 🦀!";
-
 const TEST_PUBSUBTOPIC: &str = "test";
-const NODES: &[&str] =
-&["/dns4/node-01.do-ams3.status.prod.statusim.net/tcp/30303/p2p/16Uiu2HAm6HZZr7aToTvEBPpiys4UxajCTU97zj5v7RNR2gbniy1D"];
 
 fn try_publish_relay_messages(
     node: &WakuNodeHandle,
     msg: &WakuMessage,
 ) -> Result<HashSet<MessageId>, String> {
     let topic = TEST_PUBSUBTOPIC.to_string();
-    node.relay_publish_message(msg, &topic, None)?;
-    node.relay_publish_message(msg, &topic, None)?;
-
     Ok(HashSet::from([
         node.relay_publish_message(msg, &topic, None)?
     ]))
@@ -53,7 +47,8 @@ fn set_callback(node: &WakuNodeHandle, tx: Sender<Response>) {
 }
 
 async fn test_echo_messages(
-    node: &WakuNodeHandle,
+    node1: &WakuNodeHandle,
+    node2: &WakuNodeHandle,
     content: &'static str,
     content_topic: WakuContentTopic,
 ) {
@@ -71,10 +66,12 @@ async fn test_echo_messages(
         false,
     );
 
-    let (tx, mut rx) = broadcast::channel(1);
-    set_callback(node, tx);
+    node1.set_event_callback(move |_event| {});
 
-    let mut ids = try_publish_relay_messages(node, &message).expect("send relay messages");
+    let (tx, mut rx) = broadcast::channel(1);
+    set_callback(node2, tx);
+
+    let mut ids = try_publish_relay_messages(node1, &message).expect("send relay messages");
 
     while let Ok(res) = rx.recv().await {
         if ids.take(&res.id).is_some() {
@@ -91,27 +88,28 @@ async fn test_echo_messages(
 #[tokio::test]
 #[serial]
 async fn default_echo() -> Result<(), String> {
-    let config = WakuNodeConfig {
-        node_key: Some(
-            SecretKey::from_str("05f381866cc21f6c1e2e80e07fa732008e36d942dce3206ad6dcd6793c98d609")
-                .unwrap(),
-        ),
+    let node1 = waku_new(Some(WakuNodeConfig {
+        port: Some(60010),
         ..Default::default()
-    };
+    }))?;
+    let node2 = waku_new(Some(WakuNodeConfig {
+        port: Some(60020),
+        ..Default::default()
+    }))?;
 
-    let node = waku_new(Some(config))?;
+    node1.start()?;
+    node2.start()?;
 
-    node.start()?;
+    let addresses1 = node1.listen_addresses()?;
+    node2.connect(&addresses1[0], None)?;
 
-    for node_address in NODES {
-        let address: Multiaddr = node_address.parse().unwrap();
-        node.connect(&address, None)?;
-    }
-
-    // subscribe to default channel
     let topic = TEST_PUBSUBTOPIC.to_string();
 
-    node.relay_subscribe(&topic)?;
+    node1.relay_subscribe(&topic)?;
+    node2.relay_subscribe(&topic)?;
+
+    // Wait for mesh to form
+    sleep(Duration::from_secs(5)).await;
 
     let content_topic = WakuContentTopic::new("toychat", "2", "huilong", Encoding::Proto);
 
@@ -121,12 +119,15 @@ async fn default_echo() -> Result<(), String> {
     // Send and receive messages. Waits until all messages received.
     let got_all = tokio::select! {
         _ = sleep => false,
-        _ = test_echo_messages(&node, ECHO_MESSAGE, content_topic) => true,
+        _ = test_echo_messages(&node1, &node2, ECHO_MESSAGE, content_topic) => true,
     };
 
     assert!(got_all);
 
-    node.stop()?;
+   
+    node2.stop()?;
+    node1.stop()?;
+    
     Ok(())
 }
 

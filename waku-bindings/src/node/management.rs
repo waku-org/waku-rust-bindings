@@ -34,7 +34,7 @@ pub fn waku_new(config: Option<WakuNodeConfig>) -> Result<*mut c_void> {
         out
     };
 
-    return if !error.is_empty() {
+    if !error.is_empty() {
         Err(error)
     } else {
         Ok(node_ptr)
@@ -100,7 +100,7 @@ pub fn waku_listen_addresses(ctx: *mut c_void) -> Result<Vec<Multiaddr>> {
 #[cfg(test)]
 mod test {
     use super::waku_new;
-    use crate::node::management::{waku_start, waku_stop, waku_listen_addresses, waku_version};
+    use crate::node::management::{waku_listen_addresses, waku_start, waku_stop, waku_version};
     use serial_test::serial;
 
     #[test]
@@ -110,10 +110,10 @@ mod test {
 
         waku_start(node).unwrap();
 
-         // test addresses
-         let addresses = waku_listen_addresses(node).unwrap();
-         dbg!(&addresses);
-         assert!(!addresses.is_empty());
+        // test addresses
+        let addresses = waku_listen_addresses(node).unwrap();
+        dbg!(&addresses);
+        assert!(!addresses.is_empty());
 
         waku_stop(node).unwrap();
     }

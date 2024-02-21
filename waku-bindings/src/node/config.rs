@@ -2,7 +2,6 @@
 
 // std
 // crates
-use multiaddr::Multiaddr;
 use secp256k1::SecretKey;
 use serde::{Deserialize, Serialize};
 use smart_default::SmartDefault;
