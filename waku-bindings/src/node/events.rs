@@ -29,25 +29,11 @@ pub enum Event {
 #[serde(rename_all = "camelCase")]
 pub struct WakuMessageEvent {
     /// The pubsub topic on which the message was received
-    pubsub_topic: String,
+    pub pubsub_topic: String,
     /// The message id
-    message_id: MessageId,
+    pub message_id: MessageId,
     /// The message in [`WakuMessage`] format
-    waku_message: WakuMessage,
-}
-
-impl WakuMessageEvent {
-    pub fn pubsub_topic(&self) -> &String {
-        &self.pubsub_topic
-    }
-
-    pub fn message_id(&self) -> &String {
-        &self.message_id
-    }
-
-    pub fn waku_message(&self) -> &WakuMessage {
-        &self.waku_message
-    }
+    pub waku_message: WakuMessage,
 }
 
 /// Register callback to act as event handler and receive application events,

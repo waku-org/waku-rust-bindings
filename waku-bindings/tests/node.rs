@@ -33,9 +33,9 @@ struct Response {
 fn set_callback(node: &WakuNodeHandle, tx: Sender<Response>) {
     node.set_event_callback(move |event| {
         if let Event::WakuMessage(message) = event {
-            let id = message.message_id();
-            let message = message.waku_message();
-            let payload = message.payload().to_vec();
+            let id = message.message_id;
+            let message = message.waku_message;
+            let payload = message.payload.to_vec();
 
             tx.send(Response {
                 id: id.to_string(),

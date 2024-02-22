@@ -24,19 +24,19 @@ pub type Result<T> = std::result::Result<T, String>;
 #[serde(rename_all = "camelCase")]
 pub struct WakuMessage {
     #[serde(with = "base64_serde", default = "Vec::new")]
-    payload: Vec<u8>,
+    pub payload: Vec<u8>,
     /// The content topic to be set on the message
-    content_topic: WakuContentTopic,
+    pub content_topic: WakuContentTopic,
     /// The Waku Message version number
     #[serde(default)]
-    version: WakuMessageVersion,
+    pub version: WakuMessageVersion,
     /// Unix timestamp in nanoseconds
     #[serde(deserialize_with = "deserialize_number_from_string")]
-    timestamp: usize,
+    pub timestamp: usize,
     #[serde(with = "base64_serde", default = "Vec::new")]
-    meta: Vec<u8>,
+    pub meta: Vec<u8>,
     #[serde(default)]
-    ephemeral: bool,
+    pub ephemeral: bool,
     // TODO: implement RLN fields
     #[serde(flatten)]
     _extras: serde_json::Value,
@@ -63,30 +63,6 @@ impl WakuMessage {
             ephemeral,
             _extras: Default::default(),
         }
-    }
-
-    pub fn payload(&self) -> &[u8] {
-        &self.payload
-    }
-
-    pub fn content_topic(&self) -> &WakuContentTopic {
-        &self.content_topic
-    }
-
-    pub fn version(&self) -> WakuMessageVersion {
-        self.version
-    }
-
-    pub fn timestamp(&self) -> usize {
-        self.timestamp
-    }
-
-    pub fn meta(&self) -> &[u8] {
-        &self.meta
-    }
-
-    pub fn ephemeral(&self) -> bool {
-        self.ephemeral
     }
 }
 
