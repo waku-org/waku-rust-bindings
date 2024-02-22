@@ -8,6 +8,7 @@ use libc::*;
 use multiaddr::Multiaddr;
 // internal
 use crate::general::Result;
+use crate::node::context::WakuNodeContext;
 use crate::utils::{get_trampoline, handle_no_response};
 
 /// Dial peer using a multiaddress
@@ -16,7 +17,7 @@ use crate::utils::{get_trampoline, handle_no_response};
 /// Use 0 for no timeout
 /// As per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_connect_peerchar-address-int-timeoutms)
 pub fn waku_connect(
-    ctx: *mut c_void,
+    ctx: &WakuNodeContext,
     address: &Multiaddr,
     timeout: Option<Duration>,
 ) -> Result<()> {
@@ -30,7 +31,7 @@ pub fn waku_connect(
         let mut closure = error_cb;
         let cb = get_trampoline(&closure);
         let out = waku_sys::waku_connect(
-            ctx,
+            ctx.obj_ptr,
             address_ptr,
             timeout
                 .map(|duration| duration.as_millis().try_into().unwrap_or(u32::MAX))

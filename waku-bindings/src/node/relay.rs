@@ -7,13 +7,14 @@ use std::time::Duration;
 use libc::*;
 // internal
 use crate::general::{Encoding, MessageId, Result, WakuContentTopic, WakuMessage};
+use crate::node::context::WakuNodeContext;
 use crate::utils::{get_trampoline, handle_no_response, handle_response};
 
 /// Create a content topic according to [RFC 23](https://rfc.vac.dev/spec/23/)
 /// As per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_content_topicchar-applicationname-unsigned-int-applicationversion-char-contenttopicname-char-encoding)
 #[allow(clippy::not_unsafe_ptr_arg_deref)]
 pub fn waku_create_content_topic(
-    ctx: *mut c_void,
+    ctx: &WakuNodeContext,
     application_name: &str,
     application_version: u32,
     content_topic_name: &str,
@@ -35,7 +36,7 @@ pub fn waku_create_content_topic(
         let mut closure = result_cb;
         let cb = get_trampoline(&closure);
         let out = waku_sys::waku_content_topic(
-            ctx,
+            ctx.obj_ptr,
             application_name_ptr,
             application_version,
             content_topic_name_ptr,
@@ -58,7 +59,7 @@ pub fn waku_create_content_topic(
 /// Publish a message using Waku Relay
 /// As per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_relay_publishchar-messagejson-char-pubsubtopic-int-timeoutms)
 pub fn waku_relay_publish_message(
-    ctx: *mut c_void,
+    ctx: &WakuNodeContext,
     message: &WakuMessage,
     pubsub_topic: &String,
     timeout: Option<Duration>,
@@ -81,7 +82,7 @@ pub fn waku_relay_publish_message(
         let mut closure = result_cb;
         let cb = get_trampoline(&closure);
         let out = waku_sys::waku_relay_publish(
-            ctx,
+            ctx.obj_ptr,
             pubsub_topic_ptr,
             message_ptr,
             timeout
@@ -105,7 +106,7 @@ pub fn waku_relay_publish_message(
     handle_response(code, &result)
 }
 
-pub fn waku_relay_subscribe(ctx: *mut c_void, pubsub_topic: &String) -> Result<()> {
+pub fn waku_relay_subscribe(ctx: &WakuNodeContext, pubsub_topic: &String) -> Result<()> {
     let pubsub_topic = pubsub_topic.to_string();
     let pubsub_topic_ptr = CString::new(pubsub_topic)
         .expect("CString should build properly from pubsub topic")
@@ -117,7 +118,7 @@ pub fn waku_relay_subscribe(ctx: *mut c_void, pubsub_topic: &String) -> Result<(
         let mut closure = error_cb;
         let cb = get_trampoline(&closure);
         let out = waku_sys::waku_relay_subscribe(
-            ctx,
+            ctx.obj_ptr,
             pubsub_topic_ptr,
             cb,
             &mut closure as *mut _ as *mut c_void,
@@ -131,7 +132,7 @@ pub fn waku_relay_subscribe(ctx: *mut c_void, pubsub_topic: &String) -> Result<(
     handle_no_response(code, &error)
 }
 
-pub fn waku_relay_unsubscribe(ctx: *mut c_void, pubsub_topic: &String) -> Result<()> {
+pub fn waku_relay_unsubscribe(ctx: &WakuNodeContext, pubsub_topic: &String) -> Result<()> {
     let pubsub_topic = pubsub_topic.to_string();
     let pubsub_topic_ptr = CString::new(pubsub_topic)
         .expect("CString should build properly from pubsub topic")
@@ -143,7 +144,7 @@ pub fn waku_relay_unsubscribe(ctx: *mut c_void, pubsub_topic: &String) -> Result
         let mut closure = error_cb;
         let cb = get_trampoline(&closure);
         let out = waku_sys::waku_relay_subscribe(
-            ctx,
+            ctx.obj_ptr,
             pubsub_topic_ptr,
             cb,
             &mut closure as *mut _ as *mut c_void,

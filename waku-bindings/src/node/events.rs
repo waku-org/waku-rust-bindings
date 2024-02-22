@@ -10,6 +10,7 @@ use std::ffi::c_void;
 use serde::{Deserialize, Serialize};
 // internal
 use crate::general::WakuMessage;
+use crate::node::context::WakuNodeContext;
 use crate::utils::get_trampoline;
 use crate::MessageId;
 
@@ -38,7 +39,7 @@ pub struct WakuMessageEvent {
 
 /// Register callback to act as event handler and receive application events,
 /// which are used to react to asynchronous events in Waku
-pub fn waku_set_event_callback<F: FnMut(Event) + Send + Sync>(ctx: *mut c_void, mut f: F) {
+pub fn waku_set_event_callback<F: FnMut(Event) + Send + Sync>(ctx: &WakuNodeContext, mut f: F) {
     let cb = |v: &str| {
         let data: Event = serde_json::from_str(v).expect("Parsing event to succeed");
         f(data);
@@ -48,7 +49,7 @@ pub fn waku_set_event_callback<F: FnMut(Event) + Send + Sync>(ctx: *mut c_void, 
         let mut closure = cb;
         let cb = get_trampoline(&closure);
 
-        waku_sys::waku_set_event_callback(ctx, cb, &mut closure as *mut _ as *mut c_void)
+        waku_sys::waku_set_event_callback(ctx.obj_ptr, cb, &mut closure as *mut _ as *mut c_void)
     };
 }
 
