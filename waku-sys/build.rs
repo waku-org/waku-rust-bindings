@@ -24,19 +24,42 @@ fn generate_bindgen_code(project_dir: &Path) {
     let header_path = vendor_path.join("library/libwaku.h");
 
     cc::Build::new()
-    .object(vendor_path.join("vendor/nim-libbacktrace/libbacktrace_wrapper.o").display().to_string())
-    .compile("libbacktrace_wrapper");
+        .object(
+            vendor_path
+                .join("vendor/nim-libbacktrace/libbacktrace_wrapper.o")
+                .display()
+                .to_string(),
+        )
+        .compile("libbacktrace_wrapper");
 
     println!("cargo:rerun-if-changed={}", header_path.display());
-    println!("cargo:rustc-link-search={}", vendor_path.join("build").display());
-    println!("cargo:rustc-link-lib=static=waku");  
-    println!("cargo:rustc-link-search={}",  vendor_path.join("vendor/nim-nat-traversal/vendor/miniupnp/miniupnpc/build").display());
+    println!(
+        "cargo:rustc-link-search={}",
+        vendor_path.join("build").display()
+    );
+    println!("cargo:rustc-link-lib=static=waku");
+    println!(
+        "cargo:rustc-link-search={}",
+        vendor_path
+            .join("vendor/nim-nat-traversal/vendor/miniupnp/miniupnpc/build")
+            .display()
+    );
     println!("cargo:rustc-link-lib=static=miniupnpc");
-    println!("cargo:rustc-link-search={}",  vendor_path.join("vendor/nim-nat-traversal/vendor/libnatpmp-upstream").display());
+    println!(
+        "cargo:rustc-link-search={}",
+        vendor_path
+            .join("vendor/nim-nat-traversal/vendor/libnatpmp-upstream")
+            .display()
+    );
     println!("cargo:rustc-link-lib=static=natpmp");
     println!("cargo:rustc-link-lib=dl");
     println!("cargo:rustc-link-lib=m");
-    println!("cargo:rustc-link-search=native={}", vendor_path.join("vendor/nim-libbacktrace/install/usr/lib").display());
+    println!(
+        "cargo:rustc-link-search=native={}",
+        vendor_path
+            .join("vendor/nim-libbacktrace/install/usr/lib")
+            .display()
+    );
     println!("cargo:rustc-link-lib=static=backtrace");
 
     // TODO: Determine if pthread is automatically included

@@ -8,7 +8,7 @@ mod peers;
 mod relay;
 
 // std
-pub use aes_gcm::{Aes256Gcm, Key};
+pub use aes_gcm::Key;
 pub use multiaddr::Multiaddr;
 pub use secp256k1::{PublicKey, SecretKey};
 use std::time::Duration;
