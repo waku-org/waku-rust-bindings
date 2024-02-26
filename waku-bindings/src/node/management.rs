@@ -8,11 +8,12 @@ use multiaddr::Multiaddr;
 // internal
 use super::config::WakuNodeConfig;
 use crate::general::Result;
+use crate::node::context::WakuNodeContext;
 use crate::utils::{get_trampoline, handle_json_response, handle_no_response, handle_response};
 
 /// Instantiates a Waku node
 /// as per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_newchar-jsonconfig)
-pub fn waku_new(config: Option<WakuNodeConfig>) -> Result<*mut c_void> {
+pub fn waku_new(config: Option<WakuNodeConfig>) -> Result<WakuNodeContext> {
     let config = config.unwrap_or_default();
 
     let config_ptr = CString::new(
@@ -24,7 +25,7 @@ pub fn waku_new(config: Option<WakuNodeConfig>) -> Result<*mut c_void> {
 
     let mut error: String = Default::default();
     let error_cb = |v: &str| error = v.to_string();
-    let node_ptr = unsafe {
+    let obj_ptr = unsafe {
         let mut closure = error_cb;
         let cb = get_trampoline(&closure);
         let out = waku_sys::waku_new(config_ptr, cb, &mut closure as *mut _ as *mut c_void);
@@ -37,19 +38,19 @@ pub fn waku_new(config: Option<WakuNodeConfig>) -> Result<*mut c_void> {
     if !error.is_empty() {
         Err(error)
     } else {
-        Ok(node_ptr)
+        Ok(WakuNodeContext { obj_ptr })
     }
 }
 
 /// Start a Waku node mounting all the protocols that were enabled during the Waku node instantiation.
 /// as per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_start)
-pub fn waku_start(ctx: *mut c_void) -> Result<()> {
+pub fn waku_start(ctx: &WakuNodeContext) -> Result<()> {
     let mut error: String = Default::default();
     let error_cb = |v: &str| error = v.to_string();
     let code = unsafe {
         let mut closure = error_cb;
         let cb = get_trampoline(&closure);
-        waku_sys::waku_start(ctx, cb, &mut closure as *mut _ as *mut c_void)
+        waku_sys::waku_start(ctx.obj_ptr, cb, &mut closure as *mut _ as *mut c_void)
     };
 
     handle_no_response(code, &error)
@@ -57,13 +58,13 @@ pub fn waku_start(ctx: *mut c_void) -> Result<()> {
 
 /// Stops a Waku node
 /// as per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_stop)
-pub fn waku_stop(ctx: *mut c_void) -> Result<()> {
+pub fn waku_stop(ctx: &WakuNodeContext) -> Result<()> {
     let mut error: String = Default::default();
     let error_cb = |v: &str| error = v.to_string();
     let code = unsafe {
         let mut closure = error_cb;
         let cb = get_trampoline(&closure);
-        waku_sys::waku_stop(ctx, cb, &mut closure as *mut _ as *mut c_void)
+        waku_sys::waku_stop(ctx.obj_ptr, cb, &mut closure as *mut _ as *mut c_void)
     };
 
     handle_no_response(code, &error)
@@ -71,13 +72,13 @@ pub fn waku_stop(ctx: *mut c_void) -> Result<()> {
 
 /// nwaku version
 #[allow(clippy::not_unsafe_ptr_arg_deref)]
-pub fn waku_version(ctx: *mut c_void) -> Result<String> {
+pub fn waku_version(ctx: &WakuNodeContext) -> Result<String> {
     let mut result: String = Default::default();
     let result_cb = |v: &str| result = v.to_string();
     let code = unsafe {
         let mut closure = result_cb;
         let cb = get_trampoline(&closure);
-        waku_sys::waku_version(ctx, cb, &mut closure as *mut _ as *mut c_void)
+        waku_sys::waku_version(ctx.obj_ptr, cb, &mut closure as *mut _ as *mut c_void)
     };
 
     handle_response(code, &result)
@@ -85,13 +86,13 @@ pub fn waku_version(ctx: *mut c_void) -> Result<String> {
 
 /// Get the multiaddresses the Waku node is listening to
 /// as per [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_listen_addresses)
-pub fn waku_listen_addresses(ctx: *mut c_void) -> Result<Vec<Multiaddr>> {
+pub fn waku_listen_addresses(ctx: &WakuNodeContext) -> Result<Vec<Multiaddr>> {
     let mut result: String = Default::default();
     let result_cb = |v: &str| result = v.to_string();
     let code = unsafe {
         let mut closure = result_cb;
         let cb = get_trampoline(&closure);
-        waku_sys::waku_listen_addresses(ctx, cb, &mut closure as *mut _ as *mut c_void)
+        waku_sys::waku_listen_addresses(ctx.obj_ptr, cb, &mut closure as *mut _ as *mut c_void)
     };
 
     handle_json_response(code, &result)
@@ -108,21 +109,21 @@ mod test {
     fn waku_flow() {
         let node = waku_new(None).unwrap();
 
-        waku_start(node).unwrap();
+        waku_start(&node).unwrap();
 
         // test addresses
-        let addresses = waku_listen_addresses(node).unwrap();
+        let addresses = waku_listen_addresses(&node).unwrap();
         dbg!(&addresses);
         assert!(!addresses.is_empty());
 
-        waku_stop(node).unwrap();
+        waku_stop(&node).unwrap();
     }
 
     #[test]
     #[serial]
     fn nwaku_version() {
         let node = waku_new(None).unwrap();
-        let version = waku_version(node).expect("should return the version");
+        let version = waku_version(&node).expect("should return the version");
         assert!(!version.is_empty());
     }
 }

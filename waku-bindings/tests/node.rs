@@ -124,10 +124,9 @@ async fn default_echo() -> Result<(), String> {
 
     assert!(got_all);
 
-   
     node2.stop()?;
     node1.stop()?;
-    
+
     Ok(())
 }
 
