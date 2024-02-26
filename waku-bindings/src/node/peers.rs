@@ -9,6 +9,7 @@ use multiaddr::Multiaddr;
 // internal
 use crate::general::Result;
 use crate::node::context::WakuNodeContext;
+use crate::utils::LibwakuResponse;
 use crate::utils::{get_trampoline, handle_no_response};
 
 /// Dial peer using a multiaddress
@@ -25,10 +26,10 @@ pub fn waku_connect(
         .expect("CString should build properly from multiaddress")
         .into_raw();
 
-    let mut error: String = Default::default();
-    let error_cb = |v: &str| error = v.to_string();
+    let mut result: LibwakuResponse = Default::default();
+    let result_cb = |r: LibwakuResponse| result = r;
     let code = unsafe {
-        let mut closure = error_cb;
+        let mut closure = result_cb;
         let cb = get_trampoline(&closure);
         let out = waku_sys::waku_connect(
             ctx.obj_ptr,
@@ -45,5 +46,5 @@ pub fn waku_connect(
         out
     };
 
-    handle_no_response(code, &error)
+    handle_no_response(code, result)
 }
