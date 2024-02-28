@@ -13,7 +13,7 @@ pub use multiaddr::Multiaddr;
 pub use secp256k1::{PublicKey, SecretKey};
 use std::time::Duration;
 // internal
-use crate::general::{Result, WakuMessage};
+use crate::general::{MessageId, Result, WakuMessage};
 use context::WakuNodeContext;
 
 pub use config::WakuNodeConfig;
@@ -26,6 +26,15 @@ pub struct WakuNodeHandle {
 }
 
 impl WakuNodeHandle {
+    /// Spawn a new Waku node with the given configuration (default configuration if `None` provided)
+    /// as per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_newchar-jsonconfig)
+    pub fn new(config: Option<WakuNodeConfig>) -> Result<WakuNodeHandle> {
+        Ok(WakuNodeHandle {
+            ctx: management::waku_new(config)?,
+        })
+    }
+
+
     /// Start a Waku node mounting all the protocols that were enabled during the Waku node instantiation.
     /// as per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_start)
     pub fn start(&self) -> Result<()> {
@@ -66,7 +75,7 @@ impl WakuNodeHandle {
         message: &WakuMessage,
         pubsub_topic: &String,
         timeout: Option<Duration>,
-    ) -> Result<()> {
+    ) -> Result<MessageId> {
         relay::waku_relay_publish_message(&self.ctx, message, pubsub_topic, timeout)
     }
 
@@ -83,12 +92,4 @@ impl WakuNodeHandle {
     pub fn set_event_callback<F: FnMut(Event) + Send + Sync + 'static>(&self, f: F) {
         events::waku_set_event_callback(&self.ctx, f)
     }
-}
-
-/// Spawn a new Waku node with the given configuration (default configuration if `None` provided)
-/// as per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_newchar-jsonconfig)
-pub fn waku_new(config: Option<WakuNodeConfig>) -> Result<WakuNodeHandle> {
-    Ok(WakuNodeHandle {
-        ctx: management::waku_new(config)?,
-    })
 }

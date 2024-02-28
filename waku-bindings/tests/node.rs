@@ -2,12 +2,12 @@ use secp256k1::SecretKey;
 use serial_test::serial;
 use std::str::FromStr;
 use std::time::{Duration, SystemTime};
-use std::{str::from_utf8};
+use std::{collections::HashSet, str::from_utf8};
 use tokio::sync::broadcast::{self, Sender};
 use tokio::time;
 use tokio::time::sleep;
 use waku_bindings::{
-    waku_new, Encoding, Event, MessageId, WakuContentTopic, WakuMessage, WakuNodeConfig,
+    Encoding, Event, MessageId, WakuContentTopic, WakuMessage, WakuNodeConfig,
     WakuNodeHandle,
 };
 const ECHO_TIMEOUT: u64 = 10;
@@ -17,10 +17,11 @@ const TEST_PUBSUBTOPIC: &str = "test";
 fn try_publish_relay_messages(
     node: &WakuNodeHandle,
     msg: &WakuMessage,
-) -> Result<(), String> {
+) -> Result<HashSet<MessageId>, String> {
     let topic = TEST_PUBSUBTOPIC.to_string();
-    Ok(node.relay_publish_message(msg, &topic, None)?)
-}
+    Ok(HashSet::from([
+        node.relay_publish_message(msg, &topic, None)?
+    ]))}
 
 #[derive(Debug, Clone)]
 struct Response {
@@ -69,22 +70,27 @@ async fn test_echo_messages(
     let (tx, mut rx) = broadcast::channel(1);
     set_callback(node2, tx);
 
-    try_publish_relay_messages(node1, &message).expect("send relay messages");
-
+    let mut ids = try_publish_relay_messages(node1, &message).expect("send relay messages");
     while let Ok(res) = rx.recv().await {
-        assert!(!res.id.is_empty());
-        from_utf8(&res.payload).expect("should be valid message");
+        if ids.take(&res.id).is_some() {
+            let msg = from_utf8(&res.payload).expect("should be valid message");
+            assert_eq!(content, msg);
+        }
+
+        if ids.is_empty() {
+            break;
+        }
     }
 }
 
 #[tokio::test]
 #[serial]
 async fn default_echo() -> Result<(), String> {
-    let node1 = waku_new(Some(WakuNodeConfig {
+    let node1 = WakuNodeHandle::new(Some(WakuNodeConfig {
         port: Some(60010),
         ..Default::default()
     }))?;
-    let node2 = waku_new(Some(WakuNodeConfig {
+    let node2 = WakuNodeHandle::new(Some(WakuNodeConfig {
         port: Some(60020),
         ..Default::default()
     }))?;
@@ -134,7 +140,7 @@ fn node_restart() {
     };
 
     for _ in 0..3 {
-        let node = waku_new(config.clone().into()).expect("default config should be valid");
+        let node = WakuNodeHandle::new(config.clone().into()).expect("default config should be valid");
 
         node.start().expect("node should start with valid config");
 

@@ -12,7 +12,7 @@ mod utils;
 use rln;
 
 pub use node::{
-    waku_create_content_topic, waku_new, Event, Key, Multiaddr, PublicKey, SecretKey,
+    waku_create_content_topic, Event, Key, Multiaddr, PublicKey, SecretKey,
     WakuMessageEvent, WakuNodeConfig, WakuNodeHandle,
 };
 
