@@ -41,13 +41,10 @@ pub struct WakuMessageEvent {
 /// which are used to react to asynchronous events in Waku
 pub fn waku_set_event_callback<F: FnMut(Event) + Send + Sync>(ctx: &WakuNodeContext, mut f: F) {
     let cb = |response: LibwakuResponse| {
-        match response {
-            LibwakuResponse::Success(v) => {
-                let data: Event =
-                    serde_json::from_str(v.unwrap().as_str()).expect("Parsing event to succeed");
-                f(data);
-            }
-            _ => {} // Do nothing
+        if let LibwakuResponse::Success(v) = response {
+            let data: Event =
+                serde_json::from_str(v.unwrap().as_str()).expect("Parsing event to succeed");
+            f(data);
         };
     };
 

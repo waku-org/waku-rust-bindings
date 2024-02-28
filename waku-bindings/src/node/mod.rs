@@ -11,6 +11,7 @@ mod relay;
 pub use aes_gcm::Key;
 pub use multiaddr::Multiaddr;
 pub use secp256k1::{PublicKey, SecretKey};
+use std::marker::PhantomData;
 use std::time::Duration;
 // internal
 use crate::general::{MessageId, Result, WakuMessage};
@@ -20,31 +21,52 @@ pub use config::WakuNodeConfig;
 pub use events::{Event, WakuMessageEvent};
 pub use relay::waku_create_content_topic;
 
+/// Marker trait to disallow undesired waku node states in the handle
+pub trait WakuNodeState {}
+
+/// Waku node initialized state
+pub struct Initialized;
+
+/// Waku node running state
+pub struct Running;
+
+impl WakuNodeState for Initialized {}
+impl WakuNodeState for Running {}
+
 /// Handle to the underliying waku node
-pub struct WakuNodeHandle {
+pub struct WakuNodeHandle<State: WakuNodeState> {
     ctx: WakuNodeContext,
+    phantom: PhantomData<State>,
 }
 
-impl WakuNodeHandle {
-    /// Spawn a new Waku node with the given configuration (default configuration if `None` provided)
-    /// as per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_newchar-jsonconfig)
-    pub fn new(config: Option<WakuNodeConfig>) -> Result<WakuNodeHandle> {
-        Ok(WakuNodeHandle {
-            ctx: management::waku_new(config)?,
-        })
-    }
+/// Spawn a new Waku node with the given configuration (default configuration if `None` provided)
+/// as per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_newchar-jsonconfig)
+pub fn waku_new(config: Option<WakuNodeConfig>) -> Result<WakuNodeHandle<Initialized>> {
+    Ok(WakuNodeHandle {
+        ctx: management::waku_new(config)?,
+        phantom: PhantomData,
+    })
+}
 
-
+impl WakuNodeHandle<Initialized> {
     /// Start a Waku node mounting all the protocols that were enabled during the Waku node instantiation.
     /// as per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_start)
-    pub fn start(&self) -> Result<()> {
-        management::waku_start(&self.ctx)
+    pub fn start(self) -> Result<WakuNodeHandle<Running>> {
+        management::waku_start(&self.ctx).map(|_| WakuNodeHandle {
+            ctx: self.ctx,
+            phantom: PhantomData,
+        })
     }
+}
 
+impl WakuNodeHandle<Running> {
     /// Stops a Waku node
     /// as per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_stop)
-    pub fn stop(&self) -> Result<()> {
-        management::waku_stop(&self.ctx)
+    pub fn stop(self) -> Result<WakuNodeHandle<Initialized>> {
+        management::waku_stop(&self.ctx).map(|_| WakuNodeHandle {
+            ctx: self.ctx,
+            phantom: PhantomData,
+        })
     }
 
     /// Get the multiaddresses the Waku node is listening to

@@ -22,7 +22,10 @@ impl TryFrom<(u32, &str)> for LibwakuResponse {
         let opt_value = Some(response.to_string()).filter(|s| !s.is_empty());
         match ret_code {
             RET_OK => Ok(LibwakuResponse::Success(opt_value)),
-            RET_ERR => Ok(LibwakuResponse::Failure(format!("waku error: {}", response))),
+            RET_ERR => Ok(LibwakuResponse::Failure(format!(
+                "waku error: {}",
+                response
+            ))),
             RET_MISSING_CALLBACK => Ok(LibwakuResponse::MissingCallback),
             _ => Err(format!("undefined return code {}", ret_code)),
         }
@@ -98,7 +101,7 @@ pub fn handle_response<F: FromStr>(code: i32, result: LibwakuResponse) -> Result
         LibwakuResponse::Success(v) => v
             .unwrap_or_default()
             .parse()
-            .map_err(|_| format!("could not parse value")),
+            .map_err(|_| "could not parse value".into()),
         LibwakuResponse::Failure(v) => Err(v),
         LibwakuResponse::MissingCallback => panic!("callback is required"),
         LibwakuResponse::Undefined => panic!(

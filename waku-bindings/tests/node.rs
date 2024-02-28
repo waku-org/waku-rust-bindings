@@ -7,7 +7,7 @@ use tokio::sync::broadcast::{self, Sender};
 use tokio::time;
 use tokio::time::sleep;
 use waku_bindings::{
-    Encoding, Event, MessageId, WakuContentTopic, WakuMessage, WakuNodeConfig,
+    waku_new, Encoding, Event, MessageId, Running, WakuContentTopic, WakuMessage, WakuNodeConfig,
     WakuNodeHandle,
 };
 const ECHO_TIMEOUT: u64 = 10;
@@ -15,13 +15,14 @@ const ECHO_MESSAGE: &str = "Hi from 🦀!";
 const TEST_PUBSUBTOPIC: &str = "test";
 
 fn try_publish_relay_messages(
-    node: &WakuNodeHandle,
+    node: &WakuNodeHandle<Running>,
     msg: &WakuMessage,
 ) -> Result<HashSet<MessageId>, String> {
     let topic = TEST_PUBSUBTOPIC.to_string();
     Ok(HashSet::from([
         node.relay_publish_message(msg, &topic, None)?
-    ]))}
+    ]))
+}
 
 #[derive(Debug, Clone)]
 struct Response {
@@ -29,7 +30,7 @@ struct Response {
     payload: Vec<u8>,
 }
 
-fn set_callback(node: &WakuNodeHandle, tx: Sender<Response>) {
+fn set_callback(node: &WakuNodeHandle<Running>, tx: Sender<Response>) {
     node.set_event_callback(move |event| {
         if let Event::WakuMessage(message) = event {
             let id = message.message_id;
@@ -46,8 +47,8 @@ fn set_callback(node: &WakuNodeHandle, tx: Sender<Response>) {
 }
 
 async fn test_echo_messages(
-    node1: &WakuNodeHandle,
-    node2: &WakuNodeHandle,
+    node1: &WakuNodeHandle<Running>,
+    node2: &WakuNodeHandle<Running>,
     content: &'static str,
     content_topic: WakuContentTopic,
 ) {
@@ -86,17 +87,17 @@ async fn test_echo_messages(
 #[tokio::test]
 #[serial]
 async fn default_echo() -> Result<(), String> {
-    let node1 = WakuNodeHandle::new(Some(WakuNodeConfig {
+    let node1 = waku_new(Some(WakuNodeConfig {
         port: Some(60010),
         ..Default::default()
     }))?;
-    let node2 = WakuNodeHandle::new(Some(WakuNodeConfig {
+    let node2 = waku_new(Some(WakuNodeConfig {
         port: Some(60020),
         ..Default::default()
     }))?;
 
-    node1.start()?;
-    node2.start()?;
+    let node1 = node1.start()?;
+    let node2 = node2.start()?;
 
     let addresses1 = node1.listen_addresses()?;
     node2.connect(&addresses1[0], None)?;
@@ -140,10 +141,10 @@ fn node_restart() {
     };
 
     for _ in 0..3 {
-        let node = WakuNodeHandle::new(config.clone().into()).expect("default config should be valid");
+        let node = waku_new(config.clone().into()).expect("default config should be valid");
 
-        node.start().expect("node should start with valid config");
+        let node = node.start().expect("node should start with valid config");
 
-        node.stop().expect("node should stop");
+        let node = node.stop().expect("node should stop");
     }
 }
