@@ -12,7 +12,7 @@ use serde::{Deserialize, Serialize};
 use crate::general::WakuMessage;
 use crate::node::context::WakuNodeContext;
 use crate::utils::{get_trampoline, LibwakuResponse};
-use crate::MessageId;
+use crate::MessageHash;
 
 /// Waku event
 /// For now just WakuMessage is supported
@@ -31,8 +31,8 @@ pub enum Event {
 pub struct WakuMessageEvent {
     /// The pubsub topic on which the message was received
     pub pubsub_topic: String,
-    /// The message id
-    pub message_id: MessageId,
+    /// The message hash
+    pub message_hash: MessageHash,
     /// The message in [`WakuMessage`] format
     pub waku_message: WakuMessage,
 }
@@ -62,7 +62,7 @@ mod tests {
 
     #[test]
     fn deserialize_message_event() {
-        let s = "{\"eventType\":\"message\",\"messageId\":\"0x26ff3d7fbc950ea2158ce62fd76fd745eee0323c9eac23d0713843b0f04ea27c\",\"pubsubTopic\":\"/waku/2/default-waku/proto\",\"wakuMessage\":{\"payload\":\"SGkgZnJvbSDwn6aAIQ==\",\"contentTopic\":\"/toychat/2/huilong/proto\",\"timestamp\":1665580926660}}";
+        let s = "{\"eventType\":\"message\",\"messageHash\":\"0x26ff3d7fbc950ea2158ce62fd76fd745eee0323c9eac23d0713843b0f04ea27c\",\"pubsubTopic\":\"/waku/2/default-waku/proto\",\"wakuMessage\":{\"payload\":\"SGkgZnJvbSDwn6aAIQ==\",\"contentTopic\":\"/toychat/2/huilong/proto\",\"timestamp\":1665580926660}}";
         let evt: Event = serde_json::from_str(s).unwrap();
         assert!(matches!(evt, Event::WakuMessage(_)));
     }

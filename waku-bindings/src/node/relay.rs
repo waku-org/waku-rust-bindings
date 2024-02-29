@@ -6,7 +6,7 @@ use std::time::Duration;
 // crates
 use libc::*;
 // internal
-use crate::general::{Encoding, MessageId, Result, WakuContentTopic, WakuMessage};
+use crate::general::{Encoding, MessageHash, Result, WakuContentTopic, WakuMessage};
 use crate::node::context::WakuNodeContext;
 use crate::utils::{get_trampoline, handle_no_response, handle_response, LibwakuResponse};
 
@@ -62,7 +62,7 @@ pub fn waku_relay_publish_message(
     message: &WakuMessage,
     pubsub_topic: &String,
     timeout: Option<Duration>,
-) -> Result<MessageId> {
+) -> Result<MessageHash> {
     let pubsub_topic = pubsub_topic.to_string();
 
     let message_ptr = CString::new(

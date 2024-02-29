@@ -7,7 +7,7 @@ use tokio::sync::broadcast::{self, Sender};
 use tokio::time;
 use tokio::time::sleep;
 use waku_bindings::{
-    waku_new, Encoding, Event, MessageId, Running, WakuContentTopic, WakuMessage, WakuNodeConfig,
+    waku_new, Encoding, Event, MessageHash, Running, WakuContentTopic, WakuMessage, WakuNodeConfig,
     WakuNodeHandle,
 };
 const ECHO_TIMEOUT: u64 = 10;
@@ -17,7 +17,7 @@ const TEST_PUBSUBTOPIC: &str = "test";
 fn try_publish_relay_messages(
     node: &WakuNodeHandle<Running>,
     msg: &WakuMessage,
-) -> Result<HashSet<MessageId>, String> {
+) -> Result<HashSet<MessageHash>, String> {
     let topic = TEST_PUBSUBTOPIC.to_string();
     Ok(HashSet::from([
         node.relay_publish_message(msg, &topic, None)?
@@ -26,19 +26,19 @@ fn try_publish_relay_messages(
 
 #[derive(Debug, Clone)]
 struct Response {
-    id: MessageId,
+    hash: MessageHash,
     payload: Vec<u8>,
 }
 
 fn set_callback(node: &WakuNodeHandle<Running>, tx: Sender<Response>) {
     node.set_event_callback(move |event| {
         if let Event::WakuMessage(message) = event {
-            let id = message.message_id;
+            let hash = message.message_hash;
             let message = message.waku_message;
             let payload = message.payload.to_vec();
 
             tx.send(Response {
-                id: id.to_string(),
+                hash: hash.to_string(),
                 payload,
             })
             .expect("send response to the receiver");
@@ -73,7 +73,7 @@ async fn test_echo_messages(
 
     let mut ids = try_publish_relay_messages(node1, &message).expect("send relay messages");
     while let Ok(res) = rx.recv().await {
-        if ids.take(&res.id).is_some() {
+        if ids.take(&res.hash).is_some() {
             let msg = from_utf8(&res.payload).expect("should be valid message");
             assert_eq!(content, msg);
         }
@@ -108,7 +108,7 @@ async fn default_echo() -> Result<(), String> {
     node2.relay_subscribe(&topic)?;
 
     // Wait for mesh to form
-    sleep(Duration::from_secs(5)).await;
+    sleep(Duration::from_secs(3)).await;
 
     let content_topic = WakuContentTopic::new("toychat", "2", "huilong", Encoding::Proto);
 
@@ -145,6 +145,6 @@ fn node_restart() {
 
         let node = node.start().expect("node should start with valid config");
 
-        let node = node.stop().expect("node should stop");
+        node.stop().expect("node should stop");
     }
 }

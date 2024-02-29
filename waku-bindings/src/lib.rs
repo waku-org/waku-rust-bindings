@@ -16,4 +16,6 @@ pub use node::{
     SecretKey, WakuMessageEvent, WakuNodeConfig, WakuNodeHandle,
 };
 
-pub use general::{Encoding, MessageId, Result, WakuContentTopic, WakuMessage, WakuMessageVersion};
+pub use general::{
+    Encoding, MessageHash, Result, WakuContentTopic, WakuMessage, WakuMessageVersion,
+};

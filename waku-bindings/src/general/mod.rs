@@ -11,8 +11,8 @@ use sscanf::{scanf, RegexRepresentation};
 
 /// Waku message version
 pub type WakuMessageVersion = usize;
-/// Waku message id, hex encoded sha256 digest of the message
-pub type MessageId = String;
+/// Waku message hash, hex encoded sha256 digest of the message
+pub type MessageHash = String;
 
 /// Waku response, just a `Result` with an `String` error.
 pub type Result<T> = std::result::Result<T, String>;

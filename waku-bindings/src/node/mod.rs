@@ -14,7 +14,7 @@ pub use secp256k1::{PublicKey, SecretKey};
 use std::marker::PhantomData;
 use std::time::Duration;
 // internal
-use crate::general::{MessageId, Result, WakuMessage};
+use crate::general::{MessageHash, Result, WakuMessage};
 use context::WakuNodeContext;
 
 pub use config::WakuNodeConfig;
@@ -97,7 +97,7 @@ impl WakuNodeHandle<Running> {
         message: &WakuMessage,
         pubsub_topic: &String,
         timeout: Option<Duration>,
-    ) -> Result<MessageId> {
+    ) -> Result<MessageHash> {
         relay::waku_relay_publish_message(&self.ctx, message, pubsub_topic, timeout)
     }
 
