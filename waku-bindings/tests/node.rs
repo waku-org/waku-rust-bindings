@@ -2,12 +2,12 @@ use secp256k1::SecretKey;
 use serial_test::serial;
 use std::str::FromStr;
 use std::time::{Duration, SystemTime};
-use std::{str::from_utf8};
+use std::{collections::HashSet, str::from_utf8};
 use tokio::sync::broadcast::{self, Sender};
 use tokio::time;
 use tokio::time::sleep;
 use waku_bindings::{
-    waku_new, Encoding, Event, MessageId, WakuContentTopic, WakuMessage, WakuNodeConfig,
+    waku_new, Encoding, Event, MessageHash, Running, WakuContentTopic, WakuMessage, WakuNodeConfig,
     WakuNodeHandle,
 };
 const ECHO_TIMEOUT: u64 = 10;
@@ -15,28 +15,30 @@ const ECHO_MESSAGE: &str = "Hi from 🦀!";
 const TEST_PUBSUBTOPIC: &str = "test";
 
 fn try_publish_relay_messages(
-    node: &WakuNodeHandle,
+    node: &WakuNodeHandle<Running>,
     msg: &WakuMessage,
-) -> Result<(), String> {
+) -> Result<HashSet<MessageHash>, String> {
     let topic = TEST_PUBSUBTOPIC.to_string();
-    Ok(node.relay_publish_message(msg, &topic, None)?)
+    Ok(HashSet::from([
+        node.relay_publish_message(msg, &topic, None)?
+    ]))
 }
 
 #[derive(Debug, Clone)]
 struct Response {
-    id: MessageId,
+    hash: MessageHash,
     payload: Vec<u8>,
 }
 
-fn set_callback(node: &WakuNodeHandle, tx: Sender<Response>) {
+fn set_callback(node: &WakuNodeHandle<Running>, tx: Sender<Response>) {
     node.set_event_callback(move |event| {
         if let Event::WakuMessage(message) = event {
-            let id = message.message_id;
+            let hash = message.message_hash;
             let message = message.waku_message;
             let payload = message.payload.to_vec();
 
             tx.send(Response {
-                id: id.to_string(),
+                hash: hash.to_string(),
                 payload,
             })
             .expect("send response to the receiver");
@@ -45,8 +47,8 @@ fn set_callback(node: &WakuNodeHandle, tx: Sender<Response>) {
 }
 
 async fn test_echo_messages(
-    node1: &WakuNodeHandle,
-    node2: &WakuNodeHandle,
+    node1: &WakuNodeHandle<Running>,
+    node2: &WakuNodeHandle<Running>,
     content: &'static str,
     content_topic: WakuContentTopic,
 ) {
@@ -69,11 +71,16 @@ async fn test_echo_messages(
     let (tx, mut rx) = broadcast::channel(1);
     set_callback(node2, tx);
 
-    try_publish_relay_messages(node1, &message).expect("send relay messages");
-
+    let mut ids = try_publish_relay_messages(node1, &message).expect("send relay messages");
     while let Ok(res) = rx.recv().await {
-        assert!(!res.id.is_empty());
-        from_utf8(&res.payload).expect("should be valid message");
+        if ids.take(&res.hash).is_some() {
+            let msg = from_utf8(&res.payload).expect("should be valid message");
+            assert_eq!(content, msg);
+        }
+
+        if ids.is_empty() {
+            break;
+        }
     }
 }
 
@@ -89,8 +96,8 @@ async fn default_echo() -> Result<(), String> {
         ..Default::default()
     }))?;
 
-    node1.start()?;
-    node2.start()?;
+    let node1 = node1.start()?;
+    let node2 = node2.start()?;
 
     let addresses1 = node1.listen_addresses()?;
     node2.connect(&addresses1[0], None)?;
@@ -101,7 +108,7 @@ async fn default_echo() -> Result<(), String> {
     node2.relay_subscribe(&topic)?;
 
     // Wait for mesh to form
-    sleep(Duration::from_secs(5)).await;
+    sleep(Duration::from_secs(3)).await;
 
     let content_topic = WakuContentTopic::new("toychat", "2", "huilong", Encoding::Proto);
 
@@ -136,7 +143,7 @@ fn node_restart() {
     for _ in 0..3 {
         let node = waku_new(config.clone().into()).expect("default config should be valid");
 
-        node.start().expect("node should start with valid config");
+        let node = node.start().expect("node should start with valid config");
 
         node.stop().expect("node should stop");
     }
