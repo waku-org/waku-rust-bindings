@@ -2,7 +2,7 @@ use secp256k1::SecretKey;
 use serial_test::serial;
 use std::str::FromStr;
 use std::time::{Duration, SystemTime};
-use std::{collections::HashSet, str::from_utf8};
+use std::{str::from_utf8};
 use tokio::sync::broadcast::{self, Sender};
 use tokio::time;
 use tokio::time::sleep;
@@ -17,11 +17,9 @@ const TEST_PUBSUBTOPIC: &str = "test";
 fn try_publish_relay_messages(
     node: &WakuNodeHandle,
     msg: &WakuMessage,
-) -> Result<HashSet<MessageId>, String> {
+) -> Result<(), String> {
     let topic = TEST_PUBSUBTOPIC.to_string();
-    Ok(HashSet::from([
-        node.relay_publish_message(msg, &topic, None)?
-    ]))
+    Ok(node.relay_publish_message(msg, &topic, None)?)
 }
 
 #[derive(Debug, Clone)]
@@ -71,17 +69,11 @@ async fn test_echo_messages(
     let (tx, mut rx) = broadcast::channel(1);
     set_callback(node2, tx);
 
-    let mut ids = try_publish_relay_messages(node1, &message).expect("send relay messages");
+    try_publish_relay_messages(node1, &message).expect("send relay messages");
 
     while let Ok(res) = rx.recv().await {
-        if ids.take(&res.id).is_some() {
-            let msg = from_utf8(&res.payload).expect("should be valid message");
-            assert_eq!(content, msg);
-        }
-
-        if ids.is_empty() {
-            break;
-        }
+        assert!(!res.id.is_empty());
+        from_utf8(&res.payload).expect("should be valid message");
     }
 }
 

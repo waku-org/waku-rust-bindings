@@ -9,6 +9,7 @@ use multiaddr::Multiaddr;
 use super::config::WakuNodeConfig;
 use crate::general::Result;
 use crate::node::context::WakuNodeContext;
+use crate::utils::LibwakuResponse;
 use crate::utils::{get_trampoline, handle_json_response, handle_no_response, handle_response};
 
 /// Instantiates a Waku node
@@ -23,10 +24,10 @@ pub fn waku_new(config: Option<WakuNodeConfig>) -> Result<WakuNodeContext> {
     .expect("CString should build properly from the config")
     .into_raw();
 
-    let mut error: String = Default::default();
-    let error_cb = |v: &str| error = v.to_string();
+    let mut result: LibwakuResponse = Default::default();
+    let result_cb = |r: LibwakuResponse| result = r;
     let obj_ptr = unsafe {
-        let mut closure = error_cb;
+        let mut closure = result_cb;
         let cb = get_trampoline(&closure);
         let out = waku_sys::waku_new(config_ptr, cb, &mut closure as *mut _ as *mut c_void);
 
@@ -35,67 +36,67 @@ pub fn waku_new(config: Option<WakuNodeConfig>) -> Result<WakuNodeContext> {
         out
     };
 
-    if !error.is_empty() {
-        Err(error)
-    } else {
-        Ok(WakuNodeContext { obj_ptr })
+    match result {
+        LibwakuResponse::MissingCallback => panic!("callback is required"),
+        LibwakuResponse::Failure(v) => Err(v),
+        _ => Ok(WakuNodeContext { obj_ptr }),
     }
 }
 
 /// Start a Waku node mounting all the protocols that were enabled during the Waku node instantiation.
 /// as per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_start)
 pub fn waku_start(ctx: &WakuNodeContext) -> Result<()> {
-    let mut error: String = Default::default();
-    let error_cb = |v: &str| error = v.to_string();
+    let mut result: LibwakuResponse = Default::default();
+    let result_cb = |r: LibwakuResponse| result = r;
     let code = unsafe {
-        let mut closure = error_cb;
+        let mut closure = result_cb;
         let cb = get_trampoline(&closure);
         waku_sys::waku_start(ctx.obj_ptr, cb, &mut closure as *mut _ as *mut c_void)
     };
 
-    handle_no_response(code, &error)
+    handle_no_response(code, result)
 }
 
 /// Stops a Waku node
 /// as per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_stop)
 pub fn waku_stop(ctx: &WakuNodeContext) -> Result<()> {
-    let mut error: String = Default::default();
-    let error_cb = |v: &str| error = v.to_string();
+    let mut result: LibwakuResponse = Default::default();
+    let result_cb = |r: LibwakuResponse| result = r;
     let code = unsafe {
-        let mut closure = error_cb;
+        let mut closure = result_cb;
         let cb = get_trampoline(&closure);
         waku_sys::waku_stop(ctx.obj_ptr, cb, &mut closure as *mut _ as *mut c_void)
     };
 
-    handle_no_response(code, &error)
+    handle_no_response(code, result)
 }
 
 /// nwaku version
 #[allow(clippy::not_unsafe_ptr_arg_deref)]
 pub fn waku_version(ctx: &WakuNodeContext) -> Result<String> {
-    let mut result: String = Default::default();
-    let result_cb = |v: &str| result = v.to_string();
+    let mut result: LibwakuResponse = Default::default();
+    let result_cb = |r: LibwakuResponse| result = r;
     let code = unsafe {
         let mut closure = result_cb;
         let cb = get_trampoline(&closure);
         waku_sys::waku_version(ctx.obj_ptr, cb, &mut closure as *mut _ as *mut c_void)
     };
 
-    handle_response(code, &result)
+    handle_response(code, result)
 }
 
 /// Get the multiaddresses the Waku node is listening to
 /// as per [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_listen_addresses)
 pub fn waku_listen_addresses(ctx: &WakuNodeContext) -> Result<Vec<Multiaddr>> {
-    let mut result: String = Default::default();
-    let result_cb = |v: &str| result = v.to_string();
+    let mut result: LibwakuResponse = Default::default();
+    let result_cb = |r: LibwakuResponse| result = r;
     let code = unsafe {
         let mut closure = result_cb;
         let cb = get_trampoline(&closure);
         waku_sys::waku_listen_addresses(ctx.obj_ptr, cb, &mut closure as *mut _ as *mut c_void)
     };
 
-    handle_json_response(code, &result)
+    handle_json_response(code, result)
 }
 
 #[cfg(test)]

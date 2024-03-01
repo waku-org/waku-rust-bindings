@@ -13,7 +13,7 @@ pub use multiaddr::Multiaddr;
 pub use secp256k1::{PublicKey, SecretKey};
 use std::time::Duration;
 // internal
-use crate::general::{MessageId, Result, WakuMessage};
+use crate::general::{Result, WakuMessage};
 use context::WakuNodeContext;
 
 pub use config::WakuNodeConfig;
@@ -66,7 +66,7 @@ impl WakuNodeHandle {
         message: &WakuMessage,
         pubsub_topic: &String,
         timeout: Option<Duration>,
-    ) -> Result<MessageId> {
+    ) -> Result<()> {
         relay::waku_relay_publish_message(&self.ctx, message, pubsub_topic, timeout)
     }
 

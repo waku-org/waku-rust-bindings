@@ -1,22 +1,46 @@
 use crate::general::Result;
 use core::str::FromStr;
 use serde::de::DeserializeOwned;
+use std::convert::TryFrom;
 use std::{slice, str};
 use waku_sys::WakuCallBack;
 use waku_sys::{RET_ERR, RET_MISSING_CALLBACK, RET_OK};
 
-pub fn decode<T: DeserializeOwned>(input: &str) -> Result<T> {
-    serde_json::from_str(input)
+#[derive(Debug, Default, PartialEq)]
+pub enum LibwakuResponse {
+    Success(Option<String>),
+    Failure(String),
+    MissingCallback,
+    #[default]
+    Undefined,
+}
+
+impl TryFrom<(u32, &str)> for LibwakuResponse {
+    type Error = String;
+
+    fn try_from((ret_code, response): (u32, &str)) -> std::result::Result<Self, Self::Error> {
+        let opt_value = Some(response.to_string()).filter(|s| !s.is_empty());
+        match ret_code {
+            RET_OK => Ok(LibwakuResponse::Success(opt_value)),
+            RET_ERR => Ok(LibwakuResponse::Failure(format!("waku error: {}", response))),
+            RET_MISSING_CALLBACK => Ok(LibwakuResponse::MissingCallback),
+            _ => Err(format!("undefined return code {}", ret_code)),
+        }
+    }
+}
+
+pub fn decode<T: DeserializeOwned>(input: String) -> Result<T> {
+    serde_json::from_str(input.as_str())
         .map_err(|err| format!("could not deserialize waku response: {}", err))
 }
 
 unsafe extern "C" fn trampoline<F>(
-    _ret_code: ::std::os::raw::c_int,
+    ret_code: ::std::os::raw::c_int,
     data: *const ::std::os::raw::c_char,
     data_len: usize,
     user_data: *mut ::std::os::raw::c_void,
 ) where
-    F: FnMut(&str),
+    F: FnMut(LibwakuResponse),
 {
     let user_data = &mut *(user_data as *mut F);
 
@@ -27,41 +51,59 @@ unsafe extern "C" fn trampoline<F>(
             .expect("could not retrieve response")
     };
 
-    user_data(response);
+    let result = LibwakuResponse::try_from((ret_code as u32, response))
+        .expect("invalid response obtained from libwaku");
+
+    user_data(result);
 }
 
 pub fn get_trampoline<F>(_closure: &F) -> WakuCallBack
 where
-    F: FnMut(&str),
+    F: FnMut(LibwakuResponse),
 {
     Some(trampoline::<F>)
 }
 
-pub fn handle_no_response(code: i32, error: &str) -> Result<()> {
-    match code as u32 {
-        RET_OK => Ok(()),
-        RET_ERR => Err(format!("waku error: {}", error)),
-        RET_MISSING_CALLBACK => Err("missing callback".to_string()),
-        _ => Err(format!("undefined return code {}", code)),
+pub fn handle_no_response(code: i32, result: LibwakuResponse) -> Result<()> {
+    if result == LibwakuResponse::Undefined && code as u32 == RET_OK {
+        // Some functions will only execute the callback on error
+        return Ok(());
+    }
+
+    match result {
+        LibwakuResponse::Success(_) => Ok(()),
+        LibwakuResponse::Failure(v) => Err(v),
+        LibwakuResponse::MissingCallback => panic!("callback is required"),
+        LibwakuResponse::Undefined => panic!(
+            "undefined ffi state: code({}) was returned but callback was not executed",
+            code
+        ),
     }
 }
 
-pub fn handle_json_response<F: DeserializeOwned>(code: i32, result: &str) -> Result<F> {
-    match code as u32 {
-        RET_OK => decode(result),
-        RET_ERR => Err(format!("waku error: {}", result)),
-        RET_MISSING_CALLBACK => Err("missing callback".to_string()),
-        _ => Err(format!("undefined return code {}", code)),
+pub fn handle_json_response<F: DeserializeOwned>(code: i32, result: LibwakuResponse) -> Result<F> {
+    match result {
+        LibwakuResponse::Success(v) => decode(v.unwrap_or_default()),
+        LibwakuResponse::Failure(v) => Err(v),
+        LibwakuResponse::MissingCallback => panic!("callback is required"),
+        LibwakuResponse::Undefined => panic!(
+            "undefined ffi state: code({}) was returned but callback was not executed",
+            code
+        ),
     }
 }
 
-pub fn handle_response<F: FromStr>(code: i32, result: &str) -> Result<F> {
-    match code as u32 {
-        RET_OK => result
+pub fn handle_response<F: FromStr>(code: i32, result: LibwakuResponse) -> Result<F> {
+    match result {
+        LibwakuResponse::Success(v) => v
+            .unwrap_or_default()
             .parse()
-            .map_err(|_| format!("could not parse value: {}", result)),
-        RET_ERR => Err(format!("waku error: {}", result)),
-        RET_MISSING_CALLBACK => Err("missing callback".to_string()),
-        _ => Err(format!("undefined return code {}", code)),
+            .map_err(|_| format!("could not parse value")),
+        LibwakuResponse::Failure(v) => Err(v),
+        LibwakuResponse::MissingCallback => panic!("callback is required"),
+        LibwakuResponse::Undefined => panic!(
+            "undefined ffi state: code({}) was returned but callback was not executed",
+            code
+        ),
     }
 }

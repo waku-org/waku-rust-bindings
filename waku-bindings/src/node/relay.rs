@@ -6,9 +6,9 @@ use std::time::Duration;
 // crates
 use libc::*;
 // internal
-use crate::general::{Encoding, MessageId, Result, WakuContentTopic, WakuMessage};
+use crate::general::{Encoding, Result, WakuContentTopic, WakuMessage};
 use crate::node::context::WakuNodeContext;
-use crate::utils::{get_trampoline, handle_no_response, handle_response};
+use crate::utils::{get_trampoline, handle_no_response, handle_response, LibwakuResponse};
 
 /// Create a content topic according to [RFC 23](https://rfc.vac.dev/spec/23/)
 /// As per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_content_topicchar-applicationname-unsigned-int-applicationversion-char-contenttopicname-char-encoding)
@@ -30,8 +30,8 @@ pub fn waku_create_content_topic(
         .expect("Encoding should always transform to CString")
         .into_raw();
 
-    let mut result: String = Default::default();
-    let result_cb = |v: &str| result = v.to_string();
+    let mut result: LibwakuResponse = Default::default();
+    let result_cb = |r: LibwakuResponse| result = r;
     let code = unsafe {
         let mut closure = result_cb;
         let cb = get_trampoline(&closure);
@@ -52,8 +52,7 @@ pub fn waku_create_content_topic(
         out
     };
 
-    handle_response::<WakuContentTopic>(code, &result)
-        .expect("&str from result should always be extracted")
+    handle_response(code, result).expect("&str from result should always be extracted")
 }
 
 /// Publish a message using Waku Relay
@@ -63,7 +62,7 @@ pub fn waku_relay_publish_message(
     message: &WakuMessage,
     pubsub_topic: &String,
     timeout: Option<Duration>,
-) -> Result<MessageId> {
+) -> Result<()> {
     let pubsub_topic = pubsub_topic.to_string();
 
     let message_ptr = CString::new(
@@ -76,8 +75,8 @@ pub fn waku_relay_publish_message(
         .expect("CString should build properly from pubsub topic")
         .into_raw();
 
-    let mut result: String = Default::default();
-    let result_cb = |v: &str| result = v.to_string();
+    let mut result: LibwakuResponse = Default::default();
+    let result_cb = |r: LibwakuResponse| result = r;
     let code = unsafe {
         let mut closure = result_cb;
         let cb = get_trampoline(&closure);
@@ -103,7 +102,7 @@ pub fn waku_relay_publish_message(
         out
     };
 
-    handle_response(code, &result)
+    handle_no_response(code, result)
 }
 
 pub fn waku_relay_subscribe(ctx: &WakuNodeContext, pubsub_topic: &String) -> Result<()> {
@@ -112,10 +111,10 @@ pub fn waku_relay_subscribe(ctx: &WakuNodeContext, pubsub_topic: &String) -> Res
         .expect("CString should build properly from pubsub topic")
         .into_raw();
 
-    let mut error: String = Default::default();
-    let error_cb = |v: &str| error = v.to_string();
+    let mut result: LibwakuResponse = Default::default();
+    let result_cb = |r: LibwakuResponse| result = r;
     let code = unsafe {
-        let mut closure = error_cb;
+        let mut closure = result_cb;
         let cb = get_trampoline(&closure);
         let out = waku_sys::waku_relay_subscribe(
             ctx.obj_ptr,
@@ -129,7 +128,7 @@ pub fn waku_relay_subscribe(ctx: &WakuNodeContext, pubsub_topic: &String) -> Res
         out
     };
 
-    handle_no_response(code, &error)
+    handle_no_response(code, result)
 }
 
 pub fn waku_relay_unsubscribe(ctx: &WakuNodeContext, pubsub_topic: &String) -> Result<()> {
@@ -138,10 +137,10 @@ pub fn waku_relay_unsubscribe(ctx: &WakuNodeContext, pubsub_topic: &String) -> R
         .expect("CString should build properly from pubsub topic")
         .into_raw();
 
-    let mut error: String = Default::default();
-    let error_cb = |v: &str| error = v.to_string();
+    let mut result: LibwakuResponse = Default::default();
+    let result_cb = |r: LibwakuResponse| result = r;
     let code = unsafe {
-        let mut closure = error_cb;
+        let mut closure = result_cb;
         let cb = get_trampoline(&closure);
         let out = waku_sys::waku_relay_subscribe(
             ctx.obj_ptr,
@@ -155,5 +154,5 @@ pub fn waku_relay_unsubscribe(ctx: &WakuNodeContext, pubsub_topic: &String) -> R
         out
     };
 
-    handle_no_response(code, &error)
+    handle_no_response(code, result)
 }
