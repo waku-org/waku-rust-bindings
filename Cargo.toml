@@ -3,4 +3,5 @@
 members = [
     "waku-bindings",
     "waku-sys",
+    "examples/basic"
 ]

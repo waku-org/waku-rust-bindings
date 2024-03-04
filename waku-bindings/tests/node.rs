@@ -7,8 +7,8 @@ use tokio::sync::broadcast::{self, Sender};
 use tokio::time;
 use tokio::time::sleep;
 use waku_bindings::{
-    waku_new, Encoding, Event, MessageHash, Running, WakuContentTopic, WakuMessage, WakuNodeConfig,
-    WakuNodeHandle,
+    waku_destroy, waku_new, Encoding, Event, MessageHash, Running, WakuContentTopic, WakuMessage,
+    WakuNodeConfig, WakuNodeHandle,
 };
 const ECHO_TIMEOUT: u64 = 10;
 const ECHO_MESSAGE: &str = "Hi from 🦀!";
@@ -123,8 +123,11 @@ async fn default_echo() -> Result<(), String> {
 
     assert!(got_all);
 
-    node2.stop()?;
-    node1.stop()?;
+    let node2 = node2.stop()?;
+    let node1 = node1.stop()?;
+
+    waku_destroy(node1)?;
+    waku_destroy(node2)?;
 
     Ok(())
 }
