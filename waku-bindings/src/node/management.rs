@@ -43,6 +43,18 @@ pub fn waku_new(config: Option<WakuNodeConfig>) -> Result<WakuNodeContext> {
     }
 }
 
+pub fn waku_destroy(ctx: &WakuNodeContext) -> Result<()> {
+    let mut result: LibwakuResponse = Default::default();
+    let result_cb = |r: LibwakuResponse| result = r;
+    let code = unsafe {
+        let mut closure = result_cb;
+        let cb = get_trampoline(&closure);
+        waku_sys::waku_destroy(ctx.obj_ptr, cb, &mut closure as *mut _ as *mut c_void)
+    };
+
+    handle_no_response(code, result)
+}
+
 /// Start a Waku node mounting all the protocols that were enabled during the Waku node instantiation.
 /// as per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_start)
 pub fn waku_start(ctx: &WakuNodeContext) -> Result<()> {

@@ -48,6 +48,10 @@ pub fn waku_new(config: Option<WakuNodeConfig>) -> Result<WakuNodeHandle<Initial
     })
 }
 
+pub fn waku_destroy(node: WakuNodeHandle<Initialized>) -> Result<()> {
+    management::waku_destroy(&node.ctx)
+}
+
 impl WakuNodeHandle<Initialized> {
     /// Start a Waku node mounting all the protocols that were enabled during the Waku node instantiation.
     /// as per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_start)

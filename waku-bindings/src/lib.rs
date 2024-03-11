@@ -12,8 +12,8 @@ mod utils;
 use rln;
 
 pub use node::{
-    waku_create_content_topic, waku_new, Event, Initialized, Key, Multiaddr, PublicKey, Running,
-    SecretKey, WakuMessageEvent, WakuNodeConfig, WakuNodeHandle,
+    waku_create_content_topic, waku_destroy, waku_new, Event, Initialized, Key, Multiaddr,
+    PublicKey, Running, SecretKey, WakuMessageEvent, WakuNodeConfig, WakuNodeHandle,
 };
 
 pub use general::{
