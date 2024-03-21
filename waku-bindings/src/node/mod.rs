@@ -17,6 +17,7 @@ use std::time::Duration;
 use crate::general::{MessageHash, Result, WakuMessage};
 use context::WakuNodeContext;
 
+pub use config::RLNConfig;
 pub use config::WakuNodeConfig;
 pub use events::{Event, WakuMessageEvent};
 pub use relay::waku_create_content_topic;
