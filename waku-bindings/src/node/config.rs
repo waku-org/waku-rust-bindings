@@ -20,10 +20,54 @@ pub struct WakuNodeConfig {
     /// Secp256k1 private key in Hex format (`0x123...abc`). Default random
     #[serde(with = "secret_key_serde", rename = "key")]
     pub node_key: Option<SecretKey>,
+    /// Cluster id that the node is running in
+    #[default(Some(0))]
+    pub cluster_id: Option<usize>,
     /// Enable relay protocol. Default `true`
     #[default(Some(true))]
     pub relay: Option<bool>,
     pub relay_topics: Vec<String>,
+    /// RLN configuration
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub rln_relay: Option<RLNConfig>,
+}
+
+/// RLN Relay configuration
+#[derive(Clone, SmartDefault, Serialize, Deserialize, Debug)]
+#[serde(rename_all = "kebab-case")]
+pub struct RLNConfig {
+    /// Indicates if RLN support will be enabled.
+    pub enabled: bool,
+    /// Index of the onchain commitment to use
+    #[serde(skip_serializing_if = "Option::is_none", rename = "membership-index")]
+    pub membership_index: Option<usize>,
+    /// On-chain dynamic group management
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub dynamic: Option<bool>,
+    /// Path to the RLN merkle tree sled db (https://github.com/spacejam/sled)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tree_path: Option<String>,
+    /// Message rate in bytes/sec after which verification of proofs should happen
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub bandwidth_threshold: Option<usize>,
+    /// Path for persisting rln-relay credential
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub cred_path: Option<String>,
+    /// HTTP address of an Ethereum testnet client e.g., http://localhost:8540/
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub eth_client_address: Option<String>,
+    /// Address of membership contract on an Ethereum testnet
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub eth_contract_address: Option<String>,
+    /// Password for encrypting RLN credentials
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub cred_password: Option<String>,
+    /// Set a user message limit for the rln membership registration
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub user_message_limit: Option<u64>,
+    /// Epoch size in seconds used to rate limit RLN memberships
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub epoch_sec: Option<u64>,
 }
 
 mod secret_key_serde {
