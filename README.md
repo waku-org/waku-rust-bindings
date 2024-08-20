@@ -14,7 +14,7 @@
 [codecov-badge]: https://codecov.io/github/waku-org/waku-rust-bindings/branch/main/graph/badge.svg?token=H4CQWRUCUS
 [codecov-url]: https://codecov.io/github/waku-org/waku-rust-bindings
 
-Rust layer on top of [`go-waku`](https://github.com/waku-org/go-waku) [C FFI bindings](https://github.com/waku-org/go-waku/blob/master/library/README.md).
+Rust layer on top of [`go-waku`](https://github.com/waku-org/go-waku) [C FFI bindings](https://github.com/waku-org/go-waku/blob/master/README.md).
 
 
 ## About Waku
