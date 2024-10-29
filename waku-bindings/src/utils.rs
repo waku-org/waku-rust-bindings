@@ -1,6 +1,5 @@
 use crate::general::Result;
 use core::str::FromStr;
-use serde::de::DeserializeOwned;
 use std::convert::TryFrom;
 use std::{slice, str};
 use waku_sys::WakuCallBack;
@@ -32,9 +31,13 @@ impl TryFrom<(u32, &str)> for LibwakuResponse {
     }
 }
 
-pub fn decode<T: DeserializeOwned>(input: String) -> Result<T> {
-    serde_json::from_str(input.as_str())
-        .map_err(|err| format!("could not deserialize waku response: {}", err))
+// Define the WakuDecode trait
+pub trait WakuDecode: Sized {
+    fn decode(input: &str) -> Result<Self>;
+}
+
+pub fn decode<T: WakuDecode>(input: String) -> Result<T> {
+    T::decode(input.as_str())
 }
 
 unsafe extern "C" fn trampoline<F>(
@@ -84,7 +87,7 @@ pub fn handle_no_response(code: i32, result: LibwakuResponse) -> Result<()> {
     }
 }
 
-pub fn handle_json_response<F: DeserializeOwned>(code: i32, result: LibwakuResponse) -> Result<F> {
+pub fn handle_json_response<F: WakuDecode>(code: i32, result: LibwakuResponse) -> Result<F> {
     match result {
         LibwakuResponse::Success(v) => decode(v.unwrap_or_default()),
         LibwakuResponse::Failure(v) => Err(v),

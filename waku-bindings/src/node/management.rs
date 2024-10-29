@@ -11,6 +11,7 @@ use crate::general::Result;
 use crate::node::context::WakuNodeContext;
 use crate::utils::LibwakuResponse;
 use crate::utils::{get_trampoline, handle_json_response, handle_no_response, handle_response};
+use crate::utils::WakuDecode;
 
 /// Instantiates a Waku node
 /// as per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_newchar-jsonconfig)
@@ -99,6 +100,17 @@ pub fn waku_version(ctx: &WakuNodeContext) -> Result<String> {
     };
 
     handle_response(code, result)
+}
+
+// Implement WakuDecode for Vec<Multiaddr>
+impl WakuDecode for Vec<Multiaddr> {
+    fn decode(input: &str) -> Result<Self> {
+        input
+            .split(',')
+            .map(|s| s.trim().parse::<Multiaddr>().map_err(|err| err.to_string()))
+            .collect::<Result<Vec<Multiaddr>>>() // Collect results into a Vec
+            .map_err(|err| format!("could not parse Multiaddr: {}", err))
+    }
 }
 
 /// Get the multiaddresses the Waku node is listening to
