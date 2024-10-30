@@ -15,6 +15,7 @@ use std::marker::PhantomData;
 use std::time::Duration;
 // internal
 use crate::general::{MessageHash, Result, WakuMessage};
+use crate::LibwakuResponse;
 use context::WakuNodeContext;
 
 pub use config::RLNConfig;
@@ -116,7 +117,7 @@ impl WakuNodeHandle<Running> {
         relay::waku_relay_unsubscribe(&self.ctx, pubsub_topic)
     }
 
-    pub fn set_event_callback<F: FnMut(Event) + Send + Sync + 'static>(&self, f: F) {
+    pub fn set_event_callback<F: FnMut(LibwakuResponse)>(&self, f: F) {
         events::waku_set_event_callback(&self.ctx, f)
     }
 }

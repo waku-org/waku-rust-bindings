@@ -3,7 +3,10 @@
 //! Implementation on top of [`waku-bindings`](https://rfc.vac.dev/spec/36/)
 mod general;
 mod node;
-mod utils;
+pub mod utils;
+
+// Re-export the LibwakuResponse type to make it accessible outside this module
+pub use utils::LibwakuResponse;
 
 // Required so functions inside libwaku can call RLN functions even if we
 // use it within the bindings functions

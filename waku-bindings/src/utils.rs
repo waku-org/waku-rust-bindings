@@ -48,7 +48,7 @@ unsafe extern "C" fn trampoline<F>(
 ) where
     F: FnMut(LibwakuResponse),
 {
-    let user_data = &mut *(user_data as *mut F);
+    let closure = &mut *(user_data as *mut F);
 
     let response = if data.is_null() {
         ""
@@ -60,7 +60,7 @@ unsafe extern "C" fn trampoline<F>(
     let result = LibwakuResponse::try_from((ret_code as u32, response))
         .expect("invalid response obtained from libwaku");
 
-    user_data(result);
+    closure(result);
 }
 
 pub fn get_trampoline<F>(_closure: &F) -> WakuCallBack

@@ -20,7 +20,7 @@ pub type Result<T> = std::result::Result<T, String>;
 // TODO: Properly type and deserialize payload form base64 encoded string
 /// Waku message in JSON format.
 /// as per the [specification](https://rfc.vac.dev/spec/36/#jsonmessage-type)
-#[derive(Clone, Serialize, Deserialize, Debug)]
+#[derive(Clone, Serialize, Deserialize, Debug, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct WakuMessage {
     #[serde(with = "base64_serde", default = "Vec::new")]
@@ -67,8 +67,9 @@ impl WakuMessage {
 }
 
 /// WakuMessage encoding scheme
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Default)]
 pub enum Encoding {
+    #[default]
     Proto,
     Rlp,
     Rfc26,
@@ -105,7 +106,7 @@ impl RegexRepresentation for Encoding {
 }
 
 /// A waku content topic `/{application_name}/{version}/{content_topic_name}/{encdoing}`
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Default)]
 pub struct WakuContentTopic {
     pub application_name: Cow<'static, str>,
     pub version: Cow<'static, str>,
