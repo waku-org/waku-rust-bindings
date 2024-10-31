@@ -20,7 +20,6 @@ pub fn waku_new(config: Option<WakuNodeConfig>) -> Result<WakuNodeContext> {
         waku_sys::waku_setup();
     }
 
-
     let config = config.unwrap_or_default();
     let config_ptr = CString::new(
         serde_json::to_string(&config)

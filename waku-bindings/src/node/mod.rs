@@ -37,7 +37,7 @@ impl WakuNodeState for Running {}
 
 /// Handle to the underliying waku node
 pub struct WakuNodeHandle<State: WakuNodeState> {
-    ctx: WakuNodeContext,
+    pub ctx: WakuNodeContext,
     phantom: PhantomData<State>,
 }
 
