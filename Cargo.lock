@@ -380,6 +380,7 @@ name = "basic"
 version = "0.1.0"
 dependencies = [
  "futures",
+ "serde_json",
  "tokio",
  "tokio-util",
  "waku-bindings",

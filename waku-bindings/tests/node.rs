@@ -4,17 +4,13 @@ use std::str::FromStr;
 use std::time::{Duration, SystemTime};
 use std::{collections::HashSet, str::from_utf8};
 use std::cell::OnceCell;
-use tokio::sync::broadcast::{self, Sender};
 use waku_bindings::LibwakuResponse;
-use std::sync::{Arc, OnceLock, Mutex}; // Import Arc and Mutex
 use tokio::time;
 use tokio::time::sleep;
-use waku_bindings::utils;
 use waku_bindings::{
     waku_destroy, waku_new, Encoding, Event, MessageHash, Running, WakuContentTopic, WakuMessage,
     WakuNodeConfig, WakuNodeHandle,
 };
-use std::ffi::c_void;
 const ECHO_TIMEOUT: u64 = 1000;
 const ECHO_MESSAGE: &str = "Hi from 🦀!";
 const TEST_PUBSUBTOPIC: &str = "test";
@@ -29,24 +25,18 @@ fn try_publish_relay_messages(
     ]))
 }
 
-#[derive(Debug, Clone)]
-struct Response {
-    hash: MessageHash,
-    payload: Vec<u8>,
-}
-
 async fn test_echo_messages(
     node1: &WakuNodeHandle<Running>,
     node2: &WakuNodeHandle<Running>,
     content: &'static str,
     content_topic: WakuContentTopic,
-) {
+) -> Result<(), String> {
     // setting a naïve event handler to avoid appearing ERR messages in logs
-    node1.set_event_callback(|_LibwakuResponse| {});
+    node1.set_event_callback(&|_| {});
 
     let rx_waku_message: OnceCell<WakuMessage> = OnceCell::new();
 
-    let closure = |response: LibwakuResponse| {
+    let closure = |response| {
         if let LibwakuResponse::Success(v) = response {
             let event: Event =
                 serde_json::from_str(v.unwrap().as_str()).expect("Parsing event to succeed");
@@ -65,12 +55,7 @@ async fn test_echo_messages(
 
     println!("Before setting event callback");
 
-    unsafe {
-        let cb = utils::get_trampoline(&closure);
-        waku_sys::waku_set_event_callback(node2.ctx.obj_ptr, cb, &closure as *const _ as *mut c_void)
-    };
-    
-    // node2.set_event_callback(closure); // Set the event callback with the closure
+    node2.set_event_callback(&closure); // Set the event callback with the closure
 
     let topic = TEST_PUBSUBTOPIC.to_string();
     node1.relay_subscribe(&topic).unwrap();
@@ -100,22 +85,28 @@ async fn test_echo_messages(
         Vec::new(),
         false,
     );
-    let ids = try_publish_relay_messages(node1, &message).expect("send relay messages");
-    println!("After publish");
+    let _ids = try_publish_relay_messages(node1, &message).expect("send relay messages");
 
     // Wait for the msg to arrive
     for _ in 0..50 {
-        if let Some(value) = rx_waku_message.get() {
-            println!("The waku message value is: {:?}", value);
-            break;
+        if let Some(msg) = rx_waku_message.get() {
+            println!("The waku message value is: {:?}", msg);
+            let payload = msg.payload.to_vec();
+            let payload_str = from_utf8(&payload).expect("should be valid message");
+            println!("payload: {:?}", payload_str);
+            if payload_str == ECHO_MESSAGE {
+                return Ok(())
+            }
         } else {
             sleep(Duration::from_millis(100)).await;
         }
     }
 
     if let None = rx_waku_message.get() {
-        println!("ERROR could not get waku message");
+        return Err("could not get waku message".to_string())
     }
+
+    return Err("Unexpected test ending".to_string())
 }
 
 #[tokio::test]
@@ -134,7 +125,6 @@ async fn default_echo() -> Result<(), String> {
     let node1 = node1.start()?;
     let node2 = node2.start()?;
 
-    let waku_version = node2.version()?;
     let content_topic = WakuContentTopic::new("toychat", "2", "huilong", Encoding::Proto);
 
     let sleep = time::sleep(Duration::from_secs(ECHO_TIMEOUT));
@@ -148,12 +138,8 @@ async fn default_echo() -> Result<(), String> {
 
     assert!(got_all);
 
-    let node2 = node2.stop()?;
     let node1 = node1.stop()?;
-
-    let sleep = time::sleep(Duration::from_secs(5));
-    tokio::pin!(sleep);
-
+    let node2 = node2.stop()?;
     waku_destroy(node1)?;
     waku_destroy(node2)?;
 

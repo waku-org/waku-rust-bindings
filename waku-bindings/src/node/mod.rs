@@ -117,7 +117,7 @@ impl WakuNodeHandle<Running> {
         relay::waku_relay_unsubscribe(&self.ctx, pubsub_topic)
     }
 
-    pub fn set_event_callback<F: FnMut(LibwakuResponse)>(&self, f: F) {
-        events::waku_set_event_callback(&self.ctx, f)
+    pub fn set_event_callback<F: Fn(LibwakuResponse)>(&self, closure: &F) {
+        events::waku_set_event_callback(&self.ctx, closure)
     }
 }
