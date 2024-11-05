@@ -60,7 +60,7 @@ pub fn waku_create_content_topic(
 pub fn waku_relay_publish_message(
     ctx: &WakuNodeContext,
     message: &WakuMessage,
-    pubsub_topic: &String,
+    pubsub_topic: &str,
     timeout: Option<Duration>,
 ) -> Result<MessageHash> {
     let pubsub_topic = pubsub_topic.to_string();
@@ -105,7 +105,7 @@ pub fn waku_relay_publish_message(
     handle_response(code, result)
 }
 
-pub fn waku_relay_subscribe(ctx: &WakuNodeContext, pubsub_topic: &String) -> Result<()> {
+pub fn waku_relay_subscribe(ctx: &WakuNodeContext, pubsub_topic: &str) -> Result<()> {
     let pubsub_topic = pubsub_topic.to_string();
     let pubsub_topic_ptr = CString::new(pubsub_topic)
         .expect("CString should build properly from pubsub topic")

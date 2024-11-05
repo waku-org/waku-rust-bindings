@@ -2,7 +2,7 @@
 //!
 //! Implementation on top of [`waku-bindings`](https://rfc.vac.dev/spec/36/)
 mod general;
-mod node;
+pub mod node;
 pub mod utils;
 
 // Re-export the LibwakuResponse type to make it accessible outside this module

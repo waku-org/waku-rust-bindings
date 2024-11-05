@@ -23,6 +23,10 @@ pub use config::WakuNodeConfig;
 pub use events::{Event, WakuMessageEvent};
 pub use relay::waku_create_content_topic;
 
+use crate::WakuContentTopic;
+use crate::Encoding;
+use std::time::SystemTime;
+
 /// Marker trait to disallow undesired waku node states in the handle
 pub trait WakuNodeState {}
 
@@ -65,7 +69,7 @@ impl WakuNodeHandle<Initialized> {
     }
 }
 
-impl WakuNodeHandle<Running> {
+impl<Running: WakuNodeState> WakuNodeHandle<Running> {
     /// Stops a Waku node
     /// as per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_stop)
     pub fn stop(self) -> Result<WakuNodeHandle<Initialized>> {
@@ -95,20 +99,45 @@ impl WakuNodeHandle<Running> {
         peers::waku_connect(&self.ctx, address, timeout)
     }
 
+    pub fn relay_publish_txt(
+        &self,
+        pubsub_topic: &str,
+        msg_txt: &str,
+        content_topic_name: &'static str,
+        timeout: Option<Duration>,
+    ) -> Result<MessageHash> {
+        let content_topic = WakuContentTopic::new("waku", "2", content_topic_name, Encoding::Proto);
+        let message = WakuMessage::new(
+            msg_txt,
+            content_topic,
+            0,
+            SystemTime::now()
+                .duration_since(SystemTime::UNIX_EPOCH)
+                .unwrap()
+                .as_millis()
+                .try_into()
+                .unwrap(),
+            Vec::new(),
+            false,
+        );
+
+        relay::waku_relay_publish_message(&self.ctx, &message, pubsub_topic, timeout)
+    }
+
     /// Publish a message using Waku Relay.
     /// As per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_relay_publishchar-messagejson-char-pubsubtopic-int-timeoutms)
     /// The pubsub_topic parameter is optional and if not specified it will be derived from the contentTopic.
     pub fn relay_publish_message(
         &self,
         message: &WakuMessage,
-        pubsub_topic: &String,
+        pubsub_topic: &str,
         timeout: Option<Duration>,
     ) -> Result<MessageHash> {
         relay::waku_relay_publish_message(&self.ctx, message, pubsub_topic, timeout)
     }
 
     /// Subscribe to WakuRelay to receive messages matching a content filter.
-    pub fn relay_subscribe(&self, pubsub_topic: &String) -> Result<()> {
+    pub fn relay_subscribe(&self, pubsub_topic: &str) -> Result<()> {
         relay::waku_relay_subscribe(&self.ctx, pubsub_topic)
     }
 

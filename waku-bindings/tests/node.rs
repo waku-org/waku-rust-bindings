@@ -57,7 +57,7 @@ async fn test_echo_messages(
 
     node2.set_event_callback(&closure); // Set the event callback with the closure
 
-    let topic = TEST_PUBSUBTOPIC.to_string();
+    let topic = TEST_PUBSUBTOPIC;
     node1.relay_subscribe(&topic).unwrap();
     node2.relay_subscribe(&topic).unwrap();
 
