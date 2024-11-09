@@ -30,6 +30,9 @@ pub struct WakuNodeConfig {
     /// RLN configuration
     #[serde(skip_serializing_if = "Option::is_none")]
     pub rln_relay: Option<RLNConfig>,
+    // other settings
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub log_level: Option<&'static str>,
 }
 
 /// RLN Relay configuration

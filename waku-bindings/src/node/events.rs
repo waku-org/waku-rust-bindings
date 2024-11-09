@@ -10,9 +10,12 @@ use std::ffi::c_void;
 use serde::{Deserialize, Serialize};
 // internal
 use crate::general::WakuMessage;
-use crate::node::context::WakuNodeContext;
 use crate::utils::{get_trampoline, LibwakuResponse};
 use crate::MessageHash;
+
+pub struct WakuNodeContext {
+    pub obj_ptr: *mut c_void,
+}
 
 /// Waku event
 /// For now just WakuMessage is supported
@@ -37,13 +40,15 @@ pub struct WakuMessageEvent {
     pub waku_message: WakuMessage,
 }
 
-/// Register callback to act as event handler and receive application events,
-/// which are used to react to asynchronous events in Waku
-pub fn waku_set_event_callback<F: FnMut(LibwakuResponse)>(ctx: &WakuNodeContext, closure: &F) {
-    unsafe {
-        let cb = get_trampoline(closure);
-        waku_sys::waku_set_event_callback(ctx.obj_ptr, cb, closure as *const _ as *mut c_void)
-    };
+impl WakuNodeContext {
+    /// Register callback to act as event handler and receive application events,
+    /// which are used to react to asynchronous events in Waku
+    pub fn waku_set_event_callback<F: FnMut(LibwakuResponse)>(&self, mut closure: F) {
+        unsafe {
+            let cb = get_trampoline(&closure);
+            waku_sys::waku_set_event_callback(self.obj_ptr, cb, &mut closure as *mut _ as *mut c_void)
+        };
+    }
 }
 
 #[cfg(test)]

@@ -1,7 +1,6 @@
 //! Waku node implementation
 
 mod config;
-mod context;
 mod events;
 mod management;
 mod peers;
@@ -11,16 +10,13 @@ mod relay;
 pub use aes_gcm::Key;
 pub use multiaddr::Multiaddr;
 pub use secp256k1::{PublicKey, SecretKey};
-use std::marker::PhantomData;
 use std::time::Duration;
 // internal
 use crate::general::{MessageHash, Result, WakuMessage};
-use crate::LibwakuResponse;
-use context::WakuNodeContext;
 
 pub use config::RLNConfig;
 pub use config::WakuNodeConfig;
-pub use events::{Event, WakuMessageEvent};
+pub use events::{Event, WakuMessageEvent, WakuNodeContext};
 pub use relay::waku_create_content_topic;
 
 use crate::WakuContentTopic;
@@ -40,43 +36,35 @@ impl WakuNodeState for Initialized {}
 impl WakuNodeState for Running {}
 
 /// Handle to the underliying waku node
-pub struct WakuNodeHandle<State: WakuNodeState> {
+pub struct WakuNodeHandle {
     pub ctx: WakuNodeContext,
-    phantom: PhantomData<State>,
 }
 
 /// Spawn a new Waku node with the given configuration (default configuration if `None` provided)
 /// as per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_newchar-jsonconfig)
-pub fn waku_new(config: Option<WakuNodeConfig>) -> Result<WakuNodeHandle<Initialized>> {
+pub fn waku_new(config: Option<WakuNodeConfig>) -> Result<WakuNodeHandle> {
     Ok(WakuNodeHandle {
         ctx: management::waku_new(config)?,
-        phantom: PhantomData,
     })
 }
 
-pub fn waku_destroy(node: WakuNodeHandle<Initialized>) -> Result<()> {
+pub fn waku_destroy(node: WakuNodeHandle) -> Result<()> {
     management::waku_destroy(&node.ctx)
 }
 
-impl WakuNodeHandle<Initialized> {
+// unsafe impl Send for WakuNodeHandle<Running> {}
+
+impl WakuNodeHandle {
     /// Start a Waku node mounting all the protocols that were enabled during the Waku node instantiation.
     /// as per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_start)
-    pub fn start(self) -> Result<WakuNodeHandle<Running>> {
-        management::waku_start(&self.ctx).map(|_| WakuNodeHandle {
-            ctx: self.ctx,
-            phantom: PhantomData,
-        })
+    pub fn start(&self) -> Result<()> {
+        management::waku_start(&self.ctx)
     }
-}
 
-impl<Running: WakuNodeState> WakuNodeHandle<Running> {
     /// Stops a Waku node
     /// as per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_stop)
-    pub fn stop(self) -> Result<WakuNodeHandle<Initialized>> {
-        management::waku_stop(&self.ctx).map(|_| WakuNodeHandle {
-            ctx: self.ctx,
-            phantom: PhantomData,
-        })
+    pub fn stop(&self) -> Result<()> {
+        management::waku_stop(&self.ctx)
     }
 
     /// Get the multiaddresses the Waku node is listening to
@@ -101,8 +89,8 @@ impl<Running: WakuNodeState> WakuNodeHandle<Running> {
 
     pub fn relay_publish_txt(
         &self,
-        pubsub_topic: &str,
-        msg_txt: &str,
+        pubsub_topic: &String,
+        msg_txt: &String,
         content_topic_name: &'static str,
         timeout: Option<Duration>,
     ) -> Result<MessageHash> {
@@ -130,14 +118,14 @@ impl<Running: WakuNodeState> WakuNodeHandle<Running> {
     pub fn relay_publish_message(
         &self,
         message: &WakuMessage,
-        pubsub_topic: &str,
+        pubsub_topic: &String,
         timeout: Option<Duration>,
     ) -> Result<MessageHash> {
         relay::waku_relay_publish_message(&self.ctx, message, pubsub_topic, timeout)
     }
 
     /// Subscribe to WakuRelay to receive messages matching a content filter.
-    pub fn relay_subscribe(&self, pubsub_topic: &str) -> Result<()> {
+    pub fn relay_subscribe(&self, pubsub_topic: &String) -> Result<()> {
         relay::waku_relay_subscribe(&self.ctx, pubsub_topic)
     }
 
@@ -146,7 +134,4 @@ impl<Running: WakuNodeState> WakuNodeHandle<Running> {
         relay::waku_relay_unsubscribe(&self.ctx, pubsub_topic)
     }
 
-    pub fn set_event_callback<F: Fn(LibwakuResponse)>(&self, closure: &F) {
-        events::waku_set_event_callback(&self.ctx, closure)
-    }
 }

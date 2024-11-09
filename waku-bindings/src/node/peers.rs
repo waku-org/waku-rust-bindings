@@ -8,9 +8,9 @@ use libc::*;
 use multiaddr::Multiaddr;
 // internal
 use crate::general::Result;
-use crate::node::context::WakuNodeContext;
 use crate::utils::LibwakuResponse;
 use crate::utils::{get_trampoline, handle_no_response};
+use crate::node::events::WakuNodeContext;
 
 /// Dial peer using a multiaddress
 /// If `timeout` as milliseconds doesn't fit into a `i32` it is clamped to [`i32::MAX`]
