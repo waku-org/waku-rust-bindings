@@ -73,32 +73,32 @@ impl TicTacToeApp {
         //     println!("funciona ?");
         
         
-        let mut cloned = Arc::clone(&self.val);
+     //   let mut cloned = Arc::clone(&self.val);
 
+        let tx_clone = self.tx.clone();
         // Establish a closure that handles the incoming messages
-        self.waku.ctx.waku_set_event_callback(|response| {
+        self.waku.ctx.waku_set_event_callback(move |response| {
+            //   if let Ok(mut tx) = tx_clone.try_lock() {
+            //                       //  Lock succeeded, proceed to send the message
+            //                         if tx.try_send(msg.to_string()).is_err() {
+            //                             eprintln!("Failed to send message to async task");
+            //                         }
+            //                     } else {
+            //                         eprintln!("Failed to acquire lock on tx_clone");
+            //                     }
+        //    if let Ok(mut aa) = cloned.try_lock() {
 
-              // if let Ok(mut tx) = tx_clone.try_lock() {
-                                    // Lock succeeded, proceed to send the message
-                                    // if tx.try_send(msg.to_string()).is_err() {
-                                    //     eprintln!("Failed to send message to async task");
-                                    // }
-                                // } else {
-                                //     eprintln!("Failed to acquire lock on tx_clone");
-                                // }
-            if let Ok(mut aa) = cloned.try_lock() {
-
-            }
+        //     }
             
-            // match cloned.lock() {
-            //     Ok(mut data) => {
-            //         *data = "Modified Value".to_string();
-            //         println!("Thread updated value to: {}", data);
-            //     },
-            //     Err(e) => {
-            //         eprintln!("Failed to lock the mutex in thread: {}", e);
-            //     }
-            // }
+        //     match cloned.lock() {
+        //         Ok(mut data) => {
+        //             *data = "Modified Value".to_string();
+        //             println!("Thread updated value to: {}", data);
+        //         },
+        //         Err(e) => {
+        //             eprintln!("Failed to lock the mutex in thread: {}", e);
+        //         }
+        //     }
 
 
             if let LibwakuResponse::Success(v) = response {
@@ -118,14 +118,14 @@ impl TicTacToeApp {
                                 println!("::::::::::::::::::::::::::::::::::::::::::::::::::::");
 
                                 // Send the message to the main thread
-                                // if let Ok(mut tx) = tx_clone.try_lock() {
-                                    // Lock succeeded, proceed to send the message
-                                    // if tx.try_send(msg.to_string()).is_err() {
-                                    //     eprintln!("Failed to send message to async task");
-                                    // }
-                                // } else {
-                                //     eprintln!("Failed to acquire lock on tx_clone");
-                                // }
+                                if let Ok(mut tx) = tx_clone.try_lock() {
+                                  //  Lock succeeded, proceed to send the message
+                                    if tx.try_send(msg.to_string()).is_err() {
+                                        eprintln!("Failed to send message to async task");
+                                    }
+                                } else {
+                                    eprintln!("Failed to acquire lock on tx_clone");
+                                }
 
                                 // Deserialize the JSON into the GameState struct
                                 // Lock the game_state and update it
@@ -356,6 +356,9 @@ fn main() -> eframe::Result<()> {
 
     // Listen for messages in the main thread
     tokio::spawn(async move {
+        unsafe {
+            waku_sys::waku_setup();
+        }
         while let Some(msg) = rx.recv().await {
             println!("Main thread received: {}", msg);
             // Handle the received message, e.g., update the UI or game state

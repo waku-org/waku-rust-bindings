@@ -43,7 +43,7 @@ pub struct WakuMessageEvent {
 impl WakuNodeContext {
     /// Register callback to act as event handler and receive application events,
     /// which are used to react to asynchronous events in Waku
-    pub fn waku_set_event_callback<F: FnMut(LibwakuResponse)>(&self, mut closure: F) {
+    pub fn waku_set_event_callback<F: FnMut(LibwakuResponse) + 'static>(&self, mut closure: F) {
         unsafe {
             let cb = get_trampoline(&closure);
             waku_sys::waku_set_event_callback(self.obj_ptr, cb, &mut closure as *mut _ as *mut c_void)
