@@ -5,13 +5,19 @@
 //! When an event is emitted, this callback will be triggered receiving an [`Event`]
 
 // std
-use std::ffi::c_void;
+use std::ffi::{c_char, c_int, c_void, CStr};
 // crates
 use serde::{Deserialize, Serialize};
 // internal
 use crate::general::WakuMessage;
+use std::{slice, str};
+
 use crate::utils::{get_trampoline, LibwakuResponse};
 use crate::MessageHash;
+use std::ops::Deref;
+use std::sync::Mutex;
+// crates
+use once_cell::sync::Lazy;
 
 pub struct WakuNodeContext {
     pub obj_ptr: *mut c_void,
@@ -40,14 +46,53 @@ pub struct WakuMessageEvent {
     pub waku_message: WakuMessage,
 }
 
+#[allow(clippy::type_complexity)]
+static CALLBACK: Lazy<Mutex<Box<dyn FnMut(LibwakuResponse) + Send + Sync>>> =
+    Lazy::new(|| Mutex::new(Box::new(|_| {})));
+
+/// Register global callback
+fn set_callback<F: FnMut(LibwakuResponse) + Send + Sync + 'static>(f: F) {
+    *CALLBACK.lock().unwrap() = Box::new(f);
+}
+
+unsafe extern "C" fn callback(
+    ret_code: ::std::os::raw::c_int,
+    data: *const ::std::os::raw::c_char,
+    data_len: usize,
+    user_data: *mut ::std::os::raw::c_void,
+) {
+    let response = if data.is_null() {
+        ""
+    } else {
+        str::from_utf8(slice::from_raw_parts(data as *mut u8, data_len))
+            .expect("could not retrieve response")
+    };
+
+    let result = LibwakuResponse::try_from((ret_code as u32, response))
+        .expect("invalid response obtained from libwaku");
+
+    (CALLBACK
+        .deref()
+        .lock()
+        .expect("Access to the shared callback")
+        .as_mut())(result);
+}
+
 impl WakuNodeContext {
     /// Register callback to act as event handler and receive application events,
     /// which are used to react to asynchronous events in Waku
-    pub fn waku_set_event_callback<F: FnMut(LibwakuResponse) + 'static>(&self, mut closure: F) {
+    pub fn waku_set_event_callback<F: FnMut(LibwakuResponse) + 'static + Sync + Send>(
+        &self,
+        mut closure: F,
+    ) {
+        set_callback(closure);
         unsafe {
-            let cb = get_trampoline(&closure);
-            waku_sys::waku_set_event_callback(self.obj_ptr, cb, &mut closure as *mut _ as *mut c_void)
-        };
+            waku_sys::waku_set_event_callback(
+                self.obj_ptr,
+                Some(callback),
+                callback as *mut c_void,
+            );
+        }
     }
 }
 

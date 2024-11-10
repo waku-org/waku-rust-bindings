@@ -1,18 +1,16 @@
 use eframe::egui;
 use serde::{Deserialize, Serialize};
-use tokio::sync::mpsc;
-use std::sync::Arc;
-use tokio::sync::Mutex;
-use std::str::from_utf8;
-use std::time::SystemTime;
 use std::cell::OnceCell;
+use std::str::from_utf8;
+use std::sync::Arc;
+use std::sync::Mutex;
+use std::time::SystemTime;
+use tokio::sync::mpsc;
 use waku::{
-    waku_new, Event, WakuNodeConfig,
-    LibwakuResponse, Multiaddr, Running, WakuNodeHandle,
-    Initialized, WakuContentTopic, WakuMessage, Encoding,
-    WakuNodeContext,
+    waku_new, Encoding, Event, Initialized, LibwakuResponse, Multiaddr, Running, WakuContentTopic,
+    WakuMessage, WakuNodeConfig, WakuNodeContext, WakuNodeHandle,
 };
-
+use waku_sys::waku_setup;
 #[derive(Serialize, Deserialize, PartialEq, Copy, Clone)]
 enum Player {
     X,
@@ -42,9 +40,11 @@ struct TicTacToeApp {
 }
 
 impl TicTacToeApp {
-    fn new(waku: WakuNodeHandle,
-           game_topic: &'static str,
-           tx: Arc<Mutex<mpsc::Sender<String>>>,) -> Self {
+    fn new(
+        waku: WakuNodeHandle,
+        game_topic: &'static str,
+        tx: Arc<Mutex<mpsc::Sender<String>>>,
+    ) -> Self {
         Self {
             game_state: Arc::new(Mutex::new(GameState {
                 board: [[None; 3]; 3],
@@ -76,8 +76,8 @@ impl TicTacToeApp {
      //   let mut cloned = Arc::clone(&self.val);
 
         let tx_clone = self.tx.clone();
-        // Establish a closure that handles the incoming messages
-        self.waku.ctx.waku_set_event_callback(move |response| {
+
+        let my_closure = move |response| {
             //   if let Ok(mut tx) = tx_clone.try_lock() {
             //                       //  Lock succeeded, proceed to send the message
             //                         if tx.try_send(msg.to_string()).is_err() {
@@ -86,20 +86,19 @@ impl TicTacToeApp {
             //                     } else {
             //                         eprintln!("Failed to acquire lock on tx_clone");
             //                     }
-        //    if let Ok(mut aa) = cloned.try_lock() {
+            //    if let Ok(mut aa) = cloned.try_lock() {
 
-        //     }
-            
-        //     match cloned.lock() {
-        //         Ok(mut data) => {
-        //             *data = "Modified Value".to_string();
-        //             println!("Thread updated value to: {}", data);
-        //         },
-        //         Err(e) => {
-        //             eprintln!("Failed to lock the mutex in thread: {}", e);
-        //         }
-        //     }
+            //     }
 
+            //     match cloned.lock() {
+            //         Ok(mut data) => {
+            //             *data = "Modified Value".to_string();
+            //             println!("Thread updated value to: {}", data);
+            //         },
+            //         Err(e) => {
+            //             eprintln!("Failed to lock the mutex in thread: {}", e);
+            //         }
+            //     }
 
             if let LibwakuResponse::Success(v) = response {
                 let event: Event =
@@ -119,14 +118,15 @@ impl TicTacToeApp {
 
                                 // Send the message to the main thread
                                 if let Ok(mut tx) = tx_clone.try_lock() {
-                                  //  Lock succeeded, proceed to send the message
-                                    if tx.try_send(msg.to_string()).is_err() {
+                                    //  Lock succeeded, proceed to send the message
+                                    if tx.blocking_send(msg.to_string()).is_err() {
                                         eprintln!("Failed to send message to async task");
+                                    } else {
+                                        eprintln!("Sent!!!!");
                                     }
                                 } else {
                                     eprintln!("Failed to acquire lock on tx_clone");
                                 }
-
                                 // Deserialize the JSON into the GameState struct
                                 // Lock the game_state and update it
                                 // match serde_json::from_str::<GameState>(msg) {
@@ -161,11 +161,14 @@ impl TicTacToeApp {
                     _ => panic!("event case not expected"),
                 };
             }
-        });
-        
+        };
+
+        // Establish a closure that handles the incoming messages
+        self.waku.ctx.waku_set_event_callback(my_closure);
+
         // Subscribe to desired topic
         self.waku.relay_subscribe(&self.game_topic.to_string()).expect("waku should subscribe");
-        
+
         // Connect to hard-coded node
         let target_node_multi_addr =
             "/ip4/24.144.78.119/tcp/30303/p2p/16Uiu2HAm3xVDaz6SRJ6kErwC21zBJEZjavVXg7VSkoWzaV1aMA3F"
@@ -176,7 +179,6 @@ impl TicTacToeApp {
     }
 
     fn send_game_state(&self, game_state: &GameState) {
-
         let serialized_game_state = serde_json::to_string(game_state).unwrap();
         let content_topic = WakuContentTopic::new("waku", "2", "tictactoegame", Encoding::Proto);
 
@@ -328,7 +330,8 @@ impl eframe::App for TicTacToeApp {
     }
 }
 
-fn main() -> eframe::Result<()> {
+#[tokio::main]
+async fn main() -> eframe::Result<()> {
     let (tx, mut rx) = mpsc::channel::<String>(3200); // Channel to communicate between threads
 
     // Create a Waku instance
@@ -356,9 +359,6 @@ fn main() -> eframe::Result<()> {
 
     // Listen for messages in the main thread
     tokio::spawn(async move {
-        unsafe {
-            waku_sys::waku_setup();
-        }
         while let Some(msg) = rx.recv().await {
             println!("Main thread received: {}", msg);
             // Handle the received message, e.g., update the UI or game state

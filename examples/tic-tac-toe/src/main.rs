@@ -212,7 +212,7 @@ async fn main() {
     let _ = tokio::join!(setter, reader);
     
     // Establish a closure that handles the incoming messages
-    waku.set_event_callback(&|response| {
+    waku.set_event_callback(|response| {
         if let LibwakuResponse::Success(v) = response {
             let event: Event =
                 serde_json::from_str(v.unwrap().as_str()).expect("Parsing event to succeed");
