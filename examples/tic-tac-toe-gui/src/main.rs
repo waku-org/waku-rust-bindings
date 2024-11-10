@@ -10,7 +10,7 @@ use waku::{
     waku_new, Encoding, Event, Initialized, LibwakuResponse, Multiaddr, Running, WakuContentTopic,
     WakuMessage, WakuNodeConfig, WakuNodeContext, WakuNodeHandle,
 };
-use waku_sys::waku_setup;
+
 #[derive(Serialize, Deserialize, PartialEq, Copy, Clone)]
 enum Player {
     X,
