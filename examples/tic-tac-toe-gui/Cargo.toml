@@ -13,4 +13,5 @@ tokio = { version = "1", features = ["full"] }
 tokio-util = "0.6"  # for utility functions if needed
 egui = "0.22"
 eframe = "0.22"
+secp256k1 = { version = "0.26", features = ["rand", "recovery", "serde"] }
 

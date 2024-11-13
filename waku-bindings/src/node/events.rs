@@ -5,14 +5,14 @@
 //! When an event is emitted, this callback will be triggered receiving an [`Event`]
 
 // std
-use std::ffi::{c_char, c_int, c_void, CStr};
+use std::ffi::c_void;
 // crates
 use serde::{Deserialize, Serialize};
 // internal
 use crate::general::WakuMessage;
 use std::{slice, str};
 
-use crate::utils::{get_trampoline, LibwakuResponse};
+use crate::utils::LibwakuResponse;
 use crate::MessageHash;
 use std::ops::Deref;
 use std::sync::Mutex;
