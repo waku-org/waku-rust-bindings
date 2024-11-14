@@ -15,7 +15,7 @@ use waku::{
     WakuMessage, WakuNodeConfig, WakuNodeContext, WakuNodeHandle,
 };
 
-#[derive(Serialize, Deserialize, PartialEq, Copy, Clone)]
+#[derive(Serialize, Deserialize, PartialEq, Debug, Copy, Clone)]
 enum Player {
     X,
     O,
@@ -40,6 +40,7 @@ struct TicTacToeApp {
     waku: WakuNodeHandle,
     game_topic: &'static str,
     tx: mpsc::Sender<String>, // Sender to send `msg` to main thread
+    player_role: Option<Player>, // Store the player's role (X or O)
 }
 
 impl TicTacToeApp {
@@ -54,6 +55,7 @@ impl TicTacToeApp {
             waku,
             game_topic,
             tx,
+            player_role: None,
         }
     }
 
@@ -134,6 +136,13 @@ impl TicTacToeApp {
 
     fn make_move(&mut self, row: usize, col: usize) {
         if let Ok(mut game_state) = self.game_state.try_lock() {
+
+            if let Some(my_role) = self.player_role {
+                if (*game_state).current_turn != my_role {
+                    return; // skip click if not my turn
+                }
+            }
+
             if (*game_state).board[row][col].is_none() && (*game_state).moves_left > 0 {
                 (*game_state).board[row][col] = Some((*game_state).current_turn);
                 (*game_state).moves_left -= 1;
@@ -189,6 +198,7 @@ impl TicTacToeApp {
             current_turn: Player::X,
             moves_left: 9,
         }));
+        self.player_role = None
     }
 }
 
@@ -201,6 +211,30 @@ impl eframe::App for TicTacToeApp {
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.heading("Tic-Tac-Toe");
 
+            // If the player hasn't selected a role, show the role selection buttons
+            if self.player_role.is_none() {
+                ui.label("Select your role:");
+
+                if ui.button("Play as X").clicked() {
+                    self.player_role = Some(Player::X);
+                }
+
+                if ui.button("Play as O").clicked() {
+                    self.player_role = Some(Player::O);
+                    if let Ok(mut game_state) = self.game_state.try_lock() {
+                      (*game_state).current_turn = Player::X; // player X should start
+                    }
+                }
+
+                return; // Exit early until a role is selected
+            }
+
+            let player_role = self.player_role.unwrap(); // Safe to unwrap because we've ensured it's Some
+
+            // Main game UI
+            ui.label(format!("You are playing as: {:?}", player_role));
+
+            // Draw the game board and handle the game state
             let text_size = 32.0;
             let board_size = ui.available_size();
             let cell_size = board_size.x / 4.0;
@@ -332,7 +366,6 @@ async fn main() -> eframe::Result<()> {
         },
         Box::new(|_cc| Box::new(app)),
     )?;
-
 
     Ok(())
 }
