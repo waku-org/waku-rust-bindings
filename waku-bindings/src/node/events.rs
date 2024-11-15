@@ -79,6 +79,72 @@ unsafe extern "C" fn callback(
 }
 
 impl WakuNodeContext {
+
+    fn waku_event_callback(response: LibwakuResponse) {
+        if let LibwakuResponse::Success(v) = response {
+            let event: Event =
+                serde_json::from_str(v.unwrap().as_str()).expect("Parsing event to succeed");
+
+            // let mut game_state = self.game_state.lock().unwrap();
+            match event {
+                Event::WakuMessage(evt) => {
+                    // println!("WakuMessage event received: {:?}", evt.waku_message);
+                    let message = evt.waku_message;
+                    let payload = message.payload.to_vec().clone();
+                    match from_utf8(&payload) {
+                        Ok(msg) => {
+                            println!("::::::::::::::::::::::::::::::::::::::::::::::::::::");
+                            println!("Message Received: {}", msg);
+                            println!("::::::::::::::::::::::::::::::::::::::::::::::::::::");
+
+                            // Send the message to the main thread
+                            if let Ok(mut tx) = tx_clone.try_lock() {
+                                //  Lock succeeded, proceed to send the message
+                                if tx.blocking_send(msg.to_string()).is_err() {
+                                    eprintln!("Failed to send message to async task");
+                                } else {
+                                    eprintln!("Sent!!!!");
+                                }
+                            } else {
+                                eprintln!("Failed to acquire lock on tx_clone");
+                            }
+
+                            // Deserialize the JSON into the GameState struct
+                            // Lock the game_state and update it
+                            // match serde_json::from_str::<GameState>(msg) {
+                            //     Ok(parsed_value) => {
+                            //         // Handle the parsed value here
+                            //         // self.game_state = parsed_value;
+                            //         println!("Parsed correctly");
+                            //     }
+                            //     Err(e) => {
+                            //         eprintln!("Failed to parse JSON: {}", e);
+                            //         // Handle the error as needed, such as retrying, defaulting, etc.
+                            //     }
+                            // }
+                            // *game_state = serde_json::from_str(msg).expect("Failed to deserialize JSON");
+
+                            // let tx_inner = tx_cloned.clone();
+                            // let msg_inner = msg.to_string();
+                            // tokio::spawn(async move {
+                            //     println!("do nothing");
+                            // if tx_inner.send(msg_inner.to_string()).await.is_err() {
+                            //     eprintln!("Failed to send message");
+                            // }
+                            // });
+                        }
+                        Err(e) => {
+                            eprintln!("Failed to decode payload as UTF-8: {}", e);
+                            // Handle the error as needed, or just log and skip
+                        }
+                    }
+                }
+                Event::Unrecognized(err) => panic!("Unrecognized waku event: {:?}", err),
+                _ => panic!("event case not expected"),
+            };
+        }
+    }
+
     /// Register callback to act as event handler and receive application events,
     /// which are used to react to asynchronous events in Waku
     pub fn waku_set_event_callback<F: FnMut(LibwakuResponse) + 'static + Sync + Send>(
