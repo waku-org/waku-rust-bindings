@@ -43,7 +43,11 @@ pub fn waku_new(config: Option<WakuNodeConfig>) -> Result<WakuNodeContext> {
     match result {
         LibwakuResponse::MissingCallback => panic!("callback is required"),
         LibwakuResponse::Failure(v) => Err(v),
-        _ => Ok(WakuNodeContext { obj_ptr }),
+        _ => {
+            let ctx = WakuNodeContext::new(obj_ptr);
+            ctx.waku_set_event_callback();
+            Ok(ctx)
+        },
     }
 }
 

@@ -95,7 +95,7 @@ impl TicTacToeApp {
         };
 
         // Establish a closure that handles the incoming messages
-        self.waku.ctx.waku_set_event_callback(my_closure);
+        // self.waku.ctx.waku_set_event_callback(my_closure);
 
         // Subscribe to desired topic
         self.waku.relay_subscribe(&self.game_topic.to_string()).expect("waku should subscribe");

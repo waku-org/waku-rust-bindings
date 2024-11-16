@@ -5,6 +5,7 @@ mod events;
 mod management;
 mod peers;
 mod relay;
+mod observer;
 
 // std
 pub use aes_gcm::Key;
@@ -22,6 +23,8 @@ pub use relay::waku_create_content_topic;
 use crate::WakuContentTopic;
 use crate::Encoding;
 use std::time::SystemTime;
+
+pub use observer::Observer;
 
 /// Marker trait to disallow undesired waku node states in the handle
 pub trait WakuNodeState {}
