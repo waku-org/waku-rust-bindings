@@ -59,7 +59,7 @@ impl WakuNodeContext {
     /// which are used to react to asynchronous events in Waku
     pub fn waku_set_event_callback<F: FnMut(LibwakuResponse) + 'static + Sync + Send>(
         &self,
-        mut closure: F,
+        closure: F,
     ) -> Result<(), String> {
         if let Ok(mut boxed_closure) = self.msg_observer.lock() {
             *boxed_closure = Box::new(closure);

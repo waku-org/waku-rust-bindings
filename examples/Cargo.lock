@@ -4344,6 +4344,7 @@ dependencies = [
  "ctrlc",
  "eframe",
  "egui",
+ "secp256k1 0.26.0",
  "serde",
  "serde_json",
  "tokio",

@@ -1,18 +1,13 @@
 use eframe::egui;
-use secp256k1::SecretKey;
 use serde::{Deserialize, Serialize};
-use std::cell::OnceCell;
 use std::str::from_utf8;
-use std::sync::Arc;
-use std::sync::Mutex;
-use std::str::FromStr;
-use std::time::SystemTime;
-use std::time::{Duration, Instant};
+use std::sync::{Arc, Mutex};
+use std::time::{SystemTime, Duration};
 
 use tokio::sync::mpsc;
 use waku::{
-    waku_new, Encoding, Event, Initialized, LibwakuResponse, Multiaddr, Running, WakuContentTopic,
-    WakuMessage, WakuNodeConfig, WakuNodeContext, WakuNodeHandle,
+    waku_new, Encoding, Event, LibwakuResponse, WakuContentTopic,
+    WakuMessage, WakuNodeConfig, WakuNodeHandle,
 };
 
 #[derive(Serialize, Deserialize, PartialEq, Debug, Copy, Clone)]
@@ -26,13 +21,6 @@ struct GameState {
     board: [[Option<Player>; 3]; 3],
     current_turn: Player,
     moves_left: usize,
-}
-
-#[derive(Clone)]
-struct MoveMessage {
-    row: usize,
-    col: usize,
-    player: Player,
 }
 
 struct TicTacToeApp {
@@ -95,7 +83,7 @@ impl TicTacToeApp {
         };
 
         // Establish a closure that handles the incoming messages
-        self.waku.ctx.waku_set_event_callback(my_closure);
+        self.waku.ctx.waku_set_event_callback(my_closure).expect("set event call back working");
 
         // Subscribe to desired topic
         self.waku.relay_subscribe(&self.game_topic.to_string()).expect("waku should subscribe");
@@ -235,7 +223,6 @@ impl eframe::App for TicTacToeApp {
             ui.label(format!("You are playing as: {:?}", player_role));
 
             // Draw the game board and handle the game state
-            let text_size = 32.0;
             let board_size = ui.available_size();
             let cell_size = board_size.x / 4.0;
 
