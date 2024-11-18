@@ -1,5 +1,4 @@
 [workspace]
 
 members = [
-    "basic"
-, "tic-tac-toe", "tic-tac-toe-gui"]
+    "basic", "tic-tac-toe-gui"]
