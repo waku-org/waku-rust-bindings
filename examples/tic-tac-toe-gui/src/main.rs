@@ -95,7 +95,7 @@ impl TicTacToeApp {
         };
 
         // Establish a closure that handles the incoming messages
-        // self.waku.ctx.waku_set_event_callback(my_closure);
+        self.waku.ctx.waku_set_event_callback(my_closure);
 
         // Subscribe to desired topic
         self.waku.relay_subscribe(&self.game_topic.to_string()).expect("waku should subscribe");
@@ -319,14 +319,13 @@ async fn main() -> eframe::Result<()> {
         // Discovery
         dns_discovery: Some(true),
         dns_discovery_url: Some("enrtree://AMOJVZX4V6EXP7NTJPMAYJYST2QP6AJXYW76IU6VGJS7UVSNDYZG4@boot.prod.status.nodes.status.im"),
-        discv5_discovery: Some(true),
-        discv5_udp_port: Some(9000),
-        discv5_enr_auto_update: Some(false),
+        // discv5_discovery: Some(true),
+        // discv5_udp_port: Some(9001),
+        // discv5_enr_auto_update: Some(false),
 
         ..Default::default()
     }))
     .expect("should instantiate");
-    // Initialize Waku
 
     let game_state = GameState {
         board: [[None; 3]; 3],
@@ -353,7 +352,7 @@ async fn main() -> eframe::Result<()> {
                 }
             }
             else {
-                eprintln!("Failed to parse JSON: ");
+                eprintln!("Failed to parse JSON");
             }
         }
     });

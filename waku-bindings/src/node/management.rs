@@ -8,10 +8,10 @@ use multiaddr::Multiaddr;
 // internal
 use super::config::WakuNodeConfig;
 use crate::general::Result;
-use crate::utils::LibwakuResponse;
-use crate::utils::{get_trampoline, handle_json_response, handle_no_response, handle_response};
-use crate::utils::WakuDecode;
 use crate::node::events::WakuNodeContext;
+use crate::utils::LibwakuResponse;
+use crate::utils::WakuDecode;
+use crate::utils::{get_trampoline, handle_json_response, handle_no_response, handle_response};
 
 /// Instantiates a Waku node
 /// as per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_newchar-jsonconfig)
@@ -43,11 +43,7 @@ pub fn waku_new(config: Option<WakuNodeConfig>) -> Result<WakuNodeContext> {
     match result {
         LibwakuResponse::MissingCallback => panic!("callback is required"),
         LibwakuResponse::Failure(v) => Err(v),
-        _ => {
-            let ctx = WakuNodeContext::new(obj_ptr);
-            ctx.waku_set_event_callback();
-            Ok(ctx)
-        },
+        _ => Ok(WakuNodeContext::new(obj_ptr)),
     }
 }
 
