@@ -86,7 +86,10 @@ impl TicTacToeApp {
         self.waku.ctx.waku_set_event_callback(my_closure).expect("set event call back working");
 
         // Subscribe to desired topic
-        self.waku.relay_subscribe(&self.game_topic.to_string()).expect("waku should subscribe");
+        // self.waku.relay_subscribe(&self.game_topic.to_string()).expect("waku should subscribe");
+
+        let content_topic = WakuContentTopic::new("waku", "2", "tictactoegame", Encoding::Proto);
+        self.waku.filter_subscribe(&self.game_topic.to_string(), &content_topic.to_string()).expect("waku should subscribe");
 
         // Connect to hard-coded node
         // let target_node_multi_addr =
@@ -117,9 +120,9 @@ impl TicTacToeApp {
             false,
         );
 
-        // let waku_handle = self.waku.lock().unwrap();
-        self.waku.relay_publish_message(&message, &self.game_topic.to_string(), None)
-            .expect("Failed to send message");
+        // self.waku.relay_publish_message(&message, &self.game_topic.to_string(), None)
+        //     .expect("Failed to send message");
+        self.waku.lightpush_publish_message(&message, &self.game_topic.to_string()).expect("Failed to send message");
     }
 
     fn make_move(&mut self, row: usize, col: usize) {

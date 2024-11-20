@@ -2,6 +2,8 @@
 
 mod config;
 mod events;
+mod filter;
+mod lightpush;
 mod management;
 mod peers;
 mod relay;
@@ -132,5 +134,25 @@ impl WakuNodeHandle {
     /// Closes the pubsub subscription to stop receiving messages matching a content filter. No more messages will be received from this pubsub topic
     pub fn relay_unsubscribe(&self, pubsub_topic: &String) -> Result<()> {
         relay::waku_relay_unsubscribe(&self.ctx, pubsub_topic)
+    }
+
+    pub fn filter_subscribe(&self, pubsub_topic: &String, content_topics: &String) -> Result<()> {
+        filter::waku_filter_subscribe(&self.ctx, pubsub_topic, content_topics)
+    }
+
+    pub fn filter_unsubscribe(&self, pubsub_topic: &String, content_topics: &String) -> Result<()> {
+        filter::waku_filter_unsubscribe(&self.ctx, pubsub_topic, content_topics)
+    }
+
+    pub fn filter_unsubscribe_all(&self) -> Result<()> {
+        filter::waku_filter_unsubscribe_all(&self.ctx)
+    }
+
+    pub fn lightpush_publish_message(
+        &self,
+        message: &WakuMessage,
+        pubsub_topic: &String,
+    ) -> Result<MessageHash> {
+        lightpush::waku_lightpush_publish_message(&self.ctx, message, pubsub_topic)
     }
 }
