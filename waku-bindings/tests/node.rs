@@ -149,7 +149,6 @@ async fn default_echo() -> Result<(), String> {
 #[test]
 #[serial]
 fn node_restart() {
-    println!("Test node_restart");
     let config = WakuNodeConfig {
         node_key: Some(
             SecretKey::from_str("05f381866cc21f6c1e2e80e07fa732008e36d942dce3206ad6dcd6793c98d609")
