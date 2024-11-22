@@ -85,7 +85,7 @@ impl TicTacToeApp {
         // Establish a closure that handles the incoming messages
         self.waku.ctx.waku_set_event_callback(my_closure).expect("set event call back working");
 
-        // Subscribe to desired topic
+        // Subscribe to desired topic using the relay protocol
         // self.waku.relay_subscribe(&self.game_topic.to_string()).expect("waku should subscribe");
 
         let content_topic = WakuContentTopic::new("waku", "2", "tictactoegame", Encoding::Proto);

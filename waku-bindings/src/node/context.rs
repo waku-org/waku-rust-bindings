@@ -10,12 +10,21 @@ pub struct WakuNodeContext {
 
 impl WakuNodeContext {
     pub fn new(obj_ptr: *mut c_void) -> Self {
-        Self {
+        let me = Self {
             obj_ptr: obj_ptr,
-            msg_observer: Arc::new(Mutex::new(Box::new(|_response| {
-                println!("msg observer not set")
-            }))),
-        }
+            msg_observer: Arc::new(Mutex::new(Box::new(|_| {}))),
+        };
+
+        // By default we set a callback that will panic if the user didn't specify a valid callback.
+        // And by valid callback we mean a callback that can properly handle the waku events.
+        me.waku_set_event_callback(WakuNodeContext::panic_callback)
+            .expect("correctly set default callback");
+        me
+    }
+
+    // default callback that does nothing. A valid callback should be set
+    fn panic_callback(_response: LibwakuResponse) {
+        panic!("callback not set. Please use waku_set_event_callback to set a valid callback")
     }
 
     pub fn get_ptr(&self) -> *mut c_void {

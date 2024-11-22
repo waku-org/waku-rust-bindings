@@ -32,7 +32,7 @@ async fn test_echo_messages(
     content_topic: WakuContentTopic,
 ) -> Result<(), String> {
     // setting a naïve event handler to avoid appearing ERR messages in logs
-    node1.ctx.waku_set_event_callback(&|_| {});
+    let _ = node1.ctx.waku_set_event_callback(&|_| {});
 
     let rx_waku_message: Arc<Mutex<WakuMessage>> = Arc::new(Mutex::new(WakuMessage::default()));
 
