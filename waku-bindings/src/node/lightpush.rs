@@ -32,7 +32,7 @@ pub fn waku_lightpush_publish_message(
         let mut closure = result_cb;
         let cb = get_trampoline(&closure);
         let out = waku_sys::waku_lightpush_publish(
-            ctx.obj_ptr,
+            ctx.get_ptr(),
             pubsub_topic_ptr,
             message_ptr,
             cb,

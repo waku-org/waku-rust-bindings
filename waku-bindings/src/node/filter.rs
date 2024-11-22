@@ -30,7 +30,7 @@ pub fn waku_filter_subscribe(
         let mut closure = result_cb;
         let cb = get_trampoline(&closure);
         let out = waku_sys::waku_filter_subscribe(
-            ctx.obj_ptr,
+            ctx.get_ptr(),
             pubsub_topic_ptr,
             content_topics_ptr,
             cb,
@@ -67,7 +67,7 @@ pub fn waku_filter_unsubscribe(
         let mut closure = result_cb;
         let cb = get_trampoline(&closure);
         let out = waku_sys::waku_filter_unsubscribe(
-            ctx.obj_ptr,
+            ctx.get_ptr(),
             pubsub_topic_ptr,
             content_topics_topics_ptr,
             cb,
@@ -90,7 +90,7 @@ pub fn waku_filter_unsubscribe_all(ctx: &WakuNodeContext) -> Result<()> {
         let mut closure = result_cb;
         let cb = get_trampoline(&closure);
         let out = waku_sys::waku_filter_unsubscribe_all(
-            ctx.obj_ptr,
+            ctx.get_ptr(),
             cb,
             &mut closure as *mut _ as *mut c_void,
         );

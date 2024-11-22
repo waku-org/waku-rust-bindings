@@ -18,7 +18,7 @@ use crate::MessageHash;
 use std::sync::{Arc, Mutex};
 
 pub struct WakuNodeContext {
-    pub obj_ptr: *mut c_void,
+    obj_ptr: *mut c_void,
     msg_observer: Arc<Mutex<Box<dyn FnMut(LibwakuResponse) + Send + Sync>>>,
 }
 
@@ -53,6 +53,10 @@ impl WakuNodeContext {
                 println!("msg observer not set")
             }))),
         }
+    }
+
+    pub fn get_ptr(&self) -> *mut c_void {
+        self.obj_ptr
     }
 
     /// Register callback to act as event handler and receive application events,

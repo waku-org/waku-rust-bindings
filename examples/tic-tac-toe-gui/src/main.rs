@@ -333,7 +333,7 @@ async fn main() -> eframe::Result<()> {
     // Listen for messages in the main thread
     tokio::spawn(async move {
         while let Some(msg) = rx.recv().await {
-            println!("MSG received: {}", msg);
+            // println!("MSG received: {}", msg);
             // Handle the received message, e.g., update the UI or game state
             if let Ok(parsed_value) = serde_json::from_str::<GameState>(&msg)
             {

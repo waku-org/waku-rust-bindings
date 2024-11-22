@@ -8,9 +8,9 @@ use libc::*;
 use multiaddr::Multiaddr;
 // internal
 use crate::general::Result;
+use crate::node::events::WakuNodeContext;
 use crate::utils::LibwakuResponse;
 use crate::utils::{get_trampoline, handle_no_response};
-use crate::node::events::WakuNodeContext;
 
 /// Dial peer using a multiaddress
 /// If `timeout` as milliseconds doesn't fit into a `i32` it is clamped to [`i32::MAX`]
@@ -32,7 +32,7 @@ pub fn waku_connect(
         let mut closure = result_cb;
         let cb = get_trampoline(&closure);
         let out = waku_sys::waku_connect(
-            ctx.obj_ptr,
+            ctx.get_ptr(),
             address_ptr,
             timeout
                 .map(|duration| duration.as_millis().try_into().unwrap_or(u32::MAX))

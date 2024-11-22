@@ -36,7 +36,7 @@ pub fn waku_create_content_topic(
         let mut closure = result_cb;
         let cb = get_trampoline(&closure);
         let out = waku_sys::waku_content_topic(
-            ctx.obj_ptr,
+            ctx.get_ptr(),
             application_name_ptr,
             application_version,
             content_topic_name_ptr,
@@ -81,7 +81,7 @@ pub fn waku_relay_publish_message(
         let mut closure = result_cb;
         let cb = get_trampoline(&closure);
         let out = waku_sys::waku_relay_publish(
-            ctx.obj_ptr,
+            ctx.get_ptr(),
             pubsub_topic_ptr,
             message_ptr,
             timeout
@@ -117,7 +117,7 @@ pub fn waku_relay_subscribe(ctx: &WakuNodeContext, pubsub_topic: &str) -> Result
         let mut closure = result_cb;
         let cb = get_trampoline(&closure);
         let out = waku_sys::waku_relay_subscribe(
-            ctx.obj_ptr,
+            ctx.get_ptr(),
             pubsub_topic_ptr,
             cb,
             &mut closure as *mut _ as *mut c_void,
@@ -143,7 +143,7 @@ pub fn waku_relay_unsubscribe(ctx: &WakuNodeContext, pubsub_topic: &String) -> R
         let mut closure = result_cb;
         let cb = get_trampoline(&closure);
         let out = waku_sys::waku_relay_subscribe(
-            ctx.obj_ptr,
+            ctx.get_ptr(),
             pubsub_topic_ptr,
             cb,
             &mut closure as *mut _ as *mut c_void,

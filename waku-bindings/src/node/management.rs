@@ -53,7 +53,7 @@ pub fn waku_destroy(ctx: &WakuNodeContext) -> Result<()> {
     let code = unsafe {
         let mut closure = result_cb;
         let cb = get_trampoline(&closure);
-        waku_sys::waku_destroy(ctx.obj_ptr, cb, &mut closure as *mut _ as *mut c_void)
+        waku_sys::waku_destroy(ctx.get_ptr(), cb, &mut closure as *mut _ as *mut c_void)
     };
 
     handle_no_response(code, result)
@@ -67,7 +67,7 @@ pub fn waku_start(ctx: &WakuNodeContext) -> Result<()> {
     let code = unsafe {
         let mut closure = result_cb;
         let cb = get_trampoline(&closure);
-        waku_sys::waku_start(ctx.obj_ptr, cb, &mut closure as *mut _ as *mut c_void)
+        waku_sys::waku_start(ctx.get_ptr(), cb, &mut closure as *mut _ as *mut c_void)
     };
 
     handle_no_response(code, result)
@@ -81,7 +81,7 @@ pub fn waku_stop(ctx: &WakuNodeContext) -> Result<()> {
     let code = unsafe {
         let mut closure = result_cb;
         let cb = get_trampoline(&closure);
-        waku_sys::waku_stop(ctx.obj_ptr, cb, &mut closure as *mut _ as *mut c_void)
+        waku_sys::waku_stop(ctx.get_ptr(), cb, &mut closure as *mut _ as *mut c_void)
     };
 
     handle_no_response(code, result)
@@ -95,7 +95,7 @@ pub fn waku_version(ctx: &WakuNodeContext) -> Result<String> {
     let code = unsafe {
         let mut closure = result_cb;
         let cb = get_trampoline(&closure);
-        waku_sys::waku_version(ctx.obj_ptr, cb, &mut closure as *mut _ as *mut c_void)
+        waku_sys::waku_version(ctx.get_ptr(), cb, &mut closure as *mut _ as *mut c_void)
     };
 
     handle_response(code, result)
@@ -120,7 +120,7 @@ pub fn waku_listen_addresses(ctx: &WakuNodeContext) -> Result<Vec<Multiaddr>> {
     let code = unsafe {
         let mut closure = result_cb;
         let cb = get_trampoline(&closure);
-        waku_sys::waku_listen_addresses(ctx.obj_ptr, cb, &mut closure as *mut _ as *mut c_void)
+        waku_sys::waku_listen_addresses(ctx.get_ptr(), cb, &mut closure as *mut _ as *mut c_void)
     };
 
     handle_json_response(code, result)
