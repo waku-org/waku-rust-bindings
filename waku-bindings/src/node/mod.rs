@@ -13,13 +13,15 @@ mod relay;
 pub use aes_gcm::Key;
 pub use multiaddr::Multiaddr;
 pub use secp256k1::{PublicKey, SecretKey};
+use std::marker::PhantomData;
 use std::time::Duration;
 // internal
 use crate::general::{MessageHash, Result, WakuMessage};
+use crate::utils::LibwakuResponse;
 
+use crate::node::context::WakuNodeContext;
 pub use config::RLNConfig;
 pub use config::WakuNodeConfig;
-pub use context::WakuNodeContext;
 pub use events::{Event, WakuMessageEvent};
 pub use relay::waku_create_content_topic;
 
@@ -27,59 +29,68 @@ use crate::Encoding;
 use crate::WakuContentTopic;
 use std::time::SystemTime;
 
-/// Marker trait to disallow undesired waku node states in the handle
-pub trait WakuNodeState {}
-
-/// Waku node initialized state
+// Define state marker types
 pub struct Initialized;
-
-/// Waku node running state
 pub struct Running;
 
-impl WakuNodeState for Initialized {}
-impl WakuNodeState for Running {}
-
 /// Handle to the underliying waku node
-pub struct WakuNodeHandle {
-    pub ctx: WakuNodeContext,
+pub struct WakuNodeHandle<State> {
+    ctx: WakuNodeContext,
+    _state: PhantomData<State>,
 }
 
 /// Spawn a new Waku node with the given configuration (default configuration if `None` provided)
 /// as per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_newchar-jsonconfig)
-pub fn waku_new(config: Option<WakuNodeConfig>) -> Result<WakuNodeHandle> {
+pub fn waku_new(config: Option<WakuNodeConfig>) -> Result<WakuNodeHandle<Initialized>> {
     Ok(WakuNodeHandle {
         ctx: management::waku_new(config)?,
+        _state: PhantomData,
     })
 }
 
-pub fn waku_destroy(node: WakuNodeHandle) -> Result<()> {
+pub fn waku_destroy(node: WakuNodeHandle<Initialized>) -> Result<()> {
     management::waku_destroy(&node.ctx)
 }
 
-// unsafe impl Send for WakuNodeHandle<Running> {}
+impl<State> WakuNodeHandle<State> {
+    /// Get the nwaku version
+    pub fn version(&self) -> Result<String> {
+        management::waku_version(&self.ctx)
+    }
+}
 
-impl WakuNodeHandle {
+impl WakuNodeHandle<Initialized> {
     /// Start a Waku node mounting all the protocols that were enabled during the Waku node instantiation.
     /// as per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_start)
-    pub fn start(&self) -> Result<()> {
-        management::waku_start(&self.ctx)
+    pub fn start(self) -> Result<WakuNodeHandle<Running>> {
+        management::waku_start(&self.ctx).map(|_| WakuNodeHandle {
+            ctx: self.ctx,
+            _state: PhantomData,
+        })
     }
 
+    pub fn set_event_callback<F: FnMut(LibwakuResponse) + 'static + Sync + Send>(
+        &self,
+        closure: F,
+    ) -> Result<()> {
+        self.ctx.waku_set_event_callback(closure)
+    }
+}
+
+impl WakuNodeHandle<Running> {
     /// Stops a Waku node
     /// as per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_stop)
-    pub fn stop(&self) -> Result<()> {
-        management::waku_stop(&self.ctx)
+    pub fn stop(self) -> Result<WakuNodeHandle<Initialized>> {
+        management::waku_stop(&self.ctx).map(|_| WakuNodeHandle {
+            ctx: self.ctx,
+            _state: PhantomData,
+        })
     }
 
     /// Get the multiaddresses the Waku node is listening to
     /// as per [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_listen_addresses)
     pub fn listen_addresses(&self) -> Result<Vec<Multiaddr>> {
         management::waku_listen_addresses(&self.ctx)
-    }
-
-    /// Get the nwaku version
-    pub fn version(&self) -> Result<String> {
-        management::waku_version(&self.ctx)
     }
 
     /// Dial peer using a multiaddress

@@ -14,7 +14,6 @@ pub type WakuMessageVersion = usize;
 /// Waku message hash, hex encoded sha256 digest of the message
 pub type MessageHash = String;
 
-/// Waku response, just a `Result` with an `String` error.
 pub type Result<T> = std::result::Result<T, String>;
 
 // TODO: Properly type and deserialize payload form base64 encoded string

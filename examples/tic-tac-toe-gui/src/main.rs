@@ -7,7 +7,7 @@ use std::time::{SystemTime, Duration};
 use tokio::sync::mpsc;
 use waku::{
     waku_new, Encoding, Event, LibwakuResponse, WakuContentTopic,
-    WakuMessage, WakuNodeConfig, WakuNodeHandle,
+    WakuMessage, WakuNodeConfig, WakuNodeHandle, Initialized, Running
 };
 
 #[derive(Serialize, Deserialize, PartialEq, Debug, Copy, Clone)]
@@ -23,17 +23,17 @@ struct GameState {
     moves_left: usize,
 }
 
-struct TicTacToeApp {
+struct TicTacToeApp<State> {
     game_state: Arc<Mutex<GameState>>,
-    waku: WakuNodeHandle,
+    waku: WakuNodeHandle<State>,
     game_topic: &'static str,
     tx: mpsc::Sender<String>, // Sender to send `msg` to main thread
     player_role: Option<Player>, // Store the player's role (X or O)
 }
 
-impl TicTacToeApp {
+impl TicTacToeApp<Initialized> {
     fn new(
-        waku: WakuNodeHandle,
+        waku: WakuNodeHandle<Initialized>,
         game_topic: &'static str,
         game_state: Arc<Mutex<GameState>>,
         tx: mpsc::Sender<String>,
@@ -47,10 +47,7 @@ impl TicTacToeApp {
         }
     }
 
-    fn start(&mut self) {
-        // Start the waku node
-        self.waku.start().expect("waku should start");
-
+    fn start(self) -> TicTacToeApp<Running> {
         let tx_clone = self.tx.clone();
 
         let my_closure = move |response| {
@@ -83,13 +80,18 @@ impl TicTacToeApp {
         };
 
         // Establish a closure that handles the incoming messages
-        self.waku.ctx.waku_set_event_callback(my_closure).expect("set event call back working");
+        self.waku.set_event_callback(my_closure).expect("set event call back working");
+
+        let _ = self.waku.version();
+
+        // Start the waku node
+        let waku = self.waku.start().expect("waku should start");
 
         // Subscribe to desired topic using the relay protocol
         // self.waku.relay_subscribe(&self.game_topic.to_string()).expect("waku should subscribe");
 
         let content_topic = WakuContentTopic::new("waku", "2", "tictactoegame", Encoding::Proto);
-        self.waku.filter_subscribe(&self.game_topic.to_string(), &content_topic.to_string()).expect("waku should subscribe");
+        waku.filter_subscribe(&self.game_topic.to_string(), &content_topic.to_string()).expect("waku should subscribe");
 
         // Connect to hard-coded node
         // let target_node_multi_addr =
@@ -100,8 +102,18 @@ impl TicTacToeApp {
 
         // self.waku.connect(&target_node_multi_addr, None)
         //      .expect("waku should connect to other node");
-    }
 
+        TicTacToeApp {
+            game_state: self.game_state,
+            waku: waku,
+            game_topic: self.game_topic,
+            tx: self.tx,
+            player_role: self.player_role,
+        }
+    }
+}
+
+impl TicTacToeApp<Running> {
     fn send_game_state(&self, game_state: &GameState) {
         let serialized_game_state = serde_json::to_string(game_state).unwrap();
         let content_topic = WakuContentTopic::new("waku", "2", "tictactoegame", Encoding::Proto);
@@ -193,7 +205,7 @@ impl TicTacToeApp {
     }
 }
 
-impl eframe::App for TicTacToeApp {
+impl eframe::App for TicTacToeApp<Running> {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
 
         // Request a repaint every second
@@ -325,9 +337,9 @@ async fn main() -> eframe::Result<()> {
     let shared_state = Arc::new(Mutex::new(game_state));
 
     let clone = shared_state.clone();
-    let mut app = TicTacToeApp::new(waku, game_topic, clone, tx);
+    let app = TicTacToeApp::new(waku, game_topic, clone, tx);
 
-    app.start();
+    let app = app.start();
 
     let clone = shared_state.clone();
     // Listen for messages in the main thread
