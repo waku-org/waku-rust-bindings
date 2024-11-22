@@ -7,7 +7,7 @@ use std::time::Duration;
 use libc::*;
 // internal
 use crate::general::{Encoding, MessageHash, Result, WakuContentTopic, WakuMessage};
-use crate::node::events::WakuNodeContext;
+use crate::node::context::WakuNodeContext;
 use crate::utils::{get_trampoline, handle_no_response, handle_response, LibwakuResponse};
 
 /// Create a content topic according to [RFC 23](https://rfc.vac.dev/spec/23/)

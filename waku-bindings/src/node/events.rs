@@ -4,23 +4,13 @@
 //! An example of an asynchronous event that might be emitted is receiving a message.
 //! When an event is emitted, this callback will be triggered receiving an [`Event`]
 
-// std
-use std::ffi::c_void;
 // crates
 use serde::{Deserialize, Serialize};
 // internal
 use crate::general::WakuMessage;
 use std::str;
 
-use crate::utils::{get_trampoline, LibwakuResponse};
 use crate::MessageHash;
-
-use std::sync::{Arc, Mutex};
-
-pub struct WakuNodeContext {
-    obj_ptr: *mut c_void,
-    msg_observer: Arc<Mutex<Box<dyn FnMut(LibwakuResponse) + Send + Sync>>>,
-}
 
 /// Waku event
 /// For now just WakuMessage is supported
@@ -43,45 +33,6 @@ pub struct WakuMessageEvent {
     pub message_hash: MessageHash,
     /// The message in [`WakuMessage`] format
     pub waku_message: WakuMessage,
-}
-
-impl WakuNodeContext {
-    pub fn new(obj_ptr: *mut c_void) -> Self {
-        Self {
-            obj_ptr: obj_ptr,
-            msg_observer: Arc::new(Mutex::new(Box::new(|_response| {
-                println!("msg observer not set")
-            }))),
-        }
-    }
-
-    pub fn get_ptr(&self) -> *mut c_void {
-        self.obj_ptr
-    }
-
-    /// Register callback to act as event handler and receive application events,
-    /// which are used to react to asynchronous events in Waku
-    pub fn waku_set_event_callback<F: FnMut(LibwakuResponse) + 'static + Sync + Send>(
-        &self,
-        closure: F,
-    ) -> Result<(), String> {
-        if let Ok(mut boxed_closure) = self.msg_observer.lock() {
-            *boxed_closure = Box::new(closure);
-            unsafe {
-                let cb = get_trampoline(&(*boxed_closure));
-                waku_sys::waku_set_event_callback(
-                    self.obj_ptr,
-                    cb,
-                    &mut (*boxed_closure) as *mut _ as *mut c_void,
-                )
-            };
-            Ok(())
-        } else {
-            Err(format!(
-                "Failed to acquire lock in waku_set_event_callback!"
-            ))
-        }
-    }
 }
 
 #[cfg(test)]

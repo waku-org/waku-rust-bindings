@@ -6,7 +6,7 @@ use std::ffi::CString;
 use libc::*;
 // internal
 use crate::general::Result;
-use crate::node::events::WakuNodeContext;
+use crate::node::context::WakuNodeContext;
 use crate::utils::{get_trampoline, handle_no_response, LibwakuResponse};
 
 pub fn waku_filter_subscribe(

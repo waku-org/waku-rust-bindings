@@ -6,7 +6,7 @@ use std::ffi::CString;
 use libc::*;
 // internal
 use crate::general::{MessageHash, Result, WakuMessage};
-use crate::node::events::WakuNodeContext;
+use crate::node::context::WakuNodeContext;
 use crate::utils::{get_trampoline, handle_response, LibwakuResponse};
 
 pub fn waku_lightpush_publish_message(

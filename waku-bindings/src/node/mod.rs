@@ -1,6 +1,7 @@
 //! Waku node implementation
 
 mod config;
+mod context;
 mod events;
 mod filter;
 mod lightpush;
@@ -18,7 +19,8 @@ use crate::general::{MessageHash, Result, WakuMessage};
 
 pub use config::RLNConfig;
 pub use config::WakuNodeConfig;
-pub use events::{Event, WakuMessageEvent, WakuNodeContext};
+pub use context::WakuNodeContext;
+pub use events::{Event, WakuMessageEvent};
 pub use relay::waku_create_content_topic;
 
 use crate::Encoding;

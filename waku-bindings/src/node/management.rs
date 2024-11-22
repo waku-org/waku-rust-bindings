@@ -8,7 +8,7 @@ use multiaddr::Multiaddr;
 // internal
 use super::config::WakuNodeConfig;
 use crate::general::Result;
-use crate::node::events::WakuNodeContext;
+use crate::node::context::WakuNodeContext;
 use crate::utils::LibwakuResponse;
 use crate::utils::WakuDecode;
 use crate::utils::{get_trampoline, handle_json_response, handle_no_response, handle_response};
