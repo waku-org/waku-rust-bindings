@@ -1,14 +1,14 @@
 use secp256k1::SecretKey;
 use serial_test::serial;
 use std::str::FromStr;
+use std::sync::{Arc, Mutex};
 use std::time::{Duration, SystemTime};
 use std::{collections::HashSet, str::from_utf8};
-use std::cell::OnceCell;
-use waku_bindings::LibwakuResponse;
 use tokio::time;
 use tokio::time::sleep;
+use waku_bindings::LibwakuResponse;
 use waku_bindings::{
-    waku_destroy, waku_new, Encoding, Event, MessageHash, Running, WakuContentTopic, WakuMessage,
+    waku_destroy, waku_new, Encoding, Event, MessageHash, WakuContentTopic, WakuMessage,
     WakuNodeConfig, WakuNodeHandle,
 };
 const ECHO_TIMEOUT: u64 = 1000;
@@ -16,7 +16,7 @@ const ECHO_MESSAGE: &str = "Hi from 🦀!";
 const TEST_PUBSUBTOPIC: &str = "test";
 
 fn try_publish_relay_messages(
-    node: &WakuNodeHandle<Running>,
+    node: &WakuNodeHandle,
     msg: &WakuMessage,
 ) -> Result<HashSet<MessageHash>, String> {
     let topic = TEST_PUBSUBTOPIC.to_string();
@@ -26,26 +26,27 @@ fn try_publish_relay_messages(
 }
 
 async fn test_echo_messages(
-    node1: &WakuNodeHandle<Running>,
-    node2: &WakuNodeHandle<Running>,
+    node1: &WakuNodeHandle,
+    node2: &WakuNodeHandle,
     content: &'static str,
     content_topic: WakuContentTopic,
 ) -> Result<(), String> {
     // setting a naïve event handler to avoid appearing ERR messages in logs
-    node1.set_event_callback(&|_| {});
+    node1.ctx.waku_set_event_callback(&|_| {});
 
-    let rx_waku_message: OnceCell<WakuMessage> = OnceCell::new();
+    let rx_waku_message: Arc<Mutex<WakuMessage>> = Arc::new(Mutex::new(WakuMessage::default()));
 
-    let closure = |response| {
+    let rx_waku_message_cloned = rx_waku_message.clone();
+    let closure = move |response| {
         if let LibwakuResponse::Success(v) = response {
             let event: Event =
                 serde_json::from_str(v.unwrap().as_str()).expect("Parsing event to succeed");
 
             match event {
                 Event::WakuMessage(evt) => {
-                    println!("WakuMessage event received: {:?}", evt.waku_message);
-                    // rx_waku_message = evt.waku_message; // Use the shared reference
-                    let _ = rx_waku_message.set(evt.waku_message);
+                    if let Ok(mut msg_lock) = rx_waku_message_cloned.lock() {
+                        *msg_lock = evt.waku_message;
+                    }
                 }
                 Event::Unrecognized(err) => panic!("Unrecognized waku event: {:?}", err),
                 _ => panic!("event case not expected"),
@@ -55,9 +56,12 @@ async fn test_echo_messages(
 
     println!("Before setting event callback");
 
-    node2.set_event_callback(&closure); // Set the event callback with the closure
+    node2
+        .ctx
+        .waku_set_event_callback(closure)
+        .expect("set event call back working"); // Set the event callback with the closure
 
-    let topic = TEST_PUBSUBTOPIC;
+    let topic = TEST_PUBSUBTOPIC.to_string();
     node1.relay_subscribe(&topic).unwrap();
     node2.relay_subscribe(&topic).unwrap();
 
@@ -71,7 +75,7 @@ async fn test_echo_messages(
     // Wait for mesh to form
     sleep(Duration::from_secs(3)).await;
 
-    println!("Before publish");
+    dbg!("Before publish");
     let message = WakuMessage::new(
         content,
         content_topic,
@@ -88,25 +92,22 @@ async fn test_echo_messages(
     let _ids = try_publish_relay_messages(node1, &message).expect("send relay messages");
 
     // Wait for the msg to arrive
+    let rx_waku_message_cloned = rx_waku_message.clone();
     for _ in 0..50 {
-        if let Some(msg) = rx_waku_message.get() {
-            println!("The waku message value is: {:?}", msg);
+        if let Ok(msg) = rx_waku_message_cloned.lock() {
+            // dbg!("The waku message value is: {:?}", msg);
             let payload = msg.payload.to_vec();
             let payload_str = from_utf8(&payload).expect("should be valid message");
-            println!("payload: {:?}", payload_str);
+            dbg!("payload: {:?}", payload_str);
             if payload_str == ECHO_MESSAGE {
-                return Ok(())
+                return Ok(());
             }
         } else {
             sleep(Duration::from_millis(100)).await;
         }
     }
 
-    if let None = rx_waku_message.get() {
-        return Err("could not get waku message".to_string())
-    }
-
-    return Err("Unexpected test ending".to_string())
+    return Err("Unexpected test ending".to_string());
 }
 
 #[tokio::test]
@@ -122,8 +123,8 @@ async fn default_echo() -> Result<(), String> {
         ..Default::default()
     }))?;
 
-    let node1 = node1.start()?;
-    let node2 = node2.start()?;
+    node1.start()?;
+    node2.start()?;
 
     let content_topic = WakuContentTopic::new("toychat", "2", "huilong", Encoding::Proto);
 
@@ -138,8 +139,8 @@ async fn default_echo() -> Result<(), String> {
 
     assert!(got_all);
 
-    let node1 = node1.stop()?;
-    let node2 = node2.stop()?;
+    node1.stop()?;
+    node2.stop()?;
     waku_destroy(node1)?;
     waku_destroy(node2)?;
 
@@ -159,9 +160,7 @@ fn node_restart() {
 
     for _ in 0..3 {
         let node = waku_new(config.clone().into()).expect("default config should be valid");
-
-        let node = node.start().expect("node should start with valid config");
-
+        node.start().expect("node should start with valid config");
         node.stop().expect("node should stop");
     }
 }

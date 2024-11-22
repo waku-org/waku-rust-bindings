@@ -3,7 +3,8 @@ use std::str::from_utf8;
 use std::time::SystemTime;
 use tokio::time::{sleep, Duration};
 use waku::{
-    waku_destroy, waku_new, Encoding, Event, WakuContentTopic, WakuMessage, WakuNodeConfig, LibwakuResponse,
+    waku_destroy, waku_new, Encoding, Event, LibwakuResponse, WakuContentTopic, WakuMessage,
+    WakuNodeConfig,
 };
 
 #[tokio::main]
@@ -20,12 +21,12 @@ async fn main() -> Result<(), Error> {
     }))
     .expect("should instantiate");
 
-    let node1 = node1.start().expect("node1 should start");
-    let node2 = node2.start().expect("node2 should start");
+    node1.start().expect("node1 should start");
+    node2.start().expect("node2 should start");
 
     // ========================================================================
     // Setting an event callback to be executed each time a message is received
-    node2.set_event_callback(&|response| {
+    node2.ctx.waku_set_event_callback(&|response| {
         if let LibwakuResponse::Success(v) = response {
             let event: Event =
                 serde_json::from_str(v.unwrap().as_str()).expect("Parsing event to succeed");
@@ -46,7 +47,7 @@ async fn main() -> Result<(), Error> {
         }
     });
 
-    node1.set_event_callback(&|response| {
+    node1.ctx.waku_set_event_callback(&|response| {
         if let LibwakuResponse::Success(v) = response {
             let event: Event =
                 serde_json::from_str(v.unwrap().as_str()).expect("Parsing event to succeed");
@@ -124,8 +125,8 @@ async fn main() -> Result<(), Error> {
     // ========================================================================
     // Stop both instances
 
-    let node1 = node1.stop().expect("should stop");
-    let node2 = node2.stop().expect("should stop");
+    node1.stop().expect("should stop");
+    node2.stop().expect("should stop");
 
     // ========================================================================
     // Free resources
