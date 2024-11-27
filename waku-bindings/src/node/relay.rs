@@ -6,7 +6,8 @@ use std::time::Duration;
 // crates
 use libc::*;
 // internal
-use crate::general::{Encoding, MessageHash, Result, WakuContentTopic, WakuMessage};
+use crate::general::contenttopic::{Encoding, WakuContentTopic};
+use crate::general::{MessageHash, Result, WakuMessage};
 use crate::node::context::WakuNodeContext;
 use crate::utils::{get_trampoline, handle_no_response, handle_response, LibwakuResponse};
 

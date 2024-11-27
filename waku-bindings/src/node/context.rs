@@ -1,4 +1,5 @@
 use std::ffi::c_void;
+use std::ptr::null_mut;
 use std::sync::{Arc, Mutex};
 
 use crate::utils::{get_trampoline, LibwakuResponse};
@@ -29,6 +30,10 @@ impl WakuNodeContext {
 
     pub fn get_ptr(&self) -> *mut c_void {
         self.obj_ptr
+    }
+
+    pub fn reset_ptr(mut self) {
+        self.obj_ptr = null_mut();
     }
 
     /// Register callback to act as event handler and receive application events,

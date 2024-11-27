@@ -16,7 +16,7 @@ pub struct WakuNodeConfig {
     pub host: Option<std::net::IpAddr>,
     /// Libp2p TCP listening port. Default `60000`. Use `0` for **random**
     #[default(Some(60000))]
-    pub port: Option<usize>,
+    pub tcp_port: Option<usize>,
     /// Secp256k1 private key in Hex format (`0x123...abc`). Default random
     #[serde(with = "secret_key_serde", rename = "key")]
     pub node_key: Option<SecretKey>,
@@ -28,6 +28,7 @@ pub struct WakuNodeConfig {
     #[default(Some(true))]
     pub relay: Option<bool>,
     pub relay_topics: Vec<String>,
+    #[default(vec![1])]
     pub shards: Vec<usize>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub max_message_size: Option<String>,

@@ -152,6 +152,7 @@ mod test {
     fn nwaku_version() {
         let node = waku_new(None).unwrap();
         let version = waku_version(&node).expect("should return the version");
+        print!("Current version: {}", version);
         assert!(!version.is_empty());
     }
 }

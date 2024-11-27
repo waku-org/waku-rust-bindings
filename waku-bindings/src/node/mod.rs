@@ -16,6 +16,7 @@ pub use secp256k1::{PublicKey, SecretKey};
 use std::marker::PhantomData;
 use std::time::Duration;
 // internal
+use crate::general::contenttopic::{Encoding, WakuContentTopic};
 use crate::general::{MessageHash, Result, WakuMessage};
 use crate::utils::LibwakuResponse;
 
@@ -25,8 +26,6 @@ pub use config::WakuNodeConfig;
 pub use events::{Event, WakuMessageEvent};
 pub use relay::waku_create_content_topic;
 
-use crate::Encoding;
-use crate::WakuContentTopic;
 use std::time::SystemTime;
 
 // Define state marker types
@@ -48,14 +47,16 @@ pub fn waku_new(config: Option<WakuNodeConfig>) -> Result<WakuNodeHandle<Initial
     })
 }
 
-pub fn waku_destroy(node: WakuNodeHandle<Initialized>) -> Result<()> {
-    management::waku_destroy(&node.ctx)
-}
-
 impl<State> WakuNodeHandle<State> {
     /// Get the nwaku version
     pub fn version(&self) -> Result<String> {
         management::waku_version(&self.ctx)
+    }
+
+    pub fn waku_destroy(self) -> Result<()> {
+        let res = management::waku_destroy(&self.ctx);
+        self.ctx.reset_ptr();
+        res
     }
 }
 
@@ -149,11 +150,19 @@ impl WakuNodeHandle<Running> {
         relay::waku_relay_unsubscribe(&self.ctx, pubsub_topic)
     }
 
-    pub fn filter_subscribe(&self, pubsub_topic: &String, content_topics: &String) -> Result<()> {
+    pub fn filter_subscribe(
+        &self,
+        pubsub_topic: &String,
+        content_topics: Vec<WakuContentTopic>,
+    ) -> Result<()> {
         filter::waku_filter_subscribe(&self.ctx, pubsub_topic, content_topics)
     }
 
-    pub fn filter_unsubscribe(&self, pubsub_topic: &String, content_topics: &String) -> Result<()> {
+    pub fn filter_unsubscribe(
+        &self,
+        pubsub_topic: &String,
+        content_topics: Vec<WakuContentTopic>,
+    ) -> Result<()> {
         filter::waku_filter_unsubscribe(&self.ctx, pubsub_topic, content_topics)
     }
 

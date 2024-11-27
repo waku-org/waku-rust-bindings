@@ -1,3 +1,5 @@
+use multiaddr::Multiaddr;
+use regex::Regex;
 use secp256k1::SecretKey;
 use serial_test::serial;
 use std::str::FromStr;
@@ -6,17 +8,17 @@ use std::time::{Duration, SystemTime};
 use std::{collections::HashSet, str::from_utf8};
 use tokio::time;
 use tokio::time::sleep;
-use waku_bindings::LibwakuResponse;
 use waku_bindings::{
-    waku_destroy, waku_new, Encoding, Event, MessageHash, WakuContentTopic, WakuMessage,
+    waku_new, Encoding, Event, Initialized, MessageHash, WakuContentTopic, WakuMessage,
     WakuNodeConfig, WakuNodeHandle,
 };
+use waku_bindings::{LibwakuResponse, Running};
 const ECHO_TIMEOUT: u64 = 1000;
 const ECHO_MESSAGE: &str = "Hi from 🦀!";
 const TEST_PUBSUBTOPIC: &str = "test";
 
 fn try_publish_relay_messages(
-    node: &WakuNodeHandle,
+    node: &WakuNodeHandle<Running>,
     msg: &WakuMessage,
 ) -> Result<HashSet<MessageHash>, String> {
     let topic = TEST_PUBSUBTOPIC.to_string();
@@ -26,13 +28,15 @@ fn try_publish_relay_messages(
 }
 
 async fn test_echo_messages(
-    node1: &WakuNodeHandle,
-    node2: &WakuNodeHandle,
+    node1: WakuNodeHandle<Initialized>,
+    node2: WakuNodeHandle<Initialized>,
     content: &'static str,
     content_topic: WakuContentTopic,
 ) -> Result<(), String> {
     // setting a naïve event handler to avoid appearing ERR messages in logs
-    let _ = node1.ctx.waku_set_event_callback(&|_| {});
+    node1
+        .set_event_callback(&|_| {})
+        .expect("set event call back working");
 
     let rx_waku_message: Arc<Mutex<WakuMessage>> = Arc::new(Mutex::new(WakuMessage::default()));
 
@@ -57,9 +61,11 @@ async fn test_echo_messages(
     println!("Before setting event callback");
 
     node2
-        .ctx
-        .waku_set_event_callback(closure)
+        .set_event_callback(closure)
         .expect("set event call back working"); // Set the event callback with the closure
+
+    let node1 = node1.start()?;
+    let node2 = node2.start()?;
 
     let topic = TEST_PUBSUBTOPIC.to_string();
     node1.relay_subscribe(&topic).unwrap();
@@ -68,9 +74,17 @@ async fn test_echo_messages(
     sleep(Duration::from_secs(3)).await;
 
     // Interconnect nodes
-    println!("Connecting node1 to node2");
+    // Replace all matches with 127.0.0.1 to avoid issue with NAT or firewall.
     let addresses1 = node1.listen_addresses().unwrap();
-    node2.connect(&addresses1[0], None).unwrap();
+    let addresses1 = &addresses1[0].to_string();
+
+    let re = Regex::new(r"\b(?:\d{1,3}\.){3}\d{1,3}\b").unwrap();
+    let addresses1 = re.replace_all(addresses1, "127.0.0.1").to_string();
+
+    let addresses1 = addresses1.parse::<Multiaddr>().expect("parse multiaddress");
+
+    println!("Connecting node1 to node2: {}", addresses1);
+    node2.connect(&addresses1, None).unwrap();
 
     // Wait for mesh to form
     sleep(Duration::from_secs(3)).await;
@@ -89,7 +103,7 @@ async fn test_echo_messages(
         Vec::new(),
         false,
     );
-    let _ids = try_publish_relay_messages(node1, &message).expect("send relay messages");
+    let _ids = try_publish_relay_messages(&node1, &message).expect("send relay messages");
 
     // Wait for the msg to arrive
     let rx_waku_message_cloned = rx_waku_message.clone();
@@ -98,14 +112,21 @@ async fn test_echo_messages(
             // dbg!("The waku message value is: {:?}", msg);
             let payload = msg.payload.to_vec();
             let payload_str = from_utf8(&payload).expect("should be valid message");
-            dbg!("payload: {:?}", payload_str);
             if payload_str == ECHO_MESSAGE {
+                node1.stop()?;
+                node2.stop()?;
                 return Ok(());
             }
         } else {
             sleep(Duration::from_millis(100)).await;
         }
     }
+
+    let node1 = node1.stop()?;
+    let node2 = node2.stop()?;
+
+    node1.waku_destroy()?;
+    node2.waku_destroy()?;
 
     return Err("Unexpected test ending".to_string());
 }
@@ -115,16 +136,13 @@ async fn test_echo_messages(
 async fn default_echo() -> Result<(), String> {
     println!("Test default_echo");
     let node1 = waku_new(Some(WakuNodeConfig {
-        port: Some(60010),
+        tcp_port: Some(60010),
         ..Default::default()
     }))?;
     let node2 = waku_new(Some(WakuNodeConfig {
-        port: Some(60020),
+        tcp_port: Some(60020),
         ..Default::default()
     }))?;
-
-    node1.start()?;
-    node2.start()?;
 
     let content_topic = WakuContentTopic::new("toychat", "2", "huilong", Encoding::Proto);
 
@@ -134,15 +152,10 @@ async fn default_echo() -> Result<(), String> {
     // Send and receive messages. Waits until all messages received.
     let got_all = tokio::select! {
         _ = sleep => false,
-        _ = test_echo_messages(&node1, &node2, ECHO_MESSAGE, content_topic) => true,
+        _ = test_echo_messages(node1, node2, ECHO_MESSAGE, content_topic) => true,
     };
 
     assert!(got_all);
-
-    node1.stop()?;
-    node2.stop()?;
-    waku_destroy(node1)?;
-    waku_destroy(node2)?;
 
     Ok(())
 }
@@ -160,7 +173,8 @@ fn node_restart() {
 
     for _ in 0..3 {
         let node = waku_new(config.clone().into()).expect("default config should be valid");
-        node.start().expect("node should start with valid config");
-        node.stop().expect("node should stop");
+        let node = node.start().expect("node should start with valid config");
+        let node = node.stop().expect("node should stop");
+        node.waku_destroy().expect("free resources");
     }
 }

@@ -3060,6 +3060,7 @@ dependencies = [
  "multiaddr",
  "once_cell",
  "rand",
+ "regex",
  "rln",
  "secp256k1 0.26.0",
  "serde",

@@ -90,8 +90,9 @@ impl TicTacToeApp<Initialized> {
         // Subscribe to desired topic using the relay protocol
         // self.waku.relay_subscribe(&self.game_topic.to_string()).expect("waku should subscribe");
 
-        let content_topic = WakuContentTopic::new("waku", "2", "tictactoegame", Encoding::Proto);
-        waku.filter_subscribe(&self.game_topic.to_string(), &content_topic.to_string()).expect("waku should subscribe");
+        let ctopic = WakuContentTopic::new("waku", "2", "tictactoegame", Encoding::Proto);
+        let content_topics = vec![ctopic];
+        waku.filter_subscribe(&self.game_topic.to_string(), content_topics).expect("waku should subscribe");
 
         // Connect to hard-coded node
         // let target_node_multi_addr =
@@ -308,7 +309,7 @@ async fn main() -> eframe::Result<()> {
     let game_topic = "/waku/2/rs/16/32";
     // Create a Waku instance
     let waku = waku_new(Some(WakuNodeConfig {
-        port: Some(60010),
+        tcp_port: Some(60010),
         cluster_id: Some(16),
         shards: vec![1, 32, 64, 128, 256],
         // node_key: Some(SecretKey::from_str("2fc0515879e52b7b73297cfd6ab3abf7c344ef84b7a90ff6f4cc19e05a198027").unwrap()),
