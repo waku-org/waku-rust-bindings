@@ -17,6 +17,7 @@ use std::marker::PhantomData;
 use std::time::Duration;
 // internal
 use crate::general::contenttopic::{Encoding, WakuContentTopic};
+pub use crate::general::pubsubtopic::PubsubTopic;
 use crate::general::{MessageHash, Result, WakuMessage};
 use crate::utils::LibwakuResponse;
 
@@ -105,7 +106,7 @@ impl WakuNodeHandle<Running> {
 
     pub fn relay_publish_txt(
         &self,
-        pubsub_topic: &String,
+        pubsub_topic: &PubsubTopic,
         msg_txt: &String,
         content_topic_name: &'static str,
         timeout: Option<Duration>,
@@ -134,25 +135,25 @@ impl WakuNodeHandle<Running> {
     pub fn relay_publish_message(
         &self,
         message: &WakuMessage,
-        pubsub_topic: &String,
+        pubsub_topic: &PubsubTopic,
         timeout: Option<Duration>,
     ) -> Result<MessageHash> {
         relay::waku_relay_publish_message(&self.ctx, message, pubsub_topic, timeout)
     }
 
     /// Subscribe to WakuRelay to receive messages matching a content filter.
-    pub fn relay_subscribe(&self, pubsub_topic: &String) -> Result<()> {
+    pub fn relay_subscribe(&self, pubsub_topic: &PubsubTopic) -> Result<()> {
         relay::waku_relay_subscribe(&self.ctx, pubsub_topic)
     }
 
     /// Closes the pubsub subscription to stop receiving messages matching a content filter. No more messages will be received from this pubsub topic
-    pub fn relay_unsubscribe(&self, pubsub_topic: &String) -> Result<()> {
+    pub fn relay_unsubscribe(&self, pubsub_topic: &PubsubTopic) -> Result<()> {
         relay::waku_relay_unsubscribe(&self.ctx, pubsub_topic)
     }
 
     pub fn filter_subscribe(
         &self,
-        pubsub_topic: &String,
+        pubsub_topic: &PubsubTopic,
         content_topics: Vec<WakuContentTopic>,
     ) -> Result<()> {
         filter::waku_filter_subscribe(&self.ctx, pubsub_topic, content_topics)
@@ -160,7 +161,7 @@ impl WakuNodeHandle<Running> {
 
     pub fn filter_unsubscribe(
         &self,
-        pubsub_topic: &String,
+        pubsub_topic: &PubsubTopic,
         content_topics: Vec<WakuContentTopic>,
     ) -> Result<()> {
         filter::waku_filter_unsubscribe(&self.ctx, pubsub_topic, content_topics)
@@ -173,7 +174,7 @@ impl WakuNodeHandle<Running> {
     pub fn lightpush_publish_message(
         &self,
         message: &WakuMessage,
-        pubsub_topic: &String,
+        pubsub_topic: &PubsubTopic,
     ) -> Result<MessageHash> {
         lightpush::waku_lightpush_publish_message(&self.ctx, message, pubsub_topic)
     }

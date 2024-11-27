@@ -3,7 +3,8 @@ use std::str::from_utf8;
 use std::time::SystemTime;
 use tokio::time::{sleep, Duration};
 use waku::{
-    waku_new, Encoding, Event, LibwakuResponse, WakuContentTopic, WakuMessage, WakuNodeConfig,
+    general::pubsubtopic::PubsubTopic, waku_new, Encoding, Event, LibwakuResponse,
+    WakuContentTopic, WakuMessage, WakuNodeConfig,
 };
 
 #[tokio::main]
@@ -73,7 +74,7 @@ async fn main() -> Result<(), Error> {
 
     // ========================================================================
     // Subscribe to pubsub topic
-    let topic = "test".to_string();
+    let topic = PubsubTopic::new("test");
 
     node1
         .relay_subscribe(&topic)

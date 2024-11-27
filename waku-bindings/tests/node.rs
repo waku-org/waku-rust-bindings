@@ -8,6 +8,7 @@ use std::time::{Duration, SystemTime};
 use std::{collections::HashSet, str::from_utf8};
 use tokio::time;
 use tokio::time::sleep;
+use waku_bindings::node::PubsubTopic;
 use waku_bindings::{
     waku_new, Encoding, Event, Initialized, MessageHash, WakuContentTopic, WakuMessage,
     WakuNodeConfig, WakuNodeHandle,
@@ -21,10 +22,11 @@ fn try_publish_relay_messages(
     node: &WakuNodeHandle<Running>,
     msg: &WakuMessage,
 ) -> Result<HashSet<MessageHash>, String> {
-    let topic = TEST_PUBSUBTOPIC.to_string();
-    Ok(HashSet::from([
-        node.relay_publish_message(msg, &topic, None)?
-    ]))
+    Ok(HashSet::from([node.relay_publish_message(
+        msg,
+        &PubsubTopic::new(TEST_PUBSUBTOPIC),
+        None,
+    )?]))
 }
 
 async fn test_echo_messages(
@@ -67,9 +69,12 @@ async fn test_echo_messages(
     let node1 = node1.start()?;
     let node2 = node2.start()?;
 
-    let topic = TEST_PUBSUBTOPIC.to_string();
-    node1.relay_subscribe(&topic).unwrap();
-    node2.relay_subscribe(&topic).unwrap();
+    node1
+        .relay_subscribe(&PubsubTopic::new(TEST_PUBSUBTOPIC))
+        .unwrap();
+    node2
+        .relay_subscribe(&PubsubTopic::new(TEST_PUBSUBTOPIC))
+        .unwrap();
 
     sleep(Duration::from_secs(3)).await;
 

@@ -7,7 +7,8 @@ use std::time::{SystemTime, Duration};
 use tokio::sync::mpsc;
 use waku::{
     waku_new, Encoding, Event, LibwakuResponse, WakuContentTopic,
-    WakuMessage, WakuNodeConfig, WakuNodeHandle, Initialized, Running
+    WakuMessage, WakuNodeConfig, WakuNodeHandle, Initialized, Running,
+    general::pubsubtopic::PubsubTopic,
 };
 
 #[derive(Serialize, Deserialize, PartialEq, Debug, Copy, Clone)]
@@ -26,7 +27,7 @@ struct GameState {
 struct TicTacToeApp<State> {
     game_state: Arc<Mutex<GameState>>,
     waku: WakuNodeHandle<State>,
-    game_topic: &'static str,
+    game_topic: PubsubTopic,
     tx: mpsc::Sender<String>, // Sender to send `msg` to main thread
     player_role: Option<Player>, // Store the player's role (X or O)
 }
@@ -34,7 +35,7 @@ struct TicTacToeApp<State> {
 impl TicTacToeApp<Initialized> {
     fn new(
         waku: WakuNodeHandle<Initialized>,
-        game_topic: &'static str,
+        game_topic: PubsubTopic,
         game_state: Arc<Mutex<GameState>>,
         tx: mpsc::Sender<String>,
     ) -> Self {
@@ -92,7 +93,7 @@ impl TicTacToeApp<Initialized> {
 
         let ctopic = WakuContentTopic::new("waku", "2", "tictactoegame", Encoding::Proto);
         let content_topics = vec![ctopic];
-        waku.filter_subscribe(&self.game_topic.to_string(), content_topics).expect("waku should subscribe");
+        waku.filter_subscribe(&self.game_topic, content_topics).expect("waku should subscribe");
 
         // Connect to hard-coded node
         // let target_node_multi_addr =
@@ -135,7 +136,7 @@ impl TicTacToeApp<Running> {
 
         // self.waku.relay_publish_message(&message, &self.game_topic.to_string(), None)
         //     .expect("Failed to send message");
-        self.waku.lightpush_publish_message(&message, &self.game_topic.to_string()).expect("Failed to send message");
+        self.waku.lightpush_publish_message(&message, &self.game_topic).expect("Failed to send message");
     }
 
     fn make_move(&mut self, row: usize, col: usize) {
@@ -306,7 +307,7 @@ impl eframe::App for TicTacToeApp<Running> {
 async fn main() -> eframe::Result<()> {
     let (tx, mut rx) = mpsc::channel::<String>(3200); // Channel to communicate between threads
 
-    let game_topic = "/waku/2/rs/16/32";
+    let game_topic = PubsubTopic::new("/waku/2/rs/16/32");
     // Create a Waku instance
     let waku = waku_new(Some(WakuNodeConfig {
         tcp_port: Some(60010),
@@ -314,7 +315,7 @@ async fn main() -> eframe::Result<()> {
         shards: vec![1, 32, 64, 128, 256],
         // node_key: Some(SecretKey::from_str("2fc0515879e52b7b73297cfd6ab3abf7c344ef84b7a90ff6f4cc19e05a198027").unwrap()),
         max_message_size: Some("1024KiB".to_string()),
-        relay_topics: vec![game_topic.to_string()],
+        relay_topics: vec![String::from(&game_topic)],
         log_level: Some("DEBUG"), // Supported: TRACE, DEBUG, INFO, NOTICE, WARN, ERROR or FATAL
 
         keep_alive: Some(true),

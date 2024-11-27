@@ -9,20 +9,20 @@ use crate::general::{MessageHash, Result, WakuMessage};
 use crate::node::context::WakuNodeContext;
 use crate::utils::{get_trampoline, handle_response, LibwakuResponse};
 
+use crate::general::pubsubtopic::PubsubTopic;
+
 pub fn waku_lightpush_publish_message(
     ctx: &WakuNodeContext,
     message: &WakuMessage,
-    pubsub_topic: &str,
+    pubsub_topic: &PubsubTopic,
 ) -> Result<MessageHash> {
-    let pubsub_topic = pubsub_topic.to_string();
-
     let message_ptr = CString::new(
         serde_json::to_string(&message)
             .expect("WakuMessages should always be able to success serializing"),
     )
     .expect("CString should build properly from the serialized waku message")
     .into_raw();
-    let pubsub_topic_ptr = CString::new(pubsub_topic)
+    let pubsub_topic_ptr = CString::new(String::from(pubsub_topic))
         .expect("CString should build properly from pubsub topic")
         .into_raw();
 

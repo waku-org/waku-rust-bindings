@@ -1,7 +1,7 @@
 //! # Waku
 //!
 //! Implementation on top of [`waku-bindings`](https://rfc.vac.dev/spec/36/)
-mod general;
+pub mod general;
 pub mod node;
 pub mod utils;
 

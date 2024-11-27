@@ -7,6 +7,7 @@ use std::time::Duration;
 use libc::*;
 // internal
 use crate::general::contenttopic::{Encoding, WakuContentTopic};
+use crate::general::pubsubtopic::PubsubTopic;
 use crate::general::{MessageHash, Result, WakuMessage};
 use crate::node::context::WakuNodeContext;
 use crate::utils::{get_trampoline, handle_no_response, handle_response, LibwakuResponse};
@@ -61,18 +62,16 @@ pub fn waku_create_content_topic(
 pub fn waku_relay_publish_message(
     ctx: &WakuNodeContext,
     message: &WakuMessage,
-    pubsub_topic: &str,
+    pubsub_topic: &PubsubTopic,
     timeout: Option<Duration>,
 ) -> Result<MessageHash> {
-    let pubsub_topic = pubsub_topic.to_string();
-
     let message_ptr = CString::new(
         serde_json::to_string(&message)
             .expect("WakuMessages should always be able to success serializing"),
     )
     .expect("CString should build properly from the serialized waku message")
     .into_raw();
-    let pubsub_topic_ptr = CString::new(pubsub_topic)
+    let pubsub_topic_ptr = CString::new(String::from(pubsub_topic))
         .expect("CString should build properly from pubsub topic")
         .into_raw();
 
@@ -106,9 +105,8 @@ pub fn waku_relay_publish_message(
     handle_response(code, result)
 }
 
-pub fn waku_relay_subscribe(ctx: &WakuNodeContext, pubsub_topic: &str) -> Result<()> {
-    let pubsub_topic = pubsub_topic.to_string();
-    let pubsub_topic_ptr = CString::new(pubsub_topic)
+pub fn waku_relay_subscribe(ctx: &WakuNodeContext, pubsub_topic: &PubsubTopic) -> Result<()> {
+    let pubsub_topic_ptr = CString::new(String::from(pubsub_topic))
         .expect("CString should build properly from pubsub topic")
         .into_raw();
 
@@ -132,9 +130,8 @@ pub fn waku_relay_subscribe(ctx: &WakuNodeContext, pubsub_topic: &str) -> Result
     handle_no_response(code, result)
 }
 
-pub fn waku_relay_unsubscribe(ctx: &WakuNodeContext, pubsub_topic: &String) -> Result<()> {
-    let pubsub_topic = pubsub_topic.to_string();
-    let pubsub_topic_ptr = CString::new(pubsub_topic)
+pub fn waku_relay_unsubscribe(ctx: &WakuNodeContext, pubsub_topic: &PubsubTopic) -> Result<()> {
+    let pubsub_topic_ptr = CString::new(String::from(pubsub_topic))
         .expect("CString should build properly from pubsub topic")
         .into_raw();
 

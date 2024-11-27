@@ -6,19 +6,19 @@ use std::ffi::CString;
 use libc::*;
 // internal
 use crate::general::contenttopic::WakuContentTopic;
+use crate::general::pubsubtopic::PubsubTopic;
 use crate::general::Result;
 use crate::node::context::WakuNodeContext;
 use crate::utils::{get_trampoline, handle_no_response, LibwakuResponse};
 
 pub fn waku_filter_subscribe(
     ctx: &WakuNodeContext,
-    pubsub_topic: &str,
+    pubsub_topic: &PubsubTopic,
     content_topics: Vec<WakuContentTopic>,
 ) -> Result<()> {
-    let pubsub_topic = pubsub_topic.to_string();
     let content_topics = WakuContentTopic::join_content_topics(content_topics);
 
-    let pubsub_topic_ptr = CString::new(pubsub_topic)
+    let pubsub_topic_ptr = CString::new(String::from(pubsub_topic))
         .expect("CString should build properly from pubsub topic")
         .into_raw();
     let content_topics_ptr = CString::new(content_topics)
@@ -49,13 +49,12 @@ pub fn waku_filter_subscribe(
 
 pub fn waku_filter_unsubscribe(
     ctx: &WakuNodeContext,
-    pubsub_topic: &str,
+    pubsub_topic: &PubsubTopic,
     content_topics: Vec<WakuContentTopic>, // comma-separated list of content topics
 ) -> Result<()> {
-    let pubsub_topic = pubsub_topic.to_string();
     let content_topics_topics = WakuContentTopic::join_content_topics(content_topics);
 
-    let pubsub_topic_ptr = CString::new(pubsub_topic)
+    let pubsub_topic_ptr = CString::new(String::from(pubsub_topic))
         .expect("CString should build properly from pubsub topic")
         .into_raw();
     let content_topics_topics_ptr = CString::new(content_topics_topics)
