@@ -70,9 +70,7 @@ fn generate_bindgen_code(project_dir: &Path) {
 
     println!(
         "cargo:rustc-link-search={}",
-        vendor_path
-            .join("vendor/negentropy/cpp")
-            .display()
+        vendor_path.join("vendor/negentropy/cpp").display()
     );
     println!("cargo:rustc-link-lib=static=negentropy");
 
