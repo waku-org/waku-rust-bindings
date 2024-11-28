@@ -16,20 +16,45 @@ pub struct WakuNodeConfig {
     pub host: Option<std::net::IpAddr>,
     /// Libp2p TCP listening port. Default `60000`. Use `0` for **random**
     #[default(Some(60000))]
-    pub port: Option<usize>,
+    pub tcp_port: Option<usize>,
     /// Secp256k1 private key in Hex format (`0x123...abc`). Default random
     #[serde(with = "secret_key_serde", rename = "key")]
     pub node_key: Option<SecretKey>,
     /// Cluster id that the node is running in
     #[default(Some(0))]
     pub cluster_id: Option<usize>,
-    /// Enable relay protocol. Default `true`
+
+    /// Relay protocol
     #[default(Some(true))]
     pub relay: Option<bool>,
     pub relay_topics: Vec<String>,
+    #[default(vec![1])]
+    pub shards: Vec<usize>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub max_message_size: Option<String>,
+
     /// RLN configuration
     #[serde(skip_serializing_if = "Option::is_none")]
     pub rln_relay: Option<RLNConfig>,
+
+    // Discovery
+    #[default(Some(false))]
+    pub dns_discovery: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub dns_discovery_url: Option<&'static str>,
+
+    #[default(Some(false))]
+    pub discv5_discovery: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub discv5_udp_port: Option<usize>,
+    #[default(Some(false))]
+    pub discv5_enr_auto_update: Option<bool>,
+
+    // other settings
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub log_level: Option<&'static str>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub keep_alive: Option<bool>,
 }
 
 /// RLN Relay configuration

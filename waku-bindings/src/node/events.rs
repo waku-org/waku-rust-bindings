@@ -4,20 +4,18 @@
 //! An example of an asynchronous event that might be emitted is receiving a message.
 //! When an event is emitted, this callback will be triggered receiving an [`Event`]
 
-// std
-use std::ffi::c_void;
 // crates
 use serde::{Deserialize, Serialize};
 // internal
 use crate::general::WakuMessage;
-use crate::node::context::WakuNodeContext;
-use crate::utils::{get_trampoline, LibwakuResponse};
+use std::str;
+
 use crate::MessageHash;
 
 /// Waku event
 /// For now just WakuMessage is supported
 #[non_exhaustive]
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 #[serde(tag = "eventType", rename_all = "camelCase")]
 pub enum Event {
     #[serde(rename = "message")]
@@ -26,7 +24,7 @@ pub enum Event {
 }
 
 /// Type of `event` field for a `message` event
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct WakuMessageEvent {
     /// The pubsub topic on which the message was received
@@ -35,25 +33,6 @@ pub struct WakuMessageEvent {
     pub message_hash: MessageHash,
     /// The message in [`WakuMessage`] format
     pub waku_message: WakuMessage,
-}
-
-/// Register callback to act as event handler and receive application events,
-/// which are used to react to asynchronous events in Waku
-pub fn waku_set_event_callback<F: FnMut(Event) + Send + Sync>(ctx: &WakuNodeContext, mut f: F) {
-    let cb = |response: LibwakuResponse| {
-        if let LibwakuResponse::Success(v) = response {
-            let data: Event =
-                serde_json::from_str(v.unwrap().as_str()).expect("Parsing event to succeed");
-            f(data);
-        };
-    };
-
-    unsafe {
-        let mut closure = cb;
-        let cb = get_trampoline(&closure);
-
-        waku_sys::waku_set_event_callback(ctx.obj_ptr, cb, &mut closure as *mut _ as *mut c_void)
-    };
 }
 
 #[cfg(test)]

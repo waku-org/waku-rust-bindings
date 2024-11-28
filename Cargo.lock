@@ -380,6 +380,7 @@ name = "basic"
 version = "0.1.0"
 dependencies = [
  "futures",
+ "serde_json",
  "tokio",
  "tokio-util",
  "waku-bindings",
@@ -3059,6 +3060,7 @@ dependencies = [
  "multiaddr",
  "once_cell",
  "rand",
+ "regex",
  "rln",
  "secp256k1 0.26.0",
  "serde",

@@ -38,6 +38,7 @@ fn generate_bindgen_code(project_dir: &Path) {
         vendor_path.join("build").display()
     );
     println!("cargo:rustc-link-lib=static=waku");
+
     println!(
         "cargo:rustc-link-search={}",
         vendor_path
@@ -45,6 +46,7 @@ fn generate_bindgen_code(project_dir: &Path) {
             .display()
     );
     println!("cargo:rustc-link-lib=static=miniupnpc");
+
     println!(
         "cargo:rustc-link-search={}",
         vendor_path
@@ -52,8 +54,10 @@ fn generate_bindgen_code(project_dir: &Path) {
             .display()
     );
     println!("cargo:rustc-link-lib=static=natpmp");
+
     println!("cargo:rustc-link-lib=dl");
     println!("cargo:rustc-link-lib=m");
+
     println!(
         "cargo:rustc-link-search=native={}",
         vendor_path
@@ -62,7 +66,25 @@ fn generate_bindgen_code(project_dir: &Path) {
     );
     println!("cargo:rustc-link-lib=static=backtrace");
 
+    println!("cargo:rustc-link-lib=stdc++");
+
+    println!(
+        "cargo:rustc-link-search={}",
+        vendor_path.join("vendor/negentropy/cpp").display()
+    );
+    println!("cargo:rustc-link-lib=static=negentropy");
+
+    println!("cargo:rustc-link-lib=ssl");
+    println!("cargo:rustc-link-lib=crypto");
+
+    cc::Build::new()
+        .file("src/cmd.c") // Compile the C file
+        .compile("cmditems"); // Compile it as a library
+    println!("cargo:rustc-link-lib=static=cmditems");
+
     // TODO: Determine if pthread is automatically included
+    println!("cargo:rustc-link-lib=pthread");
+
     // TODO: Test in other architectures
 
     // Generate waku bindings with bindgen

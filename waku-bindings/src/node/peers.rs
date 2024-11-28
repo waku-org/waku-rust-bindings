@@ -32,7 +32,7 @@ pub fn waku_connect(
         let mut closure = result_cb;
         let cb = get_trampoline(&closure);
         let out = waku_sys::waku_connect(
-            ctx.obj_ptr,
+            ctx.get_ptr(),
             address_ptr,
             timeout
                 .map(|duration| duration.as_millis().try_into().unwrap_or(u32::MAX))

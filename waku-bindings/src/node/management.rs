@@ -10,13 +10,17 @@ use super::config::WakuNodeConfig;
 use crate::general::Result;
 use crate::node::context::WakuNodeContext;
 use crate::utils::LibwakuResponse;
+use crate::utils::WakuDecode;
 use crate::utils::{get_trampoline, handle_json_response, handle_no_response, handle_response};
 
 /// Instantiates a Waku node
 /// as per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_newchar-jsonconfig)
 pub fn waku_new(config: Option<WakuNodeConfig>) -> Result<WakuNodeContext> {
-    let config = config.unwrap_or_default();
+    unsafe {
+        waku_sys::waku_setup();
+    }
 
+    let config = config.unwrap_or_default();
     let config_ptr = CString::new(
         serde_json::to_string(&config)
             .expect("Serialization from properly built NodeConfig should never fail"),
@@ -39,7 +43,7 @@ pub fn waku_new(config: Option<WakuNodeConfig>) -> Result<WakuNodeContext> {
     match result {
         LibwakuResponse::MissingCallback => panic!("callback is required"),
         LibwakuResponse::Failure(v) => Err(v),
-        _ => Ok(WakuNodeContext { obj_ptr }),
+        _ => Ok(WakuNodeContext::new(obj_ptr)),
     }
 }
 
@@ -49,7 +53,7 @@ pub fn waku_destroy(ctx: &WakuNodeContext) -> Result<()> {
     let code = unsafe {
         let mut closure = result_cb;
         let cb = get_trampoline(&closure);
-        waku_sys::waku_destroy(ctx.obj_ptr, cb, &mut closure as *mut _ as *mut c_void)
+        waku_sys::waku_destroy(ctx.get_ptr(), cb, &mut closure as *mut _ as *mut c_void)
     };
 
     handle_no_response(code, result)
@@ -63,7 +67,7 @@ pub fn waku_start(ctx: &WakuNodeContext) -> Result<()> {
     let code = unsafe {
         let mut closure = result_cb;
         let cb = get_trampoline(&closure);
-        waku_sys::waku_start(ctx.obj_ptr, cb, &mut closure as *mut _ as *mut c_void)
+        waku_sys::waku_start(ctx.get_ptr(), cb, &mut closure as *mut _ as *mut c_void)
     };
 
     handle_no_response(code, result)
@@ -77,7 +81,7 @@ pub fn waku_stop(ctx: &WakuNodeContext) -> Result<()> {
     let code = unsafe {
         let mut closure = result_cb;
         let cb = get_trampoline(&closure);
-        waku_sys::waku_stop(ctx.obj_ptr, cb, &mut closure as *mut _ as *mut c_void)
+        waku_sys::waku_stop(ctx.get_ptr(), cb, &mut closure as *mut _ as *mut c_void)
     };
 
     handle_no_response(code, result)
@@ -91,10 +95,21 @@ pub fn waku_version(ctx: &WakuNodeContext) -> Result<String> {
     let code = unsafe {
         let mut closure = result_cb;
         let cb = get_trampoline(&closure);
-        waku_sys::waku_version(ctx.obj_ptr, cb, &mut closure as *mut _ as *mut c_void)
+        waku_sys::waku_version(ctx.get_ptr(), cb, &mut closure as *mut _ as *mut c_void)
     };
 
     handle_response(code, result)
+}
+
+// Implement WakuDecode for Vec<Multiaddr>
+impl WakuDecode for Vec<Multiaddr> {
+    fn decode(input: &str) -> Result<Self> {
+        input
+            .split(',')
+            .map(|s| s.trim().parse::<Multiaddr>().map_err(|err| err.to_string()))
+            .collect::<Result<Vec<Multiaddr>>>() // Collect results into a Vec
+            .map_err(|err| format!("could not parse Multiaddr: {}", err))
+    }
 }
 
 /// Get the multiaddresses the Waku node is listening to
@@ -105,7 +120,7 @@ pub fn waku_listen_addresses(ctx: &WakuNodeContext) -> Result<Vec<Multiaddr>> {
     let code = unsafe {
         let mut closure = result_cb;
         let cb = get_trampoline(&closure);
-        waku_sys::waku_listen_addresses(ctx.obj_ptr, cb, &mut closure as *mut _ as *mut c_void)
+        waku_sys::waku_listen_addresses(ctx.get_ptr(), cb, &mut closure as *mut _ as *mut c_void)
     };
 
     handle_json_response(code, result)
@@ -137,6 +152,7 @@ mod test {
     fn nwaku_version() {
         let node = waku_new(None).unwrap();
         let version = waku_version(&node).expect("should return the version");
+        print!("Current version: {}", version);
         assert!(!version.is_empty());
     }
 }

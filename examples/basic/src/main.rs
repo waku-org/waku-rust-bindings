@@ -3,53 +3,78 @@ use std::str::from_utf8;
 use std::time::SystemTime;
 use tokio::time::{sleep, Duration};
 use waku::{
-    waku_destroy, waku_new, Encoding, Event, WakuContentTopic, WakuMessage, WakuNodeConfig,
+    general::pubsubtopic::PubsubTopic, waku_new, Encoding, Event, LibwakuResponse,
+    WakuContentTopic, WakuMessage, WakuNodeConfig,
 };
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
     let node1 = waku_new(Some(WakuNodeConfig {
-        port: Some(60010), // TODO: use any available port.
+        tcp_port: Some(60010), // TODO: use any available port.
         ..Default::default()
     }))
     .expect("should instantiate");
 
     let node2 = waku_new(Some(WakuNodeConfig {
-        port: Some(60020), // TODO: use any available port.
+        tcp_port: Some(60020), // TODO: use any available port.
         ..Default::default()
     }))
     .expect("should instantiate");
+
+    // ========================================================================
+    // Setting an event callback to be executed each time a message is received
+    node2
+        .set_event_callback(|response| {
+            if let LibwakuResponse::Success(v) = response {
+                let event: Event =
+                    serde_json::from_str(v.unwrap().as_str()).expect("Parsing event to succeed");
+
+                match event {
+                    Event::WakuMessage(evt) => {
+                        println!("WakuMessage event received: {:?}", evt.waku_message);
+                        let message = evt.waku_message;
+                        let payload = message.payload.to_vec();
+                        let msg = from_utf8(&payload).expect("should be valid message");
+                        println!("::::::::::::::::::::::::::::::::::::::::::::::::::::");
+                        println!("Message Received in NODE 2: {}", msg);
+                        println!("::::::::::::::::::::::::::::::::::::::::::::::::::::");
+                    }
+                    Event::Unrecognized(err) => panic!("Unrecognized waku event: {:?}", err),
+                    _ => panic!("event case not expected"),
+                };
+            }
+        })
+        .expect("set event call back working");
+
+    node1
+        .set_event_callback(|response| {
+            if let LibwakuResponse::Success(v) = response {
+                let event: Event =
+                    serde_json::from_str(v.unwrap().as_str()).expect("Parsing event to succeed");
+
+                match event {
+                    Event::WakuMessage(evt) => {
+                        println!("WakuMessage event received: {:?}", evt.waku_message);
+                        let message = evt.waku_message;
+                        let payload = message.payload.to_vec();
+                        let msg = from_utf8(&payload).expect("should be valid message");
+                        println!("::::::::::::::::::::::::::::::::::::::::::::::::::::");
+                        println!("Message Received in NODE 1: {}", msg);
+                        println!("::::::::::::::::::::::::::::::::::::::::::::::::::::");
+                    }
+                    Event::Unrecognized(err) => panic!("Unrecognized waku event: {:?}", err),
+                    _ => panic!("event case not expected"),
+                };
+            }
+        })
+        .expect("set event call back working");
 
     let node1 = node1.start().expect("node1 should start");
     let node2 = node2.start().expect("node2 should start");
 
     // ========================================================================
-    // Setting an event callback to be executed each time a message is received
-    node2.set_event_callback(move |event| {
-        if let Event::WakuMessage(message) = event {
-            let message = message.waku_message;
-            let payload = message.payload.to_vec();
-            let msg = from_utf8(&payload).expect("should be valid message");
-            println!("::::::::::::::::::::::::::::::::::::::::::::::::::::");
-            println!("Message Received in NODE 2: {}", msg);
-            println!("::::::::::::::::::::::::::::::::::::::::::::::::::::");
-        }
-    });
-
-    node1.set_event_callback(move |event| {
-        if let Event::WakuMessage(message) = event {
-            let message = message.waku_message;
-            let payload = message.payload.to_vec();
-            let msg = from_utf8(&payload).expect("should be valid message");
-            println!("::::::::::::::::::::::::::::::::::::::::::::::::::::");
-            println!("Message Received in NODE 1: {}", msg);
-            println!("::::::::::::::::::::::::::::::::::::::::::::::::::::");
-        }
-    });
-
-    // ========================================================================
     // Subscribe to pubsub topic
-    let topic = "test".to_string();
+    let topic = PubsubTopic::new("test");
 
     node1
         .relay_subscribe(&topic)
@@ -109,8 +134,8 @@ async fn main() -> Result<(), Error> {
 
     // ========================================================================
     // Free resources
-    waku_destroy(node1).expect("should deallocate");
-    waku_destroy(node2).expect("should deallocate");
+    node1.waku_destroy().expect("should deallocate");
+    node2.waku_destroy().expect("should deallocate");
 
     Ok(())
 }
