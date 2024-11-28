@@ -4,15 +4,17 @@ use std::sync::{Arc, Mutex};
 
 use crate::utils::{get_trampoline, LibwakuResponse};
 
+type LibwakuResponseClosure = dyn FnMut(LibwakuResponse) + Send + Sync;
+
 pub struct WakuNodeContext {
     obj_ptr: *mut c_void,
-    msg_observer: Arc<Mutex<Box<dyn FnMut(LibwakuResponse) + Send + Sync>>>,
+    msg_observer: Arc<Mutex<Box<LibwakuResponseClosure>>>,
 }
 
 impl WakuNodeContext {
     pub fn new(obj_ptr: *mut c_void) -> Self {
         let me = Self {
-            obj_ptr: obj_ptr,
+            obj_ptr,
             msg_observer: Arc::new(Mutex::new(Box::new(|_| {}))),
         };
 
@@ -54,9 +56,7 @@ impl WakuNodeContext {
             };
             Ok(())
         } else {
-            Err(format!(
-                "Failed to acquire lock in waku_set_event_callback!"
-            ))
+            Err("Failed to acquire lock in waku_set_event_callback!".to_string())
         }
     }
 }

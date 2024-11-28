@@ -89,13 +89,11 @@ pub fn waku_filter_unsubscribe_all(ctx: &WakuNodeContext) -> Result<()> {
     let code = unsafe {
         let mut closure = result_cb;
         let cb = get_trampoline(&closure);
-        let out = waku_sys::waku_filter_unsubscribe_all(
+        waku_sys::waku_filter_unsubscribe_all(
             ctx.get_ptr(),
             cb,
             &mut closure as *mut _ as *mut c_void,
-        );
-
-        out
+        )
     };
 
     handle_no_response(code, result)

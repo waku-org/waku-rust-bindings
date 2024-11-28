@@ -24,7 +24,7 @@ async fn main() -> Result<(), Error> {
     // ========================================================================
     // Setting an event callback to be executed each time a message is received
     node2
-        .set_event_callback(&|response| {
+        .set_event_callback(|response| {
             if let LibwakuResponse::Success(v) = response {
                 let event: Event =
                     serde_json::from_str(v.unwrap().as_str()).expect("Parsing event to succeed");
@@ -47,7 +47,7 @@ async fn main() -> Result<(), Error> {
         .expect("set event call back working");
 
     node1
-        .set_event_callback(&|response| {
+        .set_event_callback(|response| {
             if let LibwakuResponse::Success(v) = response {
                 let event: Event =
                     serde_json::from_str(v.unwrap().as_str()).expect("Parsing event to succeed");
