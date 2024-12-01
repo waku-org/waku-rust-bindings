@@ -33,6 +33,10 @@ pub struct WakuNodeConfig {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub max_message_size: Option<String>,
 
+    /// Store protocol
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub storenode: Option<&'static str>,
+
     /// RLN configuration
     #[serde(skip_serializing_if = "Option::is_none")]
     pub rln_relay: Option<RLNConfig>,

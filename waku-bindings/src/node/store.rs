@@ -7,10 +7,10 @@ use libc::*;
 // internal
 use crate::general::{
     contenttopic::WakuContentTopic, pubsubtopic::PubsubTopic, MessageHash, Result,
+    WakuStoreRespMessage,
 };
 use crate::node::context::WakuNodeContext;
 use crate::utils::{get_trampoline, handle_json_response, LibwakuResponse, WakuDecode};
-use crate::WakuMessage;
 use multiaddr::Multiaddr;
 use serde::{Deserialize, Serialize};
 
@@ -49,7 +49,7 @@ struct StoreQueryRequest {
 #[serde(rename_all = "camelCase")]
 pub struct StoreWakuMessageResponse {
     pub message_hash: [u8; 32],
-    pub message: WakuMessage,
+    pub message: WakuStoreRespMessage,
     pub pubsub_topic: String,
 }
 
@@ -72,7 +72,7 @@ pub struct StoreResponse {
 // Implement WakuDecode for Vec<Multiaddr>
 impl WakuDecode for StoreResponse {
     fn decode(input: &str) -> Result<Self> {
-        let ret: StoreResponse = serde_json::from_str(input).expect("parse store resp correctly");
+        let ret: StoreResponse = serde_json::from_str(input).expect("could not parse store resp");
         Ok(ret)
     }
 }

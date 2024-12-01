@@ -25,7 +25,6 @@ use crate::general::{MessageHash, Result, WakuMessage};
 use crate::utils::LibwakuResponse;
 
 use crate::node::context::WakuNodeContext;
-use crate::node::store::PagingOptions;
 pub use config::RLNConfig;
 pub use config::WakuNodeConfig;
 pub use events::{WakuEvent, WakuMessageEvent};

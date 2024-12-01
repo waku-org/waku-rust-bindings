@@ -8,10 +8,10 @@ use crossterm::{
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
 use prost::Message;
-use std::str::from_utf8;
 use std::io::Write;
 use std::sync::{Arc, RwLock};
 use std::{error::Error, io};
+use std::time::Duration;
 use tui::{
     backend::{Backend, CrosstermBackend},
     layout::{Constraint, Direction, Layout},
@@ -85,63 +85,30 @@ impl App<Initialized> {
         let shared_messages = Arc::clone(&self.messages);
 
         self.waku.set_event_callback(move|response| {
-            // if let LibwakuResponse::Success(v) = response {
-            //     let event: WakuEvent =
-            //         serde_json::from_str(v.unwrap().as_str()).expect("Parsing event to succeed");
-
-            //     match event {
-            //         WakuEvent::WakuMessage(evt) => {
-            //             // println!("WakuMessage event received: {:?}", evt.waku_message);
-            //             let message = evt.waku_message;
-            //             let payload = message.payload.to_vec();
-            //             match from_utf8(&payload) {
-            //                 Ok(msg) => {
-            //                     //  Lock succeeded, proceed to send the message
-            //                     // if tx_clone.blocking_send(msg.to_string()).is_err() {
-            //                     //     eprintln!("Failed to send message to async task");
-            //                     // }
-            //                 }
-            //                 Err(e) => {
-            //                     eprintln!("Failed to decode payload as UTF-8: {}", e);
-            //                     // Handle the error as needed, or just log and skip
-            //                 }
-            //             }
-            //         }
-            //         WakuEvent::Unrecognized(err) => eprintln!("Unrecognized waku event: {:?}", err),
-            //         _ => eprintln!("event case not expected"),
-            //     };
-            // }
-            
-            
             if let LibwakuResponse::Success(v) = response {
-                if let Some(msg_str) = v {
-                    
-                    match serde_json::from_str::<WakuEvent>(msg_str.as_str()) {
-                        Ok(waku_event) => {
-                            println!("AAAAAA jamon {:?}", waku_event);
-                            
-                    //         // match waku_event {
-                    //         //     WakuEvent::WakuMessage(evt) => {
-                    //         //             // println!("WakuMessage event received: {:?}", evt.waku_message);
-                            
-                    //         //             // match <Chat2Message as Message>::decode(evt.waku_message.payload()) {
-                    //         //                 //     Ok(chat_message) => {
-                    //         //                     //         shared_messages.write().unwrap().push(chat_message);
-                    //         //                     //     }
-                    //         //                     //     Err(_e) => {
-                    //         //                         //         // let mut out = std::io::stderr();
-                    //         //                         //         // write!(out, "{e:?}").unwrap();
-                    //         //                         //     }
-                    //         //                         // }
-                            
-                    //         //     },
-                    //         //     WakuEvent::Unrecognized(err) => println!("Unrecognized waku event: {:?}", err),
-                    //         // }
-                        },
+                let event: WakuEvent =
+                    serde_json::from_str(v.unwrap().as_str()).expect("Parsing event to succeed");
 
-                        Err(_e) => {}, //eprintln!("Error reading file: {}", e),
+                match event {
+                    WakuEvent::WakuMessage(evt) => {
+
+                        if evt.waku_message.content_topic != TOY_CHAT_CONTENT_TOPIC {
+                            return; // skip the messages that don't belong to the toy chat
+                        }
+
+                        match <Chat2Message as Message>::decode(evt.waku_message.payload()) {
+                            Ok(chat_message) => {
+                                shared_messages.write().unwrap().push(chat_message);
+                            }
+                            Err(e) => {
+                                let mut out = std::io::stderr();
+                                write!(out, "{e:?}").unwrap();
+                            }
+                        }
                     }
-                }
+                    WakuEvent::Unrecognized(err) => eprintln!("Unrecognized waku event: {:?}", err),
+                    _ => eprintln!("event case not expected"),
+                };
             }
         })?;
 
@@ -161,77 +128,84 @@ impl App<Initialized> {
 }
 
 impl App<Running> {
+
+    fn retrieve_history(&mut self) {
+        let history = self.waku.store_query(None, vec![TOY_CHAT_CONTENT_TOPIC.clone()], STORE_NODE);
+        let history = history.unwrap();
+
+        let messages = history.messages
+            .iter()
+            .map(|store_resp_msg| {
+                <Chat2Message as Message>::decode(store_resp_msg.message.payload())
+                    .expect("Toy chat messages should be decodeable")
+            })
+            .collect();
+
+        if history.messages.len() > 0 {
+            *self.messages.write().unwrap() = messages;
+        }
+    }
+
     fn run_main_loop<B: Backend>(
         &mut self,
         terminal: &mut Terminal<B>,
     ) -> std::result::Result<(), Box<dyn Error>> {
 
-        // let history = self.waku.store_query(None, vec![TOY_CHAT_CONTENT_TOPIC.clone()], STORE_NODE);
-        // let history = history.unwrap();
+        self.retrieve_history();
 
-        // let messages = history.messages
-        //     .iter()
-        //     .map(|store_resp_msg| {
-        //         <Chat2Message as Message>::decode(store_resp_msg.message.payload())
-        //             .expect("Toy chat messages should be decodeable")
-        //     })
-        //     .collect();
-
-        // if history.messages.len() > 0 {
-        //     *self.messages.write().unwrap() = messages;
-        // }
-        
         loop {
             terminal.draw(|f| ui(f, self))?;
 
-            if let Event::Key(key) = event::read()? {
-                match self.input_mode {
-                    InputMode::Normal => match key.code {
-                        KeyCode::Char('e') => {
-                            self.input_mode = InputMode::Editing;
-                        }
-                        KeyCode::Char('q') => {
-                            return Ok(());
-                        }
-                        _ => {}
-                    },
-                    InputMode::Editing => match key.code {
-                        KeyCode::Enter => {
-                            let message_content: String = self.input.drain(..).collect();
-                            let message = Chat2Message::new(&self.nick, &message_content);
-                            let mut buff = Vec::new();
-                            let meta = Vec::new();
-                            Message::encode(&message, &mut buff)?;
-                            let waku_message = WakuMessage::new(
-                                buff,
-                                TOY_CHAT_CONTENT_TOPIC.clone(),
-                                1,
-                                Utc::now().timestamp_nanos() as usize,
-                                meta,
-                                false,
-                            );
-
-                            let pubsub_topic = PubsubTopic::new(DEFAULT_PUBSUB_TOPIC);
-                            if let Err(e) = self.waku.relay_publish_message(
-                                &waku_message,
-                                &pubsub_topic,
-                                None,
-                            ) {
-                                let mut out = std::io::stderr();
-                                write!(out, "{e:?}").unwrap();
+            if event::poll(Duration::from_millis(500)).unwrap() {
+                if let Event::Key(key) = event::read()? {
+                    match self.input_mode {
+                        InputMode::Normal => match key.code {
+                            KeyCode::Char('e') => {
+                                self.input_mode = InputMode::Editing;
                             }
-                        }
-                        KeyCode::Char(c) => {
-                            self.input.push(c);
-                        }
-                        KeyCode::Backspace => {
-                            self.input.pop();
-                        }
-                        KeyCode::Esc => {
-                            self.input_mode = InputMode::Normal;
-                        }
-                        _ => {}
-                    },
+                            KeyCode::Char('q') => {
+                                return Ok(());
+                            }
+                            _ => {}
+                        },
+                        InputMode::Editing => match key.code {
+                            KeyCode::Enter => {
+                                let message_content: String = self.input.drain(..).collect();
+                                let message = Chat2Message::new(&self.nick, &message_content);
+                                let mut buff = Vec::new();
+                                let meta = Vec::new();
+                                Message::encode(&message, &mut buff)?;
+                                let waku_message = WakuMessage::new(
+                                    buff,
+                                    TOY_CHAT_CONTENT_TOPIC.clone(),
+                                    1,
+                                    Utc::now().timestamp_nanos() as usize,
+                                    meta,
+                                    false,
+                                );
+
+                                let pubsub_topic = PubsubTopic::new(DEFAULT_PUBSUB_TOPIC);
+                                if let Err(e) = self.waku.relay_publish_message(
+                                    &waku_message,
+                                    &pubsub_topic,
+                                    None,
+                                ) {
+                                    let mut out = std::io::stderr();
+                                    write!(out, "{e:?}").unwrap();
+                                }
+                            }
+                            KeyCode::Char(c) => {
+                                self.input.push(c);
+                            }
+                            KeyCode::Backspace => {
+                                self.input.pop();
+                            }
+                            KeyCode::Esc => {
+                                self.input_mode = InputMode::Normal;
+                            }
+                            _ => {}
+                        },
+                    }
                 }
             }
         }
@@ -241,47 +215,6 @@ impl App<Running> {
         self.waku.stop().expect("the node should stop properly");
     }
 }
-
-// fn retrieve_history(
-//     waku: &WakuNodeHandle<Running>,
-// ) -> waku_bindings::Result<Vec<Chat2Message>> {
-//     let self_id = waku.peer_id().unwrap();
-//     let peer = waku
-//         .peers()?
-//         .iter()
-//         .find(|&peer| peer.peer_id() != &self_id)
-//         .cloned()
-//         .unwrap();
-
-//     let result = waku.store_query(
-//         &StoreQuery {
-//             pubsub_topic: None,
-//             content_topics: vec![TOY_CHAT_CONTENT_TOPIC.clone()],
-//             start_time: Some(
-//                 (Duration::from_secs(Utc::now().timestamp() as u64)
-//                     - Duration::from_secs(60 * 60 * 24))
-//                 .as_nanos() as usize,
-//             ),
-//             end_time: None,
-//             paging_options: Some(PagingOptions {
-//                 page_size: 25,
-//                 cursor: None,
-//                 forward: true,
-//             }),
-//         },
-//         peer.peer_id(),
-//         Some(Duration::from_secs(10)),
-//     )?;
-
-//     Ok(result
-//         .messages()
-//         .iter()
-//         .map(|waku_message| {
-//             <Chat2Message as Message>::decode(waku_message.payload())
-//                 .expect("Toy chat messages should be decodeable")
-//         })
-//         .collect())
-// }
 
 fn main() -> std::result::Result<(), Box<dyn Error>> {
     let nick = std::env::args().nth(1).expect("Nick to be set");
