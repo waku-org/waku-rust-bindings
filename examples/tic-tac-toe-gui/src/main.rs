@@ -6,7 +6,7 @@ use std::time::{SystemTime, Duration};
 
 use tokio::sync::mpsc;
 use waku::{
-    waku_new, Encoding, Event, LibwakuResponse, WakuContentTopic,
+    waku_new, Encoding, WakuEvent, LibwakuResponse, WakuContentTopic,
     WakuMessage, WakuNodeConfig, WakuNodeHandle, Initialized, Running,
     general::pubsubtopic::PubsubTopic,
 };
@@ -53,11 +53,11 @@ impl TicTacToeApp<Initialized> {
 
         let my_closure = move |response| {
             if let LibwakuResponse::Success(v) = response {
-                let event: Event =
+                let event: WakuEvent =
                     serde_json::from_str(v.unwrap().as_str()).expect("Parsing event to succeed");
 
                 match event {
-                    Event::WakuMessage(evt) => {
+                    WakuEvent::WakuMessage(evt) => {
                         // println!("WakuMessage event received: {:?}", evt.waku_message);
                         let message = evt.waku_message;
                         let payload = message.payload.to_vec();
@@ -74,7 +74,7 @@ impl TicTacToeApp<Initialized> {
                             }
                         }
                     }
-                    Event::Unrecognized(err) => panic!("Unrecognized waku event: {:?}", err),
+                    WakuEvent::Unrecognized(err) => panic!("Unrecognized waku event: {:?}", err),
                     _ => panic!("event case not expected"),
                 };
             }
@@ -82,8 +82,6 @@ impl TicTacToeApp<Initialized> {
 
         // Establish a closure that handles the incoming messages
         self.waku.set_event_callback(my_closure).expect("set event call back working");
-
-        let _ = self.waku.version();
 
         // Start the waku node
         let waku = self.waku.start().expect("waku should start");

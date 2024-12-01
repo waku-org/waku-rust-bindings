@@ -3,8 +3,8 @@ use std::str::from_utf8;
 use std::time::SystemTime;
 use tokio::time::{sleep, Duration};
 use waku::{
-    general::pubsubtopic::PubsubTopic, waku_new, Encoding, Event, LibwakuResponse,
-    WakuContentTopic, WakuMessage, WakuNodeConfig,
+    general::pubsubtopic::PubsubTopic, waku_new, Encoding, LibwakuResponse, WakuContentTopic,
+    WakuEvent, WakuMessage, WakuNodeConfig,
 };
 
 #[tokio::main]
@@ -26,11 +26,11 @@ async fn main() -> Result<(), Error> {
     node2
         .set_event_callback(|response| {
             if let LibwakuResponse::Success(v) = response {
-                let event: Event =
+                let event: WakuEvent =
                     serde_json::from_str(v.unwrap().as_str()).expect("Parsing event to succeed");
 
                 match event {
-                    Event::WakuMessage(evt) => {
+                    WakuEvent::WakuMessage(evt) => {
                         println!("WakuMessage event received: {:?}", evt.waku_message);
                         let message = evt.waku_message;
                         let payload = message.payload.to_vec();
@@ -39,7 +39,7 @@ async fn main() -> Result<(), Error> {
                         println!("Message Received in NODE 2: {}", msg);
                         println!("::::::::::::::::::::::::::::::::::::::::::::::::::::");
                     }
-                    Event::Unrecognized(err) => panic!("Unrecognized waku event: {:?}", err),
+                    WakuEvent::Unrecognized(err) => panic!("Unrecognized waku event: {:?}", err),
                     _ => panic!("event case not expected"),
                 };
             }
@@ -49,11 +49,11 @@ async fn main() -> Result<(), Error> {
     node1
         .set_event_callback(|response| {
             if let LibwakuResponse::Success(v) = response {
-                let event: Event =
+                let event: WakuEvent =
                     serde_json::from_str(v.unwrap().as_str()).expect("Parsing event to succeed");
 
                 match event {
-                    Event::WakuMessage(evt) => {
+                    WakuEvent::WakuMessage(evt) => {
                         println!("WakuMessage event received: {:?}", evt.waku_message);
                         let message = evt.waku_message;
                         let payload = message.payload.to_vec();
@@ -62,7 +62,7 @@ async fn main() -> Result<(), Error> {
                         println!("Message Received in NODE 1: {}", msg);
                         println!("::::::::::::::::::::::::::::::::::::::::::::::::::::");
                     }
-                    Event::Unrecognized(err) => panic!("Unrecognized waku event: {:?}", err),
+                    WakuEvent::Unrecognized(err) => panic!("Unrecognized waku event: {:?}", err),
                     _ => panic!("event case not expected"),
                 };
             }

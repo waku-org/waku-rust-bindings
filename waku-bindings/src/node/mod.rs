@@ -8,13 +8,16 @@ mod lightpush;
 mod management;
 mod peers;
 mod relay;
+mod store;
 
 // std
 pub use aes_gcm::Key;
+use chrono::Utc;
 pub use multiaddr::Multiaddr;
 pub use secp256k1::{PublicKey, SecretKey};
 use std::marker::PhantomData;
 use std::time::Duration;
+use store::StoreResponse;
 // internal
 use crate::general::contenttopic::{Encoding, WakuContentTopic};
 pub use crate::general::pubsubtopic::PubsubTopic;
@@ -22,9 +25,10 @@ use crate::general::{MessageHash, Result, WakuMessage};
 use crate::utils::LibwakuResponse;
 
 use crate::node::context::WakuNodeContext;
+use crate::node::store::PagingOptions;
 pub use config::RLNConfig;
 pub use config::WakuNodeConfig;
-pub use events::{Event, WakuMessageEvent};
+pub use events::{WakuEvent, WakuMessageEvent};
 pub use relay::waku_create_content_topic;
 
 use std::time::SystemTime;
@@ -177,5 +181,32 @@ impl WakuNodeHandle<Running> {
         pubsub_topic: &PubsubTopic,
     ) -> Result<MessageHash> {
         lightpush::waku_lightpush_publish_message(&self.ctx, message, pubsub_topic)
+    }
+
+    pub fn store_query(
+        &self,
+        pubsub_topic: Option<PubsubTopic>,
+        content_topics: Vec<WakuContentTopic>,
+        peer_addr: &str,
+    ) -> Result<StoreResponse> {
+        store::waku_store_query(
+            &self.ctx,
+            "hard-coded-req-id".to_string(),
+            true, // include_data
+            pubsub_topic,
+            content_topics,
+            Some(
+                (Duration::from_secs(Utc::now().timestamp() as u64)
+                    - Duration::from_secs(60 * 60 * 24))
+                .as_nanos() as usize,
+            ), // time_start
+            None,     // end_time
+            None,     // message_hashes
+            None,     // pagination_cursor
+            true,     // pagination_forward
+            Some(25), // pagination_limit,
+            peer_addr,
+            None, // timeout_millis
+        )
     }
 }

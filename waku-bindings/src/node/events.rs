@@ -2,7 +2,7 @@
 //!
 //! Asynchronous events require a callback to be registered.
 //! An example of an asynchronous event that might be emitted is receiving a message.
-//! When an event is emitted, this callback will be triggered receiving an [`Event`]
+//! When an event is emitted, this callback will be triggered receiving an [`WakuEvent`]
 
 // crates
 use serde::{Deserialize, Serialize};
@@ -17,7 +17,7 @@ use crate::MessageHash;
 #[non_exhaustive]
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(tag = "eventType", rename_all = "camelCase")]
-pub enum Event {
+pub enum WakuEvent {
     #[serde(rename = "message")]
     WakuMessage(WakuMessageEvent),
     Unrecognized(serde_json::Value),
@@ -37,12 +37,12 @@ pub struct WakuMessageEvent {
 
 #[cfg(test)]
 mod tests {
-    use crate::Event;
+    use crate::WakuEvent;
 
     #[test]
     fn deserialize_message_event() {
         let s = "{\"eventType\":\"message\",\"messageHash\":\"0x26ff3d7fbc950ea2158ce62fd76fd745eee0323c9eac23d0713843b0f04ea27c\",\"pubsubTopic\":\"/waku/2/default-waku/proto\",\"wakuMessage\":{\"payload\":\"SGkgZnJvbSDwn6aAIQ==\",\"contentTopic\":\"/toychat/2/huilong/proto\",\"timestamp\":1665580926660}}";
-        let evt: Event = serde_json::from_str(s).unwrap();
-        assert!(matches!(evt, Event::WakuMessage(_)));
+        let evt: WakuEvent = serde_json::from_str(s).unwrap();
+        assert!(matches!(evt, WakuEvent::WakuMessage(_)));
     }
 }

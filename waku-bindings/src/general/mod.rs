@@ -1,6 +1,7 @@
 //! Waku [general](https://rfc.vac.dev/spec/36/#general) types
 
 pub mod contenttopic;
+pub mod messagehash;
 pub mod pubsubtopic;
 
 // crates
@@ -20,21 +21,22 @@ pub type Result<T> = std::result::Result<T, String>;
 /// as per the [specification](https://rfc.vac.dev/spec/36/#jsonmessage-type)
 #[derive(Clone, Serialize, Deserialize, Debug, Default)]
 #[serde(rename_all = "camelCase")]
+
 pub struct WakuMessage {
     #[serde(with = "base64_serde", default = "Vec::new")]
     pub payload: Vec<u8>,
     /// The content topic to be set on the message
-    pub content_topic: WakuContentTopic,
+    content_topic: WakuContentTopic,
+    // TODO: check if missing default should be 0
     /// The Waku Message version number
     #[serde(default)]
-    pub version: WakuMessageVersion,
+    version: WakuMessageVersion,
     /// Unix timestamp in nanoseconds
     #[serde(deserialize_with = "deserialize_number_from_string")]
-    pub timestamp: usize,
-    #[serde(with = "base64_serde", default = "Vec::new")]
-    pub meta: Vec<u8>,
+    timestamp: usize,
+    meta: Vec<u8>,
     #[serde(default)]
-    pub ephemeral: bool,
+    ephemeral: bool,
     // TODO: implement RLN fields
     #[serde(flatten)]
     _extras: serde_json::Value,
@@ -61,6 +63,10 @@ impl WakuMessage {
             ephemeral,
             _extras: Default::default(),
         }
+    }
+
+    pub fn payload(&self) -> &[u8] {
+        &self.payload
     }
 }
 

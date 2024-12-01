@@ -15,7 +15,7 @@ pub use utils::LibwakuResponse;
 use rln;
 
 pub use node::{
-    waku_create_content_topic, waku_new, Event, Initialized, Key, Multiaddr, PublicKey, RLNConfig,
+    waku_create_content_topic, waku_new, WakuEvent, Initialized, Key, Multiaddr, PublicKey, RLNConfig,
     Running, SecretKey, WakuMessageEvent, WakuNodeConfig, WakuNodeHandle,
 };
 
