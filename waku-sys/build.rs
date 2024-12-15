@@ -68,12 +68,6 @@ fn generate_bindgen_code(project_dir: &Path) {
 
     println!("cargo:rustc-link-lib=stdc++");
 
-    println!(
-        "cargo:rustc-link-search={}",
-        vendor_path.join("vendor/negentropy/cpp").display()
-    );
-    println!("cargo:rustc-link-lib=static=negentropy");
-
     println!("cargo:rustc-link-lib=ssl");
     println!("cargo:rustc-link-lib=crypto");
 

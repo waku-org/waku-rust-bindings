@@ -15,9 +15,9 @@ pub use utils::LibwakuResponse;
 use rln;
 
 pub use node::{
-    waku_create_content_topic, waku_new, WakuEvent, Initialized, Key, Multiaddr, PublicKey, RLNConfig,
-    Running, SecretKey, WakuMessageEvent, WakuNodeConfig, WakuNodeHandle,
+    waku_create_content_topic, waku_new, Initialized, Key, Multiaddr, PublicKey, RLNConfig,
+    Running, SecretKey, WakuEvent, WakuMessageEvent, WakuNodeConfig, WakuNodeHandle,
 };
 
 pub use general::contenttopic::{Encoding, WakuContentTopic};
-pub use general::{MessageHash, Result, WakuMessage, WakuMessageVersion};
+pub use general::{messagehash::MessageHash, Result, WakuMessage, WakuMessageVersion};

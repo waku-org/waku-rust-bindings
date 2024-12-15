@@ -6,7 +6,7 @@ use std::ffi::CString;
 use libc::*;
 // internal
 use crate::general::{
-    contenttopic::WakuContentTopic, pubsubtopic::PubsubTopic, MessageHash, Result,
+    contenttopic::WakuContentTopic, messagehash::MessageHash, pubsubtopic::PubsubTopic, Result,
     WakuStoreRespMessage,
 };
 use crate::node::context::WakuNodeContext;
@@ -48,7 +48,7 @@ struct StoreQueryRequest {
 #[derive(Clone, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct StoreWakuMessageResponse {
-    pub message_hash: [u8; 32],
+    pub message_hash: MessageHash,
     pub message: WakuStoreRespMessage,
     pub pubsub_topic: String,
 }
@@ -66,14 +66,13 @@ pub struct StoreResponse {
     pub messages: Vec<StoreWakuMessageResponse>,
     /// Paging information in [`PagingOptions`] format from which to resume further historical queries
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub pagination_cursor: Option<[u8; 32]>,
+    pub pagination_cursor: Option<MessageHash>,
 }
 
 // Implement WakuDecode for Vec<Multiaddr>
 impl WakuDecode for StoreResponse {
     fn decode(input: &str) -> Result<Self> {
-        let ret: StoreResponse = serde_json::from_str(input).expect("could not parse store resp");
-        Ok(ret)
+        Ok(serde_json::from_str(input).expect("could not parse store resp"))
     }
 }
 

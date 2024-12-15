@@ -17,11 +17,11 @@ pub use multiaddr::Multiaddr;
 pub use secp256k1::{PublicKey, SecretKey};
 use std::marker::PhantomData;
 use std::time::Duration;
-use store::StoreResponse;
+use store::StoreWakuMessageResponse;
 // internal
 use crate::general::contenttopic::{Encoding, WakuContentTopic};
 pub use crate::general::pubsubtopic::PubsubTopic;
-use crate::general::{MessageHash, Result, WakuMessage};
+use crate::general::{messagehash::MessageHash, Result, WakuMessage};
 use crate::utils::LibwakuResponse;
 
 use crate::node::context::WakuNodeContext;
@@ -187,25 +187,43 @@ impl WakuNodeHandle<Running> {
         pubsub_topic: Option<PubsubTopic>,
         content_topics: Vec<WakuContentTopic>,
         peer_addr: &str,
-    ) -> Result<StoreResponse> {
-        store::waku_store_query(
-            &self.ctx,
-            "hard-coded-req-id".to_string(),
-            true, // include_data
-            pubsub_topic,
-            content_topics,
-            Some(
-                (Duration::from_secs(Utc::now().timestamp() as u64)
-                    - Duration::from_secs(60 * 60 * 24))
-                .as_nanos() as usize,
-            ), // time_start
-            None,     // end_time
-            None,     // message_hashes
-            None,     // pagination_cursor
-            true,     // pagination_forward
-            Some(25), // pagination_limit,
-            peer_addr,
-            None, // timeout_millis
-        )
+    ) -> Result<Vec<StoreWakuMessageResponse>> {
+        let one_day_in_secs = 60 * 60 * 24;
+        let time_start = (Duration::from_secs(Utc::now().timestamp() as u64)
+            - Duration::from_secs(one_day_in_secs))
+        .as_nanos() as usize;
+
+        let mut cursor: Option<MessageHash> = None;
+
+        let mut messages: Vec<StoreWakuMessageResponse> = Vec::new();
+
+        loop {
+            let response = store::waku_store_query(
+                &self.ctx,
+                "hard-coded-req-id".to_string(),
+                true, // include_data
+                pubsub_topic.clone(),
+                content_topics.clone(),
+                Some(time_start), // time_start
+                None,             // end_time
+                None,             // message_hashes
+                cursor,           // pagination_cursor
+                true,             // pagination_forward
+                Some(25),         // pagination_limit,
+                peer_addr,
+                None, // timeout_millis
+            )?;
+
+            messages.extend(response.messages);
+
+            if !response.pagination_cursor.is_some() {
+                break;
+            }
+            cursor = response.pagination_cursor;
+        }
+
+        messages.reverse();
+
+        return Ok(messages);
     }
 }

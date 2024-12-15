@@ -10,7 +10,7 @@ use tokio::time;
 use tokio::time::sleep;
 use waku_bindings::node::PubsubTopic;
 use waku_bindings::{
-    waku_new, Encoding, WakuEvent, Initialized, MessageHash, WakuContentTopic, WakuMessage,
+    waku_new, Encoding, Initialized, MessageHash, WakuContentTopic, WakuEvent, WakuMessage,
     WakuNodeConfig, WakuNodeHandle,
 };
 use waku_bindings::{LibwakuResponse, Running};
@@ -45,8 +45,8 @@ async fn test_echo_messages(
     let rx_waku_message_cloned = rx_waku_message.clone();
     let closure = move |response| {
         if let LibwakuResponse::Success(v) = response {
-            let event: WakuEvent =
-                serde_json::from_str(v.unwrap().as_str()).expect("Parsing event to succeed");
+            let event: WakuEvent = serde_json::from_str(v.unwrap().as_str())
+                .expect("Parsing event to succeed test_echo_messages");
 
             match event {
                 WakuEvent::WakuMessage(evt) => {

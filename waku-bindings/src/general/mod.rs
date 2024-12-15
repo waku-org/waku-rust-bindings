@@ -11,8 +11,6 @@ use serde_aux::prelude::*;
 
 /// Waku message version
 pub type WakuMessageVersion = usize;
-/// Waku message hash, hex encoded sha256 digest of the message
-pub type MessageHash = String;
 
 pub type Result<T> = std::result::Result<T, String>;
 

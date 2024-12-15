@@ -99,12 +99,15 @@ pub fn handle_json_response<F: WakuDecode>(code: i32, result: LibwakuResponse) -
     }
 }
 
-pub fn handle_response<F: FromStr>(code: i32, result: LibwakuResponse) -> Result<F> {
+pub fn handle_response<F: FromStr>(code: i32, result: LibwakuResponse) -> Result<F>
+where
+    <F as FromStr>::Err: std::fmt::Debug,
+{
     match result {
         LibwakuResponse::Success(v) => v
             .unwrap_or_default()
             .parse()
-            .map_err(|_| "could not parse value".into()),
+            .map_err(|e| format!("could not parse value: {:?}", e)),
         LibwakuResponse::Failure(v) => Err(v),
         LibwakuResponse::MissingCallback => panic!("callback is required"),
         LibwakuResponse::Undefined => panic!(

@@ -5,7 +5,7 @@ use std::ffi::CString;
 // crates
 use libc::*;
 // internal
-use crate::general::{MessageHash, Result, WakuMessage};
+use crate::general::{messagehash::MessageHash, Result, WakuMessage};
 use crate::node::context::WakuNodeContext;
 use crate::utils::{get_trampoline, handle_response, LibwakuResponse};
 

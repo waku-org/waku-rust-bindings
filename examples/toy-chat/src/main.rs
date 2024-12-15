@@ -87,7 +87,7 @@ impl App<Initialized> {
         self.waku.set_event_callback(move|response| {
             if let LibwakuResponse::Success(v) = response {
                 let event: WakuEvent =
-                    serde_json::from_str(v.unwrap().as_str()).expect("Parsing event to succeed");
+                    serde_json::from_str(v.unwrap().as_str()).expect("failed parsing event in set_event_callback");
 
                 match event {
                     WakuEvent::WakuMessage(evt) => {
@@ -98,7 +98,11 @@ impl App<Initialized> {
 
                         match <Chat2Message as Message>::decode(evt.waku_message.payload()) {
                             Ok(chat_message) => {
-                                shared_messages.write().unwrap().push(chat_message);
+                                // Add the new message to the front
+                                {
+                                    let mut messages_lock = shared_messages.write().unwrap();
+                                    messages_lock.insert(0, chat_message); // Insert at the front (index 0)
+                                }
                             }
                             Err(e) => {
                                 let mut out = std::io::stderr();
@@ -130,10 +134,8 @@ impl App<Initialized> {
 impl App<Running> {
 
     fn retrieve_history(&mut self) {
-        let history = self.waku.store_query(None, vec![TOY_CHAT_CONTENT_TOPIC.clone()], STORE_NODE);
-        let history = history.unwrap();
-
-        let messages = history.messages
+        let messages = self.waku.store_query(None, vec![TOY_CHAT_CONTENT_TOPIC.clone()], STORE_NODE).unwrap();
+        let messages:Vec<_> = messages
             .iter()
             .map(|store_resp_msg| {
                 <Chat2Message as Message>::decode(store_resp_msg.message.payload())
@@ -141,7 +143,7 @@ impl App<Running> {
             })
             .collect();
 
-        if history.messages.len() > 0 {
+        if messages.len() > 0 {
             *self.messages.write().unwrap() = messages;
         }
     }
@@ -150,9 +152,6 @@ impl App<Running> {
         &mut self,
         terminal: &mut Terminal<B>,
     ) -> std::result::Result<(), Box<dyn Error>> {
-
-        self.retrieve_history();
-
         loop {
             terminal.draw(|f| ui(f, self))?;
 
@@ -229,7 +228,9 @@ fn main() -> std::result::Result<(), Box<dyn Error>> {
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
 
+    app.retrieve_history();
     let res = app.run_main_loop(&mut terminal);
+    app.stop_app();
 
     // restore terminal
     disable_raw_mode()?;
