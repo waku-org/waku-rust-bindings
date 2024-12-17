@@ -8,7 +8,7 @@ use libc::*;
 // internal
 use crate::general::contenttopic::{Encoding, WakuContentTopic};
 use crate::general::pubsubtopic::PubsubTopic;
-use crate::general::{MessageHash, Result, WakuMessage};
+use crate::general::{messagehash::MessageHash, Result, WakuMessage};
 use crate::node::context::WakuNodeContext;
 use crate::utils::{get_trampoline, handle_no_response, handle_response, LibwakuResponse};
 

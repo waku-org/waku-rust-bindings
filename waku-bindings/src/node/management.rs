@@ -16,10 +16,6 @@ use crate::utils::{get_trampoline, handle_json_response, handle_no_response, han
 /// Instantiates a Waku node
 /// as per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_newchar-jsonconfig)
 pub fn waku_new(config: Option<WakuNodeConfig>) -> Result<WakuNodeContext> {
-    unsafe {
-        waku_sys::waku_setup();
-    }
-
     let config = config.unwrap_or_default();
     let config_ptr = CString::new(
         serde_json::to_string(&config)
