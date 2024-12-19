@@ -44,34 +44,41 @@ pub struct WakuNodeHandle<State> {
 
 /// Spawn a new Waku node with the given configuration (default configuration if `None` provided)
 /// as per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_newchar-jsonconfig)
-pub fn waku_new(config: Option<WakuNodeConfig>) -> Result<WakuNodeHandle<Initialized>> {
+pub async fn waku_new(config: Option<WakuNodeConfig>) -> Result<WakuNodeHandle<Initialized>> {
     Ok(WakuNodeHandle {
-        ctx: management::waku_new(config)?,
+        ctx: management::waku_new(config).await?,
         _state: PhantomData,
     })
 }
 
 impl<State> WakuNodeHandle<State> {
     /// Get the nwaku version
-    pub fn version(&self) -> Result<String> {
-        management::waku_version(&self.ctx)
+    pub async fn version(&self) -> Result<String> {
+        management::waku_version(&self.ctx).await
     }
 
-    pub fn waku_destroy(self) -> Result<()> {
-        let res = management::waku_destroy(&self.ctx);
+    pub async fn waku_destroy(self) -> Result<()> {
+        let res = management::waku_destroy(&self.ctx).await;
         self.ctx.reset_ptr();
         res
+    }
+
+    /// Subscribe to WakuRelay to receive messages matching a content filter.
+    pub async fn relay_subscribe(&self, pubsub_topic: &PubsubTopic) -> Result<()> {
+        relay::waku_relay_subscribe(&self.ctx, pubsub_topic).await
     }
 }
 
 impl WakuNodeHandle<Initialized> {
     /// Start a Waku node mounting all the protocols that were enabled during the Waku node instantiation.
     /// as per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_start)
-    pub fn start(self) -> Result<WakuNodeHandle<Running>> {
-        management::waku_start(&self.ctx).map(|_| WakuNodeHandle {
-            ctx: self.ctx,
-            _state: PhantomData,
-        })
+    pub async fn start(self) -> Result<WakuNodeHandle<Running>> {
+        management::waku_start(&self.ctx)
+            .await
+            .map(|_| WakuNodeHandle {
+                ctx: self.ctx,
+                _state: PhantomData,
+            })
     }
 
     pub fn set_event_callback<F: FnMut(LibwakuResponse) + 'static + Sync + Send>(
@@ -85,17 +92,19 @@ impl WakuNodeHandle<Initialized> {
 impl WakuNodeHandle<Running> {
     /// Stops a Waku node
     /// as per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_stop)
-    pub fn stop(self) -> Result<WakuNodeHandle<Initialized>> {
-        management::waku_stop(&self.ctx).map(|_| WakuNodeHandle {
-            ctx: self.ctx,
-            _state: PhantomData,
-        })
+    pub async fn stop(self) -> Result<WakuNodeHandle<Initialized>> {
+        management::waku_stop(&self.ctx)
+            .await
+            .map(|_| WakuNodeHandle {
+                ctx: self.ctx,
+                _state: PhantomData,
+            })
     }
 
     /// Get the multiaddresses the Waku node is listening to
     /// as per [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_listen_addresses)
-    pub fn listen_addresses(&self) -> Result<Vec<Multiaddr>> {
-        management::waku_listen_addresses(&self.ctx)
+    pub async fn listen_addresses(&self) -> Result<Vec<Multiaddr>> {
+        management::waku_listen_addresses(&self.ctx).await
     }
 
     /// Dial peer using a multiaddress
@@ -103,11 +112,11 @@ impl WakuNodeHandle<Running> {
     /// If the function execution takes longer than `timeout` value, the execution will be canceled and an error returned.
     /// Use 0 for no timeout
     /// As per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_connect_peerchar-address-int-timeoutms)
-    pub fn connect(&self, address: &Multiaddr, timeout: Option<Duration>) -> Result<()> {
-        peers::waku_connect(&self.ctx, address, timeout)
+    pub async fn connect(&self, address: &Multiaddr, timeout: Option<Duration>) -> Result<()> {
+        peers::waku_connect(&self.ctx, address, timeout).await
     }
 
-    pub fn relay_publish_txt(
+    pub async fn relay_publish_txt(
         &self,
         pubsub_topic: &PubsubTopic,
         msg_txt: &String,
@@ -129,60 +138,55 @@ impl WakuNodeHandle<Running> {
             false,
         );
 
-        relay::waku_relay_publish_message(&self.ctx, &message, pubsub_topic, timeout)
+        relay::waku_relay_publish_message(&self.ctx, &message, pubsub_topic, timeout).await
     }
 
     /// Publish a message using Waku Relay.
     /// As per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_relay_publishchar-messagejson-char-pubsubtopic-int-timeoutms)
     /// The pubsub_topic parameter is optional and if not specified it will be derived from the contentTopic.
-    pub fn relay_publish_message(
+    pub async fn relay_publish_message(
         &self,
         message: &WakuMessage,
         pubsub_topic: &PubsubTopic,
         timeout: Option<Duration>,
     ) -> Result<MessageHash> {
-        relay::waku_relay_publish_message(&self.ctx, message, pubsub_topic, timeout)
-    }
-
-    /// Subscribe to WakuRelay to receive messages matching a content filter.
-    pub fn relay_subscribe(&self, pubsub_topic: &PubsubTopic) -> Result<()> {
-        relay::waku_relay_subscribe(&self.ctx, pubsub_topic)
+        relay::waku_relay_publish_message(&self.ctx, message, pubsub_topic, timeout).await
     }
 
     /// Closes the pubsub subscription to stop receiving messages matching a content filter. No more messages will be received from this pubsub topic
-    pub fn relay_unsubscribe(&self, pubsub_topic: &PubsubTopic) -> Result<()> {
-        relay::waku_relay_unsubscribe(&self.ctx, pubsub_topic)
+    pub async fn relay_unsubscribe(&self, pubsub_topic: &PubsubTopic) -> Result<()> {
+        relay::waku_relay_unsubscribe(&self.ctx, pubsub_topic).await
     }
 
-    pub fn filter_subscribe(
+    pub async fn filter_subscribe(
         &self,
         pubsub_topic: &PubsubTopic,
         content_topics: Vec<WakuContentTopic>,
     ) -> Result<()> {
-        filter::waku_filter_subscribe(&self.ctx, pubsub_topic, content_topics)
+        filter::waku_filter_subscribe(&self.ctx, pubsub_topic, content_topics).await
     }
 
-    pub fn filter_unsubscribe(
+    pub async fn filter_unsubscribe(
         &self,
         pubsub_topic: &PubsubTopic,
         content_topics: Vec<WakuContentTopic>,
     ) -> Result<()> {
-        filter::waku_filter_unsubscribe(&self.ctx, pubsub_topic, content_topics)
+        filter::waku_filter_unsubscribe(&self.ctx, pubsub_topic, content_topics).await
     }
 
-    pub fn filter_unsubscribe_all(&self) -> Result<()> {
-        filter::waku_filter_unsubscribe_all(&self.ctx)
+    pub async fn filter_unsubscribe_all(&self) -> Result<()> {
+        filter::waku_filter_unsubscribe_all(&self.ctx).await
     }
 
-    pub fn lightpush_publish_message(
+    pub async fn lightpush_publish_message(
         &self,
         message: &WakuMessage,
         pubsub_topic: &PubsubTopic,
     ) -> Result<MessageHash> {
-        lightpush::waku_lightpush_publish_message(&self.ctx, message, pubsub_topic)
+        lightpush::waku_lightpush_publish_message(&self.ctx, message, pubsub_topic).await
     }
 
-    pub fn store_query(
+    pub async fn store_query(
         &self,
         pubsub_topic: Option<PubsubTopic>,
         content_topics: Vec<WakuContentTopic>,
@@ -212,7 +216,8 @@ impl WakuNodeHandle<Running> {
                 Some(25),         // pagination_limit,
                 peer_addr,
                 None, // timeout_millis
-            )?;
+            )
+            .await?;
 
             messages.extend(response.messages);
 

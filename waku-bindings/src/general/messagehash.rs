@@ -2,11 +2,27 @@ use crate::utils::WakuDecode;
 use hex::FromHex;
 use serde::{Deserialize, Deserializer, Serialize};
 use std::convert::TryInto;
+use std::fmt;
+use std::hash::{Hash, Hasher};
 use std::str::FromStr;
 
 /// Waku message hash, hex encoded sha256 digest of the message
-#[derive(Debug, Serialize, Clone)]
+#[derive(Debug, Serialize, PartialEq, Eq, Clone)]
 pub struct MessageHash([u8; 32]);
+
+impl MessageHash {
+    fn to_hex_string(&self) -> String {
+        let hex: String = self.0.iter().map(|b| format!("{:02x}", b)).collect();
+        format!("0x{}", hex)
+    }
+}
+
+impl Hash for MessageHash {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        // Use the inner array to contribute to the hash
+        self.0.hash(state);
+    }
+}
 
 impl FromStr for MessageHash {
     type Err = String;
@@ -45,6 +61,13 @@ impl<'de> Deserialize<'de> for MessageHash {
 
 impl WakuDecode for MessageHash {
     fn decode(input: &str) -> Result<Self, String> {
-        serde_json::from_str(input).expect("could not parse MessageHash")
+        MessageHash::from_str(input)
+    }
+}
+
+// Implement the Display trait
+impl fmt::Display for MessageHash {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.to_hex_string())
     }
 }

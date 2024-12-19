@@ -4,6 +4,8 @@
 use std::ffi::CString;
 // crates
 use libc::*;
+use std::sync::Arc;
+use tokio::sync::Notify;
 // internal
 use crate::general::{messagehash::MessageHash, Result, WakuMessage};
 use crate::node::context::WakuNodeContext;
@@ -11,23 +13,30 @@ use crate::utils::{get_trampoline, handle_response, LibwakuResponse};
 
 use crate::general::pubsubtopic::PubsubTopic;
 
-pub fn waku_lightpush_publish_message(
+pub async fn waku_lightpush_publish_message(
     ctx: &WakuNodeContext,
     message: &WakuMessage,
     pubsub_topic: &PubsubTopic,
 ) -> Result<MessageHash> {
-    let message_ptr = CString::new(
+    let message = CString::new(
         serde_json::to_string(&message)
             .expect("WakuMessages should always be able to success serializing"),
     )
-    .expect("CString should build properly from the serialized waku message")
-    .into_raw();
-    let pubsub_topic_ptr = CString::new(String::from(pubsub_topic))
-        .expect("CString should build properly from pubsub topic")
-        .into_raw();
+    .expect("CString should build properly from the serialized waku message");
+    let message_ptr = message.as_ptr();
 
-    let mut result: LibwakuResponse = Default::default();
-    let result_cb = |r: LibwakuResponse| result = r;
+    let pubsub_topic = CString::new(String::from(pubsub_topic))
+        .expect("CString should build properly from pubsub topic");
+    let pubsub_topic_ptr = pubsub_topic.as_ptr();
+
+    let mut result = LibwakuResponse::default();
+    let notify = Arc::new(Notify::new());
+    let notify_clone = notify.clone();
+    let result_cb = |r: LibwakuResponse| {
+        result = r;
+        notify_clone.notify_one(); // Notify that the value has been updated
+    };
+
     let code = unsafe {
         let mut closure = result_cb;
         let cb = get_trampoline(&closure);
@@ -39,11 +48,9 @@ pub fn waku_lightpush_publish_message(
             &mut closure as *mut _ as *mut c_void,
         );
 
-        drop(CString::from_raw(message_ptr));
-        drop(CString::from_raw(pubsub_topic_ptr));
-
         out
     };
 
+    notify.notified().await; // Wait until a result is received
     handle_response(code, result)
 }

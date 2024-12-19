@@ -1,4 +1,6 @@
 // std
+use crate::general::Result;
+use crate::utils::WakuDecode;
 use std::borrow::Cow;
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;
@@ -76,6 +78,12 @@ impl WakuContentTopic {
             .map(|topic| topic.to_string())
             .collect::<Vec<_>>()
             .join(",")
+    }
+}
+
+impl WakuDecode for WakuContentTopic {
+    fn decode(input: &str) -> Result<Self> {
+        Ok(serde_json::from_str(input).expect("could not parse store resp"))
     }
 }
 

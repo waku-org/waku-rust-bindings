@@ -5,36 +5,43 @@ use std::ffi::CString;
 // crates
 use libc::c_void;
 use multiaddr::Multiaddr;
+use std::sync::Arc;
+use tokio::sync::Notify;
 // internal
 use super::config::WakuNodeConfig;
 use crate::general::Result;
 use crate::node::context::WakuNodeContext;
 use crate::utils::LibwakuResponse;
 use crate::utils::WakuDecode;
-use crate::utils::{get_trampoline, handle_json_response, handle_no_response, handle_response};
+use crate::utils::{get_trampoline, handle_no_response, handle_response};
 
 /// Instantiates a Waku node
 /// as per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_newchar-jsonconfig)
-pub fn waku_new(config: Option<WakuNodeConfig>) -> Result<WakuNodeContext> {
+pub async fn waku_new(config: Option<WakuNodeConfig>) -> Result<WakuNodeContext> {
     let config = config.unwrap_or_default();
-    let config_ptr = CString::new(
+    let config = CString::new(
         serde_json::to_string(&config)
             .expect("Serialization from properly built NodeConfig should never fail"),
     )
-    .expect("CString should build properly from the config")
-    .into_raw();
+    .expect("CString should build properly from the config");
+    let config_ptr = config.as_ptr();
 
-    let mut result: LibwakuResponse = Default::default();
-    let result_cb = |r: LibwakuResponse| result = r;
+    let notify = Arc::new(Notify::new());
+    let notify_clone = notify.clone();
+    let mut result = LibwakuResponse::default();
+    let result_cb = |r: LibwakuResponse| {
+        result = r;
+        notify_clone.notify_one(); // Notify that the value has been updated
+    };
     let obj_ptr = unsafe {
         let mut closure = result_cb;
         let cb = get_trampoline(&closure);
         let out = waku_sys::waku_new(config_ptr, cb, &mut closure as *mut _ as *mut c_void);
 
-        drop(CString::from_raw(config_ptr));
-
         out
     };
+
+    notify.notified().await; // Wait until a result is received
 
     match result {
         LibwakuResponse::MissingCallback => panic!("callback is required"),
@@ -43,57 +50,81 @@ pub fn waku_new(config: Option<WakuNodeConfig>) -> Result<WakuNodeContext> {
     }
 }
 
-pub fn waku_destroy(ctx: &WakuNodeContext) -> Result<()> {
-    let mut result: LibwakuResponse = Default::default();
-    let result_cb = |r: LibwakuResponse| result = r;
+pub async fn waku_destroy(ctx: &WakuNodeContext) -> Result<()> {
+    let mut result = LibwakuResponse::default();
+    let notify = Arc::new(Notify::new());
+    let notify_clone = notify.clone();
+    let result_cb = |r: LibwakuResponse| {
+        result = r;
+        notify_clone.notify_one(); // Notify that the value has been updated
+    };
     let code = unsafe {
         let mut closure = result_cb;
         let cb = get_trampoline(&closure);
         waku_sys::waku_destroy(ctx.get_ptr(), cb, &mut closure as *mut _ as *mut c_void)
     };
+    notify.notified().await; // Wait until a result is received
 
     handle_no_response(code, result)
 }
 
 /// Start a Waku node mounting all the protocols that were enabled during the Waku node instantiation.
 /// as per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_start)
-pub fn waku_start(ctx: &WakuNodeContext) -> Result<()> {
-    let mut result: LibwakuResponse = Default::default();
-    let result_cb = |r: LibwakuResponse| result = r;
+pub async fn waku_start(ctx: &WakuNodeContext) -> Result<()> {
+    let mut result = LibwakuResponse::default();
+    let notify = Arc::new(Notify::new());
+    let notify_clone = notify.clone();
+    let result_cb = |r: LibwakuResponse| {
+        result = r;
+        notify_clone.notify_one(); // Notify that the value has been updated
+    };
     let code = unsafe {
         let mut closure = result_cb;
         let cb = get_trampoline(&closure);
         waku_sys::waku_start(ctx.get_ptr(), cb, &mut closure as *mut _ as *mut c_void)
     };
 
+    notify.notified().await; // Wait until a result is received
     handle_no_response(code, result)
 }
 
 /// Stops a Waku node
 /// as per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_stop)
-pub fn waku_stop(ctx: &WakuNodeContext) -> Result<()> {
-    let mut result: LibwakuResponse = Default::default();
-    let result_cb = |r: LibwakuResponse| result = r;
+pub async fn waku_stop(ctx: &WakuNodeContext) -> Result<()> {
+    let mut result = LibwakuResponse::default();
+    let notify = Arc::new(Notify::new());
+    let notify_clone = notify.clone();
+    let result_cb = |r: LibwakuResponse| {
+        result = r;
+        notify_clone.notify_one(); // Notify that the value has been updated
+    };
     let code = unsafe {
         let mut closure = result_cb;
         let cb = get_trampoline(&closure);
         waku_sys::waku_stop(ctx.get_ptr(), cb, &mut closure as *mut _ as *mut c_void)
     };
 
+    notify.notified().await; // Wait until a result is received
     handle_no_response(code, result)
 }
 
 /// nwaku version
 #[allow(clippy::not_unsafe_ptr_arg_deref)]
-pub fn waku_version(ctx: &WakuNodeContext) -> Result<String> {
-    let mut result: LibwakuResponse = Default::default();
-    let result_cb = |r: LibwakuResponse| result = r;
+pub async fn waku_version(ctx: &WakuNodeContext) -> Result<String> {
+    let mut result = LibwakuResponse::default();
+    let notify = Arc::new(Notify::new());
+    let notify_clone = notify.clone();
+    let result_cb = |r: LibwakuResponse| {
+        result = r;
+        notify_clone.notify_one(); // Notify that the value has been updated
+    };
     let code = unsafe {
         let mut closure = result_cb;
         let cb = get_trampoline(&closure);
         waku_sys::waku_version(ctx.get_ptr(), cb, &mut closure as *mut _ as *mut c_void)
     };
 
+    notify.notified().await; // Wait until a result is received
     handle_response(code, result)
 }
 
@@ -110,45 +141,54 @@ impl WakuDecode for Vec<Multiaddr> {
 
 /// Get the multiaddresses the Waku node is listening to
 /// as per [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_listen_addresses)
-pub fn waku_listen_addresses(ctx: &WakuNodeContext) -> Result<Vec<Multiaddr>> {
-    let mut result: LibwakuResponse = Default::default();
-    let result_cb = |r: LibwakuResponse| result = r;
+pub async fn waku_listen_addresses(ctx: &WakuNodeContext) -> Result<Vec<Multiaddr>> {
+    let mut result = LibwakuResponse::default();
+    let notify = Arc::new(Notify::new());
+    let notify_clone = notify.clone();
+    let result_cb = |r: LibwakuResponse| {
+        result = r;
+        notify_clone.notify_one(); // Notify that the value has been updated
+    };
+
     let code = unsafe {
         let mut closure = result_cb;
         let cb = get_trampoline(&closure);
         waku_sys::waku_listen_addresses(ctx.get_ptr(), cb, &mut closure as *mut _ as *mut c_void)
     };
 
-    handle_json_response(code, result)
+    notify.notified().await; // Wait until a result is received
+    handle_response(code, result)
 }
 
 #[cfg(test)]
 mod test {
     use super::waku_new;
     use crate::node::management::{waku_listen_addresses, waku_start, waku_stop, waku_version};
-    use serial_test::serial;
 
-    #[test]
-    #[serial]
-    fn waku_flow() {
-        let node = waku_new(None).unwrap();
+    #[tokio::test]
+    async fn waku_flow() {
+        let node = waku_new(None).await.unwrap();
 
-        waku_start(&node).unwrap();
+        waku_start(&node).await.unwrap();
 
         // test addresses
-        let addresses = waku_listen_addresses(&node).unwrap();
+        let addresses = waku_listen_addresses(&node).await.unwrap();
         dbg!(&addresses);
         assert!(!addresses.is_empty());
 
-        waku_stop(&node).unwrap();
+        waku_stop(&node).await.unwrap();
     }
 
-    #[test]
-    #[serial]
-    fn nwaku_version() {
-        let node = waku_new(None).unwrap();
-        let version = waku_version(&node).expect("should return the version");
+    #[tokio::test]
+    async fn nwaku_version() {
+        let node = waku_new(None).await.unwrap();
+
+        let version = waku_version(&node)
+            .await
+            .expect("should return the version");
+
         print!("Current version: {}", version);
+
         assert!(!version.is_empty());
     }
 }

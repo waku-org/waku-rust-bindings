@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 use std::str::from_utf8;
 use std::sync::{Arc, Mutex};
 use std::time::{SystemTime, Duration};
+use tokio::task;
 
 use tokio::sync::mpsc;
 use waku::{
@@ -48,7 +49,7 @@ impl TicTacToeApp<Initialized> {
         }
     }
 
-    fn start(self) -> TicTacToeApp<Running> {
+    async fn start(self) -> TicTacToeApp<Running> {
         let tx_clone = self.tx.clone();
 
         let my_closure = move |response| {
@@ -84,14 +85,14 @@ impl TicTacToeApp<Initialized> {
         self.waku.set_event_callback(my_closure).expect("set event call back working");
 
         // Start the waku node
-        let waku = self.waku.start().expect("waku should start");
+        let waku = self.waku.start().await.expect("waku should start");
 
         // Subscribe to desired topic using the relay protocol
-        // self.waku.relay_subscribe(&self.game_topic.to_string()).expect("waku should subscribe");
+        waku.relay_subscribe(&self.game_topic).await.expect("waku should subscribe");
 
-        let ctopic = WakuContentTopic::new("waku", "2", "tictactoegame", Encoding::Proto);
-        let content_topics = vec![ctopic];
-        waku.filter_subscribe(&self.game_topic, content_topics).expect("waku should subscribe");
+        // let ctopic = WakuContentTopic::new("waku", "2", "tictactoegame", Encoding::Proto);
+        // let content_topics = vec![ctopic];
+        // waku.filter_subscribe(&self.game_topic, content_topics).await.expect("waku should subscribe");
 
         // Connect to hard-coded node
         // let target_node_multi_addr =
@@ -114,7 +115,7 @@ impl TicTacToeApp<Initialized> {
 }
 
 impl TicTacToeApp<Running> {
-    fn send_game_state(&self, game_state: &GameState) {
+    async fn send_game_state(&self, game_state: &GameState) {
         let serialized_game_state = serde_json::to_string(game_state).unwrap();
         let content_topic = WakuContentTopic::new("waku", "2", "tictactoegame", Encoding::Proto);
 
@@ -132,9 +133,11 @@ impl TicTacToeApp<Running> {
             false,
         );
 
-        // self.waku.relay_publish_message(&message, &self.game_topic.to_string(), None)
-        //     .expect("Failed to send message");
-        self.waku.lightpush_publish_message(&message, &self.game_topic).expect("Failed to send message");
+        if let Ok(msg_hash) = self.waku.relay_publish_message(&message, &self.game_topic, None).await {
+            dbg!(format!("message hash published: {}", msg_hash));
+        }
+
+        // self.waku.lightpush_publish_message(&message, &self.game_topic);
     }
 
     fn make_move(&mut self, row: usize, col: usize) {
@@ -159,7 +162,17 @@ impl TicTacToeApp<Running> {
                     };
                 }
 
-                self.send_game_state(&game_state); // Send updated state after a move
+                // Call the async function in a blocking context
+                task::block_in_place(|| {
+                    // Obtain the current runtime handle
+                    let handle = tokio::runtime::Handle::current();
+
+                    // Block on the async function
+                    handle.block_on(async {
+                        // Assuming `self` is available in the current context
+                        self.send_game_state(&game_state).await;
+                    });
+                });
             }
         }
     }
@@ -314,7 +327,7 @@ async fn main() -> eframe::Result<()> {
         // node_key: Some(SecretKey::from_str("2fc0515879e52b7b73297cfd6ab3abf7c344ef84b7a90ff6f4cc19e05a198027").unwrap()),
         max_message_size: Some("1024KiB".to_string()),
         relay_topics: vec![String::from(&game_topic)],
-        log_level: Some("DEBUG"), // Supported: TRACE, DEBUG, INFO, NOTICE, WARN, ERROR or FATAL
+        log_level: Some("FATAL"), // Supported: TRACE, DEBUG, INFO, NOTICE, WARN, ERROR or FATAL
 
         keep_alive: Some(true),
 
@@ -326,7 +339,7 @@ async fn main() -> eframe::Result<()> {
         // discv5_enr_auto_update: Some(false),
 
         ..Default::default()
-    }))
+    })).await
     .expect("should instantiate");
 
     let game_state = GameState {
@@ -339,7 +352,7 @@ async fn main() -> eframe::Result<()> {
     let clone = shared_state.clone();
     let app = TicTacToeApp::new(waku, game_topic, clone, tx);
 
-    let app = app.start();
+    let app = app.start().await;
 
     let clone = shared_state.clone();
     // Listen for messages in the main thread

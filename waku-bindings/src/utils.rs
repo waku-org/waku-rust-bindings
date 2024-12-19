@@ -1,11 +1,10 @@
 use crate::general::Result;
-use core::str::FromStr;
 use std::convert::TryFrom;
 use std::{slice, str};
 use waku_sys::WakuCallBack;
 use waku_sys::{RET_ERR, RET_MISSING_CALLBACK, RET_OK};
 
-#[derive(Debug, Default, PartialEq)]
+#[derive(Debug, Clone, Default, PartialEq)]
 pub enum LibwakuResponse {
     Success(Option<String>),
     Failure(String),
@@ -34,6 +33,12 @@ impl TryFrom<(u32, &str)> for LibwakuResponse {
 // Define the WakuDecode trait
 pub trait WakuDecode: Sized {
     fn decode(input: &str) -> Result<Self>;
+}
+
+impl WakuDecode for String {
+    fn decode(input: &str) -> Result<Self> {
+        Ok(input.to_string())
+    }
 }
 
 pub fn decode<T: WakuDecode>(input: String) -> Result<T> {
@@ -87,27 +92,9 @@ pub fn handle_no_response(code: i32, result: LibwakuResponse) -> Result<()> {
     }
 }
 
-pub fn handle_json_response<F: WakuDecode>(code: i32, result: LibwakuResponse) -> Result<F> {
+pub fn handle_response<F: WakuDecode>(code: i32, result: LibwakuResponse) -> Result<F> {
     match result {
         LibwakuResponse::Success(v) => decode(v.unwrap_or_default()),
-        LibwakuResponse::Failure(v) => Err(v),
-        LibwakuResponse::MissingCallback => panic!("callback is required"),
-        LibwakuResponse::Undefined => panic!(
-            "undefined ffi state: code({}) was returned but callback was not executed",
-            code
-        ),
-    }
-}
-
-pub fn handle_response<F: FromStr>(code: i32, result: LibwakuResponse) -> Result<F>
-where
-    <F as FromStr>::Err: std::fmt::Debug,
-{
-    match result {
-        LibwakuResponse::Success(v) => v
-            .unwrap_or_default()
-            .parse()
-            .map_err(|e| format!("could not parse value: {:?}", e)),
         LibwakuResponse::Failure(v) => Err(v),
         LibwakuResponse::MissingCallback => panic!("callback is required"),
         LibwakuResponse::Undefined => panic!(

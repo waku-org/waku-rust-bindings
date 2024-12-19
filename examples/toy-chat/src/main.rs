@@ -1,6 +1,7 @@
 mod protocol;
 
 use crate::protocol::{Chat2Message, TOY_CHAT_CONTENT_TOPIC};
+use tokio::task;
 use chrono::Utc;
 use crossterm::{
     event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
@@ -48,7 +49,7 @@ struct App<State> {
 }
 
 impl App<Initialized> {
-    fn new(nick: String) -> Result<App<Initialized>> {
+    async fn new(nick: String) -> Result<App<Initialized>> {
         let pubsub_topic = PubsubTopic::new(DEFAULT_PUBSUB_TOPIC);
         let waku = waku_new(Some(WakuNodeConfig {
             tcp_port: Some(60010),
@@ -69,7 +70,7 @@ impl App<Initialized> {
             // discv5_enr_auto_update: Some(false),
     
             ..Default::default()
-        }))?;
+        })).await?;
         
         Ok(App {
             input: String::new(),
@@ -80,7 +81,7 @@ impl App<Initialized> {
         })
     }
 
-    fn start_waku_node(self) -> Result<App<Running>> {
+    async fn start_waku_node(self) -> Result<App<Running>> {
 
         let shared_messages = Arc::clone(&self.messages);
 
@@ -116,10 +117,10 @@ impl App<Initialized> {
             }
         })?;
 
-        let waku = self.waku.start()?;
+        let waku = self.waku.start().await?;
 
         let pubsub_topic = PubsubTopic::new(DEFAULT_PUBSUB_TOPIC);
-        waku.relay_subscribe(&pubsub_topic)?;
+        waku.relay_subscribe(&pubsub_topic).await?;
 
         Ok(App {
             input: self.input,
@@ -133,8 +134,8 @@ impl App<Initialized> {
 
 impl App<Running> {
 
-    fn retrieve_history(&mut self) {
-        let messages = self.waku.store_query(None, vec![TOY_CHAT_CONTENT_TOPIC.clone()], STORE_NODE).unwrap();
+    async fn retrieve_history(&mut self) {
+        let messages = self.waku.store_query(None, vec![TOY_CHAT_CONTENT_TOPIC.clone()], STORE_NODE).await.unwrap();
         let messages:Vec<_> = messages
             .iter()
             .map(|store_resp_msg| {
@@ -183,15 +184,25 @@ impl App<Running> {
                                     false,
                                 );
 
-                                let pubsub_topic = PubsubTopic::new(DEFAULT_PUBSUB_TOPIC);
-                                if let Err(e) = self.waku.relay_publish_message(
-                                    &waku_message,
-                                    &pubsub_topic,
-                                    None,
-                                ) {
-                                    let mut out = std::io::stderr();
-                                    write!(out, "{e:?}").unwrap();
-                                }
+                                // Call the async function in a blocking context
+                                task::block_in_place(|| {
+                                    // Obtain the current runtime handle
+                                    let handle = tokio::runtime::Handle::current();
+
+                                    // Block on the async function
+                                    handle.block_on(async {
+                                        // Assuming `self` is available in the current context
+                                        let pubsub_topic = PubsubTopic::new(DEFAULT_PUBSUB_TOPIC);
+                                                if let Err(e) = self.waku.relay_publish_message(
+                                                    &waku_message,
+                                                    &pubsub_topic,
+                                                    None,
+                                                ).await {
+                                                    let mut out = std::io::stderr();
+                                                    write!(out, "{e:?}").unwrap();
+                                                }
+                                    });
+                                });
                             }
                             KeyCode::Char(c) => {
                                 self.input.push(c);
@@ -210,16 +221,17 @@ impl App<Running> {
         }
     }
 
-    fn stop_app(self) {
-        self.waku.stop().expect("the node should stop properly");
+    async fn stop_app(self) {
+        self.waku.stop().await.expect("the node should stop properly");
     }
 }
 
-fn main() -> std::result::Result<(), Box<dyn Error>> {
+#[tokio::main]
+async fn main() -> std::result::Result<(), Box<dyn Error>> {
     let nick = std::env::args().nth(1).expect("Nick to be set");
 
-    let app = App::new(nick)?;
-    let mut app = app.start_waku_node()?;
+    let app = App::new(nick).await?;
+    let mut app = app.start_waku_node().await?;
 
     // setup terminal
     enable_raw_mode()?;
@@ -228,9 +240,9 @@ fn main() -> std::result::Result<(), Box<dyn Error>> {
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
 
-    app.retrieve_history();
+    app.retrieve_history().await;
     let res = app.run_main_loop(&mut terminal);
-    app.stop_app();
+    app.stop_app().await;
 
     // restore terminal
     disable_raw_mode()?;
