@@ -163,9 +163,13 @@ pub async fn waku_listen_addresses(ctx: &WakuNodeContext) -> Result<Vec<Multiadd
 #[cfg(test)]
 mod test {
     use super::waku_new;
-    use crate::node::management::{waku_listen_addresses, waku_start, waku_stop, waku_version};
+    use crate::node::management::{
+        waku_destroy, waku_listen_addresses, waku_start, waku_stop, waku_version,
+    };
+    use serial_test::serial;
 
     #[tokio::test]
+    #[serial]
     async fn waku_flow() {
         let node = waku_new(None).await.unwrap();
 
@@ -177,9 +181,11 @@ mod test {
         assert!(!addresses.is_empty());
 
         waku_stop(&node).await.unwrap();
+        waku_destroy(&node).await.unwrap();
     }
 
     #[tokio::test]
+    #[serial]
     async fn nwaku_version() {
         let node = waku_new(None).await.unwrap();
 
@@ -190,5 +196,6 @@ mod test {
         print!("Current version: {}", version);
 
         assert!(!version.is_empty());
+        waku_destroy(&node).await.unwrap();
     }
 }

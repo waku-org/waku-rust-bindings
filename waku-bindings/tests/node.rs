@@ -170,6 +170,7 @@ async fn default_echo() -> Result<(), String> {
 }
 
 #[tokio::test]
+#[serial]
 async fn node_restart() {
     let config = WakuNodeConfig {
         node_key: Some(
