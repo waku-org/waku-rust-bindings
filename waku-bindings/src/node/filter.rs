@@ -39,15 +39,13 @@ pub async fn waku_filter_subscribe(
     let code = unsafe {
         let mut closure = result_cb;
         let cb = get_trampoline(&closure);
-        let out = waku_sys::waku_filter_subscribe(
+        waku_sys::waku_filter_subscribe(
             ctx.get_ptr(),
             pubsub_topic_ptr,
             content_topics_ptr,
             cb,
             &mut closure as *mut _ as *mut c_void,
-        );
-
-        out
+        )
     };
 
     notify.notified().await; // Wait until a result is received
@@ -79,15 +77,13 @@ pub async fn waku_filter_unsubscribe(
     let code = unsafe {
         let mut closure = result_cb;
         let cb = get_trampoline(&closure);
-        let out = waku_sys::waku_filter_unsubscribe(
+        waku_sys::waku_filter_unsubscribe(
             ctx.get_ptr(),
             pubsub_topic_ptr,
             content_topics_topics_ptr,
             cb,
             &mut closure as *mut _ as *mut c_void,
-        );
-
-        out
+        )
     };
 
     notify.notified().await; // Wait until a result is received

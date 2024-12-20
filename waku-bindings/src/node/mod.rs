@@ -221,7 +221,7 @@ impl WakuNodeHandle<Running> {
 
             messages.extend(response.messages);
 
-            if !response.pagination_cursor.is_some() {
+            if response.pagination_cursor.is_none() {
                 break;
             }
             cursor = response.pagination_cursor;
@@ -229,6 +229,6 @@ impl WakuNodeHandle<Running> {
 
         messages.reverse();
 
-        return Ok(messages);
+        Ok(messages)
     }
 }

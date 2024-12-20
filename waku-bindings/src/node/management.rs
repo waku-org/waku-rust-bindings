@@ -36,9 +36,7 @@ pub async fn waku_new(config: Option<WakuNodeConfig>) -> Result<WakuNodeContext>
     let obj_ptr = unsafe {
         let mut closure = result_cb;
         let cb = get_trampoline(&closure);
-        let out = waku_sys::waku_new(config_ptr, cb, &mut closure as *mut _ as *mut c_void);
-
-        out
+        waku_sys::waku_new(config_ptr, cb, &mut closure as *mut _ as *mut c_void)
     };
 
     notify.notified().await; // Wait until a result is received

@@ -130,16 +130,14 @@ pub async fn waku_store_query(
     let code = unsafe {
         let mut closure = result_cb;
         let cb = get_trampoline(&closure);
-        let out = waku_sys::waku_store_query(
+        waku_sys::waku_store_query(
             ctx.get_ptr(),
             json_query_ptr,
             peer_addr_ptr,
             timeout_millis,
             cb,
             &mut closure as *mut _ as *mut c_void,
-        );
-
-        out
+        )
     };
 
     notify.notified().await; // Wait until a result is received

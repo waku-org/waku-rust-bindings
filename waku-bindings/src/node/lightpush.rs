@@ -40,15 +40,13 @@ pub async fn waku_lightpush_publish_message(
     let code = unsafe {
         let mut closure = result_cb;
         let cb = get_trampoline(&closure);
-        let out = waku_sys::waku_lightpush_publish(
+        waku_sys::waku_lightpush_publish(
             ctx.get_ptr(),
             pubsub_topic_ptr,
             message_ptr,
             cb,
             &mut closure as *mut _ as *mut c_void,
-        );
-
-        out
+        )
     };
 
     notify.notified().await; // Wait until a result is received

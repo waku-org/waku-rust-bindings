@@ -39,7 +39,7 @@ pub async fn waku_connect(
     let code = unsafe {
         let mut closure = result_cb;
         let cb = get_trampoline(&closure);
-        let out = waku_sys::waku_connect(
+        waku_sys::waku_connect(
             ctx.get_ptr(),
             address_ptr,
             timeout
@@ -47,9 +47,7 @@ pub async fn waku_connect(
                 .unwrap_or(0),
             cb,
             &mut closure as *mut _ as *mut c_void,
-        );
-
-        out
+        )
     };
 
     notify.notified().await; // Wait until a result is received

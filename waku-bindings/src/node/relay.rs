@@ -46,7 +46,7 @@ pub async fn waku_create_content_topic(
     let code = unsafe {
         let mut closure = result_cb;
         let cb = get_trampoline(&closure);
-        let out = waku_sys::waku_content_topic(
+        waku_sys::waku_content_topic(
             ctx.get_ptr(),
             application_name_ptr,
             application_version,
@@ -54,9 +54,7 @@ pub async fn waku_create_content_topic(
             encoding_ptr,
             cb,
             &mut closure as *mut _ as *mut c_void,
-        );
-
-        out
+        )
     };
 
     notify.notified().await; // Wait until a result is received
@@ -90,7 +88,7 @@ pub async fn waku_relay_publish_message(
     let code = unsafe {
         let mut closure = result_cb;
         let cb = get_trampoline(&closure);
-        let out = waku_sys::waku_relay_publish(
+        waku_sys::waku_relay_publish(
             ctx.get_ptr(),
             pubsub_topic.as_ptr(),
             message.as_ptr(),
@@ -104,9 +102,7 @@ pub async fn waku_relay_publish_message(
                 .unwrap_or(0),
             cb,
             &mut closure as *mut _ as *mut c_void,
-        );
-
-        out
+        )
     };
 
     notify.notified().await; // Wait until a result is received
@@ -128,14 +124,12 @@ pub async fn waku_relay_subscribe(ctx: &WakuNodeContext, pubsub_topic: &PubsubTo
     let code = unsafe {
         let mut closure = result_cb;
         let cb = get_trampoline(&closure);
-        let out = waku_sys::waku_relay_subscribe(
+        waku_sys::waku_relay_subscribe(
             ctx.get_ptr(),
             pubsub_topic_ptr,
             cb,
             &mut closure as *mut _ as *mut c_void,
-        );
-
-        out
+        )
     };
 
     notify.notified().await; // Wait until a result is received
@@ -160,14 +154,12 @@ pub async fn waku_relay_unsubscribe(
     let code = unsafe {
         let mut closure = result_cb;
         let cb = get_trampoline(&closure);
-        let out = waku_sys::waku_relay_subscribe(
+        waku_sys::waku_relay_subscribe(
             ctx.get_ptr(),
             pubsub_topic_ptr,
             cb,
             &mut closure as *mut _ as *mut c_void,
-        );
-
-        out
+        )
     };
 
     notify.notified().await; // Wait until a result is received
