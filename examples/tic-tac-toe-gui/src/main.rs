@@ -90,9 +90,16 @@ impl TicTacToeApp<Initialized> {
         // Subscribe to desired topic using the relay protocol
         waku.relay_subscribe(&self.game_topic).await.expect("waku should subscribe");
 
+        /// Example filter subscription. This is needed in edge nodes (resource-restricted devices)
+        /// Nodes usually use either relay or lightpush/filter protocols
+
         // let ctopic = WakuContentTopic::new("waku", "2", "tictactoegame", Encoding::Proto);
         // let content_topics = vec![ctopic];
         // waku.filter_subscribe(&self.game_topic, content_topics).await.expect("waku should subscribe");
+
+        /// End filter example ----------------------------------------
+
+        /// Example to establish direct connection to a well-known node
 
         // Connect to hard-coded node
         // let target_node_multi_addr =
@@ -103,6 +110,8 @@ impl TicTacToeApp<Initialized> {
 
         // self.waku.connect(&target_node_multi_addr, None)
         //      .expect("waku should connect to other node");
+
+        /// End example direct connection
 
         TicTacToeApp {
             game_state: self.game_state,
@@ -137,7 +146,11 @@ impl TicTacToeApp<Running> {
             dbg!(format!("message hash published: {}", msg_hash));
         }
 
+        /// Example lightpush publish message. This is needed in edge nodes (resource-restricted devices)
+        /// Nodes usually use either relay or lightpush/filter protocols
+        ///
         // self.waku.lightpush_publish_message(&message, &self.game_topic);
+        /// End example lightpush publish message -------------------------------
     }
 
     fn make_move(&mut self, row: usize, col: usize) {
