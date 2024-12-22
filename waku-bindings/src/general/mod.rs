@@ -59,7 +59,7 @@ pub struct WakuStoreRespMessage {
     pub timestamp: usize,
     #[serde(default)]
     pub ephemeral: bool,
-    // pub proof: Vec<u8>,
+    pub proof: Vec<u8>,
 }
 
 impl WakuMessage {
