@@ -135,7 +135,8 @@ impl App<Initialized> {
 impl App<Running> {
 
     async fn retrieve_history(&mut self) {
-        let messages = self.waku.store_query(None, vec![TOY_CHAT_CONTENT_TOPIC.clone()], STORE_NODE).await.unwrap();
+        let include_data = true;
+        let messages = self.waku.store_query(None, vec![TOY_CHAT_CONTENT_TOPIC.clone()], STORE_NODE, include_data).await.unwrap();
         let messages:Vec<_> = messages
             .iter()
             .map(|store_resp_msg| {

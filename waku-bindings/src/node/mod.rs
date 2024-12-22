@@ -192,6 +192,7 @@ impl WakuNodeHandle<Running> {
         pubsub_topic: Option<PubsubTopic>,
         content_topics: Vec<WakuContentTopic>,
         peer_addr: &str,
+        include_data: bool, // is true, resp contains payload, etc. Only msg_hashes otherwise
     ) -> Result<Vec<StoreWakuMessageResponse>> {
         let one_day_in_secs = 60 * 60 * 24;
         let time_start = (Duration::from_secs(Utc::now().timestamp() as u64)
@@ -206,8 +207,8 @@ impl WakuNodeHandle<Running> {
             let request_id = Uuid::new_v4();
             let response = store::waku_store_query(
                 &self.ctx,
-                true, // include_data
                 request_id.to_string(),
+                include_data,
                 pubsub_topic.clone(),
                 content_topics.clone(),
                 Some(time_start), // time_start
