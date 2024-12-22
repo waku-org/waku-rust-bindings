@@ -18,6 +18,7 @@ pub use secp256k1::{PublicKey, SecretKey};
 use std::marker::PhantomData;
 use std::time::Duration;
 use store::StoreWakuMessageResponse;
+use uuid::Uuid;
 // internal
 use crate::general::contenttopic::{Encoding, WakuContentTopic};
 use crate::general::libwaku_response::LibwakuResponse;
@@ -202,10 +203,11 @@ impl WakuNodeHandle<Running> {
         let mut messages: Vec<StoreWakuMessageResponse> = Vec::new();
 
         loop {
+            let request_id = Uuid::new_v4();
             let response = store::waku_store_query(
                 &self.ctx,
-                "hard-coded-req-id".to_string(),
                 true, // include_data
+                request_id.to_string(),
                 pubsub_topic.clone(),
                 content_topics.clone(),
                 Some(time_start), // time_start
