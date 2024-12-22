@@ -1,6 +1,5 @@
 use std::io::Error;
 use std::str::from_utf8;
-use std::time::SystemTime;
 use tokio::time::{sleep, Duration};
 use waku::{
     general::pubsubtopic::PubsubTopic, waku_new, Encoding, LibwakuResponse, WakuContentTopic,
@@ -110,19 +109,7 @@ async fn main() -> Result<(), Error> {
     // Publish a message
 
     let content_topic = WakuContentTopic::new("waku", "2", "test", Encoding::Proto);
-    let message = WakuMessage::new(
-        "Hello world",
-        content_topic,
-        0,
-        SystemTime::now()
-            .duration_since(SystemTime::UNIX_EPOCH)
-            .unwrap()
-            .as_millis()
-            .try_into()
-            .unwrap(),
-        Vec::new(),
-        false,
-    );
+    let message = WakuMessage::new("Hello world", content_topic, 0, Vec::new(), false);
     node1
         .relay_publish_message(&message, &topic, None)
         .await

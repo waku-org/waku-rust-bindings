@@ -4,7 +4,7 @@ use secp256k1::SecretKey;
 use serial_test::serial;
 use std::str::FromStr;
 use std::sync::{Arc, Mutex};
-use std::time::{Duration, SystemTime};
+use std::time::Duration;
 use std::{collections::HashSet, str::from_utf8};
 use tokio::time;
 use tokio::time::sleep;
@@ -76,7 +76,7 @@ async fn test_echo_messages(
         .await
         .unwrap();
 
-    sleep(Duration::from_secs(3)).await;
+    sleep(Duration::from_secs(5)).await;
 
     // Interconnect nodes
     // Replace all matches with 127.0.0.1 to avoid issue with NAT or firewall.
@@ -95,19 +95,7 @@ async fn test_echo_messages(
     sleep(Duration::from_secs(3)).await;
 
     dbg!("Before publish");
-    let message = WakuMessage::new(
-        content,
-        content_topic,
-        1,
-        SystemTime::now()
-            .duration_since(SystemTime::UNIX_EPOCH)
-            .unwrap()
-            .as_millis()
-            .try_into()
-            .unwrap(),
-        Vec::new(),
-        false,
-    );
+    let message = WakuMessage::new(content, content_topic, 1, Vec::new(), false);
     let _ids = try_publish_relay_messages(&node1, &message)
         .await
         .expect("send relay messages");
