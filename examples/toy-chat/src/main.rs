@@ -138,7 +138,7 @@ impl App<Running> {
         let one_day_in_secs = 60 * 60 * 24;
         let time_start = (Duration::from_secs(Utc::now().timestamp() as u64)
             - Duration::from_secs(one_day_in_secs))
-            .as_nanos() as usize;
+            .as_nanos() as u64;
 
         let include_data = true;
 
@@ -147,6 +147,7 @@ impl App<Running> {
                             STORE_NODE,
                             include_data,
                             Some(time_start),
+                            None,
                             None).await.unwrap();
         let messages:Vec<_> = messages
             .iter()

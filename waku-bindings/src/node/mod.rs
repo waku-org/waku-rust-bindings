@@ -16,8 +16,7 @@ pub use multiaddr::Multiaddr;
 pub use secp256k1::{PublicKey, SecretKey};
 use std::marker::PhantomData;
 use std::time::Duration;
-use store::StoreWakuMessageResponse;
-use uuid::Uuid;
+use store::{StoreQueryRequest, StoreWakuMessageResponse};
 // internal
 use crate::general::contenttopic::{Encoding, WakuContentTopic};
 use crate::general::libwaku_response::LibwakuResponse;
@@ -177,31 +176,26 @@ impl WakuNodeHandle<Running> {
         content_topics: Vec<WakuContentTopic>,
         peer_addr: &str,
         include_data: bool, // is true, resp contains payload, etc. Only msg_hashes otherwise
-        time_start: Option<usize>, // unix time nanoseconds
-        time_end: Option<usize>, // unix time nanoseconds
+        time_start: Option<u64>, // unix time nanoseconds
+        time_end: Option<u64>, // unix time nanoseconds
+        timeout_millis: Option<i32>,
     ) -> Result<Vec<StoreWakuMessageResponse>> {
         let mut cursor: Option<MessageHash> = None;
 
         let mut messages: Vec<StoreWakuMessageResponse> = Vec::new();
 
         loop {
-            let request_id = Uuid::new_v4();
-            let response = store::waku_store_query(
-                &self.ctx,
-                request_id.to_string(),
-                include_data,
-                pubsub_topic.clone(),
-                content_topics.clone(),
-                time_start,
-                time_end,
-                None,     // message_hashes
-                cursor,   // pagination_cursor
-                true,     // pagination_forward
-                Some(25), // pagination_limit,
-                peer_addr,
-                None, // timeout_millis
-            )
-            .await?;
+            let query = StoreQueryRequest::new()
+                .with_pubsub_topic(pubsub_topic.clone())
+                .with_content_topics(content_topics.clone())
+                .with_include_data(include_data)
+                .with_time_start(time_start)
+                .with_time_end(time_end)
+                .with_pagination_cursor(cursor)
+                .with_pagination_forward(true);
+
+            let response =
+                store::waku_store_query(&self.ctx, query, peer_addr, timeout_millis).await?;
 
             messages.extend(response.messages);
 
