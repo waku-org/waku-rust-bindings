@@ -2,7 +2,8 @@ use std::ffi::c_void;
 use std::ptr::null_mut;
 use std::sync::{Arc, Mutex};
 
-use crate::utils::{get_trampoline, LibwakuResponse};
+use crate::general::libwaku_response::LibwakuResponse;
+use crate::macros::get_trampoline;
 
 type LibwakuResponseClosure = dyn FnMut(LibwakuResponse) + Send + Sync;
 

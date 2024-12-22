@@ -1,8 +1,10 @@
 //! Waku [general](https://rfc.vac.dev/spec/36/#general) types
 
 pub mod contenttopic;
+pub mod libwaku_response;
 pub mod messagehash;
 pub mod pubsubtopic;
+pub mod waku_decode;
 
 // crates
 use contenttopic::WakuContentTopic;

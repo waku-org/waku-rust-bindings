@@ -1,7 +1,7 @@
+use crate::general::waku_decode::WakuDecode;
 use crate::general::Result;
 use std::convert::TryFrom;
-use std::{slice, str};
-use waku_sys::WakuCallBack;
+use std::str;
 use waku_sys::{RET_ERR, RET_MISSING_CALLBACK, RET_OK};
 
 #[derive(Debug, Clone, Default, PartialEq)]
@@ -30,51 +30,8 @@ impl TryFrom<(u32, &str)> for LibwakuResponse {
     }
 }
 
-// Define the WakuDecode trait
-pub trait WakuDecode: Sized {
-    fn decode(input: &str) -> Result<Self>;
-}
-
-impl WakuDecode for String {
-    fn decode(input: &str) -> Result<Self> {
-        Ok(input.to_string())
-    }
-}
-
-pub fn decode<T: WakuDecode>(input: String) -> Result<T> {
-    T::decode(input.as_str())
-}
-
-unsafe extern "C" fn trampoline<F>(
-    ret_code: ::std::os::raw::c_int,
-    data: *const ::std::os::raw::c_char,
-    data_len: usize,
-    user_data: *mut ::std::os::raw::c_void,
-) where
-    F: FnMut(LibwakuResponse),
-{
-    let closure = &mut *(user_data as *mut F);
-
-    let response = if data.is_null() {
-        ""
-    } else {
-        str::from_utf8(slice::from_raw_parts(data as *mut u8, data_len))
-            .expect("could not retrieve response")
-    };
-
-    let result = LibwakuResponse::try_from((ret_code as u32, response))
-        .expect("invalid response obtained from libwaku");
-
-    closure(result);
-}
-
-pub fn get_trampoline<F>(_closure: &F) -> WakuCallBack
-where
-    F: FnMut(LibwakuResponse),
-{
-    Some(trampoline::<F>)
-}
-
+/// Used in cases where the FFI call doesn't return additional infomation in the
+/// callback. Instead, it returns RET_OK, RET_ERR, etc.
 pub fn handle_no_response(code: i32, result: LibwakuResponse) -> Result<()> {
     if result == LibwakuResponse::Undefined && code as u32 == RET_OK {
         // Some functions will only execute the callback on error
@@ -92,9 +49,11 @@ pub fn handle_no_response(code: i32, result: LibwakuResponse) -> Result<()> {
     }
 }
 
+/// Used in cases where the FFI function returns a code (RET_OK, RET_ERR, etc) plus additional
+/// information, i.e. LibwakuResponse
 pub fn handle_response<F: WakuDecode>(code: i32, result: LibwakuResponse) -> Result<F> {
     match result {
-        LibwakuResponse::Success(v) => decode(v.unwrap_or_default()),
+        LibwakuResponse::Success(v) => WakuDecode::decode(&v.unwrap_or_default()),
         LibwakuResponse::Failure(v) => Err(v),
         LibwakuResponse::MissingCallback => panic!("callback is required"),
         LibwakuResponse::Undefined => panic!(

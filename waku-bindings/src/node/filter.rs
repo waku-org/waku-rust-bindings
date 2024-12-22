@@ -8,10 +8,11 @@ use std::sync::Arc;
 use tokio::sync::Notify;
 // internal
 use crate::general::contenttopic::WakuContentTopic;
+use crate::general::libwaku_response::{handle_no_response, LibwakuResponse};
 use crate::general::pubsubtopic::PubsubTopic;
 use crate::general::Result;
+use crate::macros::get_trampoline;
 use crate::node::context::WakuNodeContext;
-use crate::utils::{get_trampoline, handle_no_response, LibwakuResponse};
 
 pub async fn waku_filter_subscribe(
     ctx: &WakuNodeContext,

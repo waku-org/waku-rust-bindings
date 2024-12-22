@@ -1,4 +1,4 @@
-use crate::utils::WakuDecode;
+use crate::general::waku_decode::WakuDecode;
 use hex::FromHex;
 use serde::{Deserialize, Deserializer, Serialize};
 use std::convert::TryInto;

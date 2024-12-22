@@ -1,6 +1,6 @@
 // std
+use crate::general::waku_decode::WakuDecode;
 use crate::general::Result;
-use crate::utils::WakuDecode;
 use std::borrow::Cow;
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;

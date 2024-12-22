@@ -2,17 +2,15 @@
 
 // std
 use std::ffi::CString;
-// crates
-use libc::*;
-use std::sync::Arc;
-use tokio::sync::Notify;
 // internal
+use crate::general::libwaku_response::{handle_response, LibwakuResponse};
+use crate::general::waku_decode::WakuDecode;
 use crate::general::{
     contenttopic::WakuContentTopic, messagehash::MessageHash, pubsubtopic::PubsubTopic, Result,
     WakuStoreRespMessage,
 };
+use crate::handle_ffi_call;
 use crate::node::context::WakuNodeContext;
-use crate::utils::{get_trampoline, handle_response, LibwakuResponse, WakuDecode};
 use multiaddr::Multiaddr;
 use serde::{Deserialize, Serialize};
 
@@ -110,36 +108,18 @@ pub async fn waku_store_query(
         serde_json::to_string(&query).expect("StoreQuery should always be able to be serialized"),
     )
     .expect("CString should build properly from the serialized filter subscription");
-    let json_query_ptr = json_query.as_ptr();
 
     peer_addr
         .parse::<Multiaddr>()
         .expect("correct multiaddress in store query");
     let peer_addr = CString::new(peer_addr).expect("peer_addr CString should be created");
-    let peer_addr_ptr = peer_addr.as_ptr();
 
-    let timeout_millis = timeout_millis.unwrap_or(10000i32);
-
-    let mut result = LibwakuResponse::default();
-    let notify = Arc::new(Notify::new());
-    let notify_clone = notify.clone();
-    let result_cb = |r: LibwakuResponse| {
-        result = r;
-        notify_clone.notify_one(); // Notify that the value has been updated
-    };
-    let code = unsafe {
-        let mut closure = result_cb;
-        let cb = get_trampoline(&closure);
-        waku_sys::waku_store_query(
-            ctx.get_ptr(),
-            json_query_ptr,
-            peer_addr_ptr,
-            timeout_millis,
-            cb,
-            &mut closure as *mut _ as *mut c_void,
-        )
-    };
-
-    notify.notified().await; // Wait until a result is received
-    handle_response(code, result)
+    handle_ffi_call!(
+        waku_sys::waku_store_query,
+        handle_response,
+        ctx.get_ptr(),
+        json_query.as_ptr(),
+        peer_addr.as_ptr(),
+        timeout_millis.unwrap_or(10000i32)
+    )
 }

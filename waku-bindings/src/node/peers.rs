@@ -4,15 +4,12 @@
 use std::ffi::CString;
 use std::time::Duration;
 // crates
-use libc::*;
 use multiaddr::Multiaddr;
-use std::sync::Arc;
-use tokio::sync::Notify;
 // internal
+use crate::general::libwaku_response::{handle_no_response, LibwakuResponse};
 use crate::general::Result;
+use crate::handle_ffi_call;
 use crate::node::context::WakuNodeContext;
-use crate::utils::LibwakuResponse;
-use crate::utils::{get_trampoline, handle_no_response};
 
 /// Dial peer using a multiaddress
 /// If `timeout` as milliseconds doesn't fit into a `i32` it is clamped to [`i32::MAX`]
@@ -27,29 +24,13 @@ pub async fn waku_connect(
     let address =
         CString::new(address.to_string()).expect("CString should build properly from multiaddress");
 
-    let address_ptr = address.as_ptr();
-
-    let mut result = LibwakuResponse::default();
-    let notify = Arc::new(Notify::new());
-    let notify_clone = notify.clone();
-    let result_cb = |r: LibwakuResponse| {
-        result = r;
-        notify_clone.notify_one(); // Notify that the value has been updated
-    };
-    let code = unsafe {
-        let mut closure = result_cb;
-        let cb = get_trampoline(&closure);
-        waku_sys::waku_connect(
-            ctx.get_ptr(),
-            address_ptr,
-            timeout
-                .map(|duration| duration.as_millis().try_into().unwrap_or(u32::MAX))
-                .unwrap_or(0),
-            cb,
-            &mut closure as *mut _ as *mut c_void,
-        )
-    };
-
-    notify.notified().await; // Wait until a result is received
-    handle_no_response(code, result)
+    handle_ffi_call!(
+        waku_sys::waku_connect,
+        handle_no_response,
+        ctx.get_ptr(),
+        address.as_ptr(),
+        timeout
+            .map(|duration| duration.as_millis().try_into().unwrap_or(u32::MAX))
+            .unwrap_or(0)
+    )
 }

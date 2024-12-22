@@ -20,9 +20,9 @@ use std::time::Duration;
 use store::StoreWakuMessageResponse;
 // internal
 use crate::general::contenttopic::{Encoding, WakuContentTopic};
+use crate::general::libwaku_response::LibwakuResponse;
 pub use crate::general::pubsubtopic::PubsubTopic;
 use crate::general::{messagehash::MessageHash, Result, WakuMessage};
-use crate::utils::LibwakuResponse;
 
 use crate::node::context::WakuNodeContext;
 pub use config::RLNConfig;
