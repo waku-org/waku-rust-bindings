@@ -2,13 +2,13 @@ mod protocol;
 
 use crate::protocol::{Chat2Message, TOY_CHAT_CONTENT_TOPIC};
 use tokio::task;
-use chrono::Utc;
 use crossterm::{
     event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
 use prost::Message;
+use chrono::Utc;
 use std::io::Write;
 use std::sync::{Arc, RwLock};
 use std::{error::Error, io};
@@ -135,8 +135,19 @@ impl App<Initialized> {
 impl App<Running> {
 
     async fn retrieve_history(&mut self) {
+        let one_day_in_secs = 60 * 60 * 24;
+        let time_start = (Duration::from_secs(Utc::now().timestamp() as u64)
+            - Duration::from_secs(one_day_in_secs))
+            .as_nanos() as usize;
+
         let include_data = true;
-        let messages = self.waku.store_query(None, vec![TOY_CHAT_CONTENT_TOPIC.clone()], STORE_NODE, include_data).await.unwrap();
+
+        let messages = self.waku.store_query(None,
+                            vec![TOY_CHAT_CONTENT_TOPIC.clone()],
+                            STORE_NODE,
+                            include_data,
+                            Some(time_start),
+                            None).await.unwrap();
         let messages:Vec<_> = messages
             .iter()
             .map(|store_resp_msg| {
@@ -180,7 +191,6 @@ impl App<Running> {
                                     buff,
                                     TOY_CHAT_CONTENT_TOPIC.clone(),
                                     1,
-                                    Utc::now().timestamp_nanos() as usize,
                                     meta,
                                     false,
                                 );

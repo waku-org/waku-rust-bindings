@@ -12,7 +12,6 @@ mod store;
 
 // std
 pub use aes_gcm::Key;
-use chrono::Utc;
 pub use multiaddr::Multiaddr;
 pub use secp256k1::{PublicKey, SecretKey};
 use std::marker::PhantomData;
@@ -30,8 +29,6 @@ pub use config::RLNConfig;
 pub use config::WakuNodeConfig;
 pub use events::{WakuEvent, WakuMessageEvent};
 pub use relay::waku_create_content_topic;
-
-use std::time::SystemTime;
 
 // Define state marker types
 pub struct Initialized;
@@ -125,20 +122,7 @@ impl WakuNodeHandle<Running> {
         timeout: Option<Duration>,
     ) -> Result<MessageHash> {
         let content_topic = WakuContentTopic::new("waku", "2", content_topic_name, Encoding::Proto);
-        let message = WakuMessage::new(
-            msg_txt,
-            content_topic,
-            0,
-            SystemTime::now()
-                .duration_since(SystemTime::UNIX_EPOCH)
-                .unwrap()
-                .as_millis()
-                .try_into()
-                .unwrap(),
-            Vec::new(),
-            false,
-        );
-
+        let message = WakuMessage::new(msg_txt, content_topic, 0, Vec::new(), false);
         relay::waku_relay_publish_message(&self.ctx, &message, pubsub_topic, timeout).await
     }
 
@@ -193,12 +177,9 @@ impl WakuNodeHandle<Running> {
         content_topics: Vec<WakuContentTopic>,
         peer_addr: &str,
         include_data: bool, // is true, resp contains payload, etc. Only msg_hashes otherwise
+        time_start: Option<usize>, // unix time nanoseconds
+        time_end: Option<usize>, // unix time nanoseconds
     ) -> Result<Vec<StoreWakuMessageResponse>> {
-        let one_day_in_secs = 60 * 60 * 24;
-        let time_start = (Duration::from_secs(Utc::now().timestamp() as u64)
-            - Duration::from_secs(one_day_in_secs))
-        .as_nanos() as usize;
-
         let mut cursor: Option<MessageHash> = None;
 
         let mut messages: Vec<StoreWakuMessageResponse> = Vec::new();
@@ -211,12 +192,12 @@ impl WakuNodeHandle<Running> {
                 include_data,
                 pubsub_topic.clone(),
                 content_topics.clone(),
-                Some(time_start), // time_start
-                None,             // end_time
-                None,             // message_hashes
-                cursor,           // pagination_cursor
-                true,             // pagination_forward
-                Some(25),         // pagination_limit,
+                time_start,
+                time_end,
+                None,     // message_hashes
+                cursor,   // pagination_cursor
+                true,     // pagination_forward
+                Some(25), // pagination_limit,
                 peer_addr,
                 None, // timeout_millis
             )

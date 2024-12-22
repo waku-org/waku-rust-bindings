@@ -132,12 +132,6 @@ impl TicTacToeApp<Running> {
             &serialized_game_state,
             content_topic,
             0,
-            SystemTime::now()
-                .duration_since(SystemTime::UNIX_EPOCH)
-                .unwrap()
-                .as_millis()
-                .try_into()
-                .unwrap(),
             Vec::new(),
             false,
         );

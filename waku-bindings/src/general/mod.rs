@@ -4,9 +4,11 @@ pub mod contenttopic;
 pub mod libwaku_response;
 pub mod messagehash;
 pub mod pubsubtopic;
+pub mod time;
 pub mod waku_decode;
 
 // crates
+use crate::general::time::get_now_in_nanosecs;
 use contenttopic::WakuContentTopic;
 use serde::{Deserialize, Serialize};
 use serde_aux::prelude::*;
@@ -32,7 +34,7 @@ pub struct WakuMessage {
     pub version: WakuMessageVersion,
     /// Unix timestamp in nanoseconds
     #[serde(deserialize_with = "deserialize_number_from_string")]
-    pub timestamp: usize,
+    pub timestamp: u64,
     #[serde(with = "base64_serde", default = "Vec::new")]
     pub meta: Vec<u8>,
     #[serde(default)]
@@ -67,7 +69,6 @@ impl WakuMessage {
         payload: PAYLOAD,
         content_topic: WakuContentTopic,
         version: WakuMessageVersion,
-        timestamp: usize,
         meta: META,
         ephemeral: bool,
     ) -> Self {
@@ -78,7 +79,7 @@ impl WakuMessage {
             payload,
             content_topic,
             version,
-            timestamp,
+            timestamp: get_now_in_nanosecs(),
             meta,
             ephemeral,
             _extras: Default::default(),
