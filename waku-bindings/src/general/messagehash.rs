@@ -1,9 +1,9 @@
 use crate::general::waku_decode::WakuDecode;
-use std::fmt::Write;
 use hex::FromHex;
 use serde::{Deserialize, Deserializer, Serialize};
 use std::convert::TryInto;
 use std::fmt;
+use std::fmt::Write;
 use std::hash::{Hash, Hasher};
 use std::str::FromStr;
 
