@@ -76,8 +76,8 @@ impl App<Initialized> {
             input: String::new(),
             input_mode: InputMode::Normal,
             messages: Arc::new(RwLock::new(Vec::new())),
-            nick: nick,
-            waku: waku,
+            nick,
+            waku,
         })
     }
 
@@ -127,7 +127,7 @@ impl App<Initialized> {
             nick: self.nick,
             input_mode: self.input_mode,
             messages: self.messages,
-            waku: waku,
+            waku,
         })
     }
 }
@@ -157,7 +157,7 @@ impl App<Running> {
             })
             .collect();
 
-        if messages.len() > 0 {
+        if !messages.is_empty() {
             *self.messages.write().unwrap() = messages;
         }
     }

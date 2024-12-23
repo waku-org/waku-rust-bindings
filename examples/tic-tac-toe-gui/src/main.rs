@@ -115,7 +115,7 @@ impl TicTacToeApp<Initialized> {
 
         TicTacToeApp {
             game_state: self.game_state,
-            waku: waku,
+            waku,
             game_topic: self.game_topic,
             tx: self.tx,
             player_role: self.player_role,
@@ -151,19 +151,19 @@ impl TicTacToeApp<Running> {
         if let Ok(mut game_state) = self.game_state.try_lock() {
 
             if let Some(my_role) = self.player_role {
-                if (*game_state).current_turn != my_role {
+                if game_state.current_turn != my_role {
                     return; // skip click if not my turn
                 }
             }
 
-            if (*game_state).board[row][col].is_none() && (*game_state).moves_left > 0 {
-                (*game_state).board[row][col] = Some((*game_state).current_turn);
-                (*game_state).moves_left -= 1;
+            if game_state.board[row][col].is_none() && game_state.moves_left > 0 {
+                game_state.board[row][col] = Some(game_state.current_turn);
+                game_state.moves_left -= 1;
 
                 if let Some(winner) = self.check_winner(&game_state) {
-                    (*game_state).current_turn = winner;
+                    game_state.current_turn = winner;
                 } else {
-                    (*game_state).current_turn = match (*game_state).current_turn {
+                    game_state.current_turn = match game_state.current_turn {
                         Player::X => Player::O,
                         Player::O => Player::X,
                     };
@@ -245,7 +245,7 @@ impl eframe::App for TicTacToeApp<Running> {
                 if ui.button("Play as O").clicked() {
                     self.player_role = Some(Player::O);
                     if let Ok(mut game_state) = self.game_state.try_lock() {
-                      (*game_state).current_turn = Player::X; // player X should start
+                      game_state.current_turn = Player::X; // player X should start
                     }
                 }
 
