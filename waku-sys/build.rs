@@ -66,8 +66,6 @@ fn generate_bindgen_code(project_dir: &Path) {
     );
     println!("cargo:rustc-link-lib=static=backtrace");
 
-    println!("cargo:rustc-link-lib=stdc++");
-
     println!("cargo:rustc-link-lib=ssl");
     println!("cargo:rustc-link-lib=crypto");
 
