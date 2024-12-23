@@ -37,7 +37,7 @@ where
 macro_rules! handle_ffi_call {
     // Case: With or without additional arguments
     ($waku_fn:expr, $resp_hndlr:expr, $ctx:expr $(, $($arg:expr),*)?) => {{
-        use crate::macros::get_trampoline;
+        use $crate::macros::get_trampoline;
         use std::sync::Arc;
         use tokio::sync::Notify;
         use libc::*;

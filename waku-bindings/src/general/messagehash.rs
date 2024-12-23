@@ -1,4 +1,5 @@
 use crate::general::waku_decode::WakuDecode;
+use std::fmt::Write;
 use hex::FromHex;
 use serde::{Deserialize, Deserializer, Serialize};
 use std::convert::TryInto;
@@ -12,8 +13,10 @@ pub struct MessageHash([u8; 32]);
 
 impl MessageHash {
     fn to_hex_string(&self) -> String {
-        let hex: String = self.0.iter().map(|b| format!("{:02x}", b)).collect();
-        format!("0x{}", hex)
+        self.0.iter().fold(String::new(), |mut output, b| {
+            let _ = write!(output, "{b:02X}");
+            output
+        })
     }
 }
 

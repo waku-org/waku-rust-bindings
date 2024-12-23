@@ -170,6 +170,7 @@ impl WakuNodeHandle<Running> {
         lightpush::waku_lightpush_publish_message(&self.ctx, message, pubsub_topic).await
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub async fn store_query(
         &self,
         pubsub_topic: Option<PubsubTopic>,
