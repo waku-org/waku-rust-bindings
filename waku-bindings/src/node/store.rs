@@ -88,6 +88,7 @@ impl StoreQueryRequest {
         self
     }
 
+    #[allow(dead_code)]
     pub fn with_message_hashes(mut self, message_hashes: Vec<MessageHash>) -> Self {
         self.message_hashes = Some(message_hashes);
         self
@@ -115,9 +116,14 @@ pub struct StoreWakuMessageResponse {
 #[derive(Clone, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct StoreResponse {
+    #[allow(unused)]
     pub request_id: String,
+
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[allow(unused)]
     pub status_code: u32,
+
+    #[allow(unused)]
     pub status_desc: String,
 
     /// Array of retrieved historical messages in [`WakuMessage`] format
