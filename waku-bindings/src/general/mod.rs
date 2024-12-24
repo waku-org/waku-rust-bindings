@@ -23,7 +23,6 @@ pub type Result<T> = std::result::Result<T, String>;
 /// as per the [specification](https://rfc.vac.dev/spec/36/#jsonmessage-type)
 #[derive(Clone, Serialize, Deserialize, Debug, Default)]
 #[serde(rename_all = "camelCase")]
-
 pub struct WakuMessage {
     #[serde(with = "base64_serde", default = "Vec::new")]
     pub payload: Vec<u8>,
