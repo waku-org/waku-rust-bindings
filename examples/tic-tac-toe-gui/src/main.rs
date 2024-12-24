@@ -319,6 +319,10 @@ impl eframe::App for TicTacToeApp<Running> {
             }
         });
     }
+
+    fn on_exit(&mut self, _gl: Option<&eframe::glow::Context>) {
+        // TODO: implement the cleanup an proper stop of waku node
+    }
 }
 
 #[tokio::main]
