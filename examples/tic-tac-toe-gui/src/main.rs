@@ -74,7 +74,8 @@ impl TicTacToeApp<Initialized> {
                                 // Handle the error as needed, or just log and skip
                             }
                         }
-                    }
+                    },
+                    WakuEvent::RelayTopicHealthChange(_evt) => {}, // do nothing
                     WakuEvent::Unrecognized(err) => panic!("Unrecognized waku event: {:?}", err),
                     _ => panic!("event case not expected"),
                 };

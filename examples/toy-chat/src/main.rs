@@ -110,7 +110,8 @@ impl App<Initialized> {
                                 write!(out, "{e:?}").unwrap();
                             }
                         }
-                    }
+                    },
+                    WakuEvent::RelayTopicHealthChange(_evt) => {} // do nothing
                     WakuEvent::Unrecognized(err) => eprintln!("Unrecognized waku event: {:?}", err),
                     _ => eprintln!("event case not expected"),
                 };

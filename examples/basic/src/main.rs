@@ -40,6 +40,7 @@ async fn main() -> Result<(), Error> {
                         println!("Message Received in NODE 2: {}", msg);
                         println!("::::::::::::::::::::::::::::::::::::::::::::::::::::");
                     }
+                    WakuEvent::RelayTopicHealthChange(_evt) => {} // do nothing
                     WakuEvent::Unrecognized(err) => panic!("Unrecognized waku event: {:?}", err),
                     _ => panic!("event case not expected"),
                 };
