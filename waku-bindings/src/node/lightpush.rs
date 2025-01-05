@@ -2,7 +2,6 @@
 
 // std
 use std::ffi::CString;
-// crates
 // internal
 use crate::general::libwaku_response::{handle_response, LibwakuResponse};
 use crate::general::{messagehash::MessageHash, Result, WakuMessage};

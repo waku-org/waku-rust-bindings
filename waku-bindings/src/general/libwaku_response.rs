@@ -30,7 +30,7 @@ impl TryFrom<(u32, &str)> for LibwakuResponse {
     }
 }
 
-/// Used in cases where the FFI call doesn't return additional infomation in the
+/// Used in cases where the FFI call doesn't return additional information in the
 /// callback. Instead, it returns RET_OK, RET_ERR, etc.
 pub fn handle_no_response(code: i32, result: LibwakuResponse) -> Result<()> {
     if result == LibwakuResponse::Undefined && code as u32 == RET_OK {
