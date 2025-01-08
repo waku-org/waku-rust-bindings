@@ -24,6 +24,9 @@ pub enum WakuEvent {
     #[serde(rename = "relay_topic_health_change")]
     RelayTopicHealthChange(TopicHealthEvent),
 
+    #[serde(rename = "connection_change")]
+    ConnectionChange(ConnectionChangeEvent),
+
     Unrecognized(serde_json::Value),
 }
 
@@ -39,7 +42,7 @@ pub struct WakuMessageEvent {
     pub waku_message: WakuMessage,
 }
 
-/// Type of `event` field for a `message` event
+/// Type of `event` field for a `topic health` event
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct TopicHealthEvent {
@@ -49,10 +52,20 @@ pub struct TopicHealthEvent {
     pub topic_health: String,
 }
 
+/// Type of `event` field for a `connection change` event
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct ConnectionChangeEvent {
+    /// The pubsub topic on which the message was received
+    pub peer_id: String,
+    /// The message hash
+    pub peer_event: String,
+}
+
 #[cfg(test)]
 mod tests {
     use crate::WakuEvent;
-    use crate::WakuEvent::RelayTopicHealthChange;
+    use crate::WakuEvent::{ConnectionChange, RelayTopicHealthChange};
 
     #[test]
     fn deserialize_message_event() {
@@ -69,6 +82,22 @@ mod tests {
             RelayTopicHealthChange(topic_health_event) => {
                 assert_eq!(topic_health_event.pubsub_topic, "/waku/2/rs/16/1");
                 assert_eq!(topic_health_event.topic_health, "MinimallyHealthy");
+            }
+            _ => panic!("Expected RelayTopicHealthChange event, but got {:?}", evt),
+        }
+    }
+
+    #[test]
+    fn deserialize_connection_change_event() {
+        let s = "{\"eventType\":\"connection_change\", \"peerId\":\"16Uiu2HAmAR24Mbb6VuzoyUiGx42UenDkshENVDj4qnmmbabLvo31\",\"peerEvent\":\"Joined\"}";
+        let evt: WakuEvent = serde_json::from_str(s).unwrap();
+        match evt {
+            ConnectionChange(conn_change_event) => {
+                assert_eq!(
+                    conn_change_event.peer_id,
+                    "16Uiu2HAmAR24Mbb6VuzoyUiGx42UenDkshENVDj4qnmmbabLvo31"
+                );
+                assert_eq!(conn_change_event.peer_event, "Joined");
             }
             _ => panic!("Expected RelayTopicHealthChange event, but got {:?}", evt),
         }

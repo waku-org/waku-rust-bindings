@@ -75,7 +75,12 @@ impl TicTacToeApp<Initialized> {
                             }
                         }
                     },
-                    WakuEvent::RelayTopicHealthChange(_evt) => {}, // do nothing
+                    WakuEvent::RelayTopicHealthChange(_evt) => {
+                        // dbg!("Relay topic change evt", evt);
+                    },
+                    WakuEvent::ConnectionChange(_evt) => {
+                        // dbg!("Conn change evt", evt);
+                    },
                     WakuEvent::Unrecognized(err) => panic!("Unrecognized waku event: {:?}", err),
                     _ => panic!("event case not expected"),
                 };
@@ -89,14 +94,14 @@ impl TicTacToeApp<Initialized> {
         let waku = self.waku.start().await.expect("waku should start");
 
         // Subscribe to desired topic using the relay protocol
-        // waku.relay_subscribe(&self.game_topic).await.expect("waku should subscribe");
+        waku.relay_subscribe(&self.game_topic).await.expect("waku should subscribe");
 
         // Example filter subscription. This is needed in edge nodes (resource-restricted devices)
         // Nodes usually use either relay or lightpush/filter protocols
 
-        let ctopic = WakuContentTopic::new("waku", "2", "tictactoegame", Encoding::Proto);
-        let content_topics = vec![ctopic];
-        waku.filter_subscribe(&self.game_topic, content_topics).await.expect("waku should subscribe");
+        // let ctopic = WakuContentTopic::new("waku", "2", "tictactoegame", Encoding::Proto);
+        // let content_topics = vec![ctopic];
+        // waku.filter_subscribe(&self.game_topic, content_topics).await.expect("waku should subscribe");
 
         // End filter example ----------------------------------------
 
@@ -137,18 +142,18 @@ impl TicTacToeApp<Running> {
             false,
         );
 
-        // if let Ok(msg_hash) = self.waku.relay_publish_message(&message, &self.game_topic, None).await {
-        //     dbg!(format!("message hash published: {}", msg_hash));
-        // }
+        if let Ok(msg_hash) = self.waku.relay_publish_message(&message, &self.game_topic, None).await {
+            dbg!(format!("message hash published: {}", msg_hash));
+        }
 
         // Example lightpush publish message. This is needed in edge nodes (resource-restricted devices)
         // Nodes usually use either relay or lightpush/filter protocols
         //
-        let msg_hash_ret = self.waku.lightpush_publish_message(&message, &self.game_topic).await;
-        match msg_hash_ret {
-            Ok(msg_hash) => println!("Published message hash {:?}", msg_hash.to_string()),
-            Err(error) => println!("Failed to publish with lightpush: {}", error)
-        }
+        // let msg_hash_ret = self.waku.lightpush_publish_message(&message, &self.game_topic).await;
+        // match msg_hash_ret {
+        //     Ok(msg_hash) => println!("Published message hash {:?}", msg_hash.to_string()),
+        //     Err(error) => println!("Failed to publish with lightpush: {}", error)
+        // }
         // End example lightpush publish message
     }
 

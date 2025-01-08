@@ -40,7 +40,12 @@ async fn main() -> Result<(), Error> {
                         println!("Message Received in NODE 2: {}", msg);
                         println!("::::::::::::::::::::::::::::::::::::::::::::::::::::");
                     }
-                    WakuEvent::RelayTopicHealthChange(_evt) => {} // do nothing
+                    WakuEvent::RelayTopicHealthChange(_evt) => {
+                        // dbg!("Relay topic change evt", evt);
+                    }
+                    WakuEvent::ConnectionChange(_evt) => {
+                        // dbg!("Conn change evt", evt);
+                    }
                     WakuEvent::Unrecognized(err) => panic!("Unrecognized waku event: {:?}", err),
                     _ => panic!("event case not expected"),
                 };
@@ -63,6 +68,12 @@ async fn main() -> Result<(), Error> {
                         println!("::::::::::::::::::::::::::::::::::::::::::::::::::::");
                         println!("Message Received in NODE 1: {}", msg);
                         println!("::::::::::::::::::::::::::::::::::::::::::::::::::::");
+                    }
+                    WakuEvent::RelayTopicHealthChange(_evt) => {
+                        // dbg!("Relay topic change evt", evt);
+                    }
+                    WakuEvent::ConnectionChange(_evt) => {
+                        // dbg!("Conn change evt", evt);
                     }
                     WakuEvent::Unrecognized(err) => panic!("Unrecognized waku event: {:?}", err),
                     _ => panic!("event case not expected"),

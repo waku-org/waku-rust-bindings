@@ -111,7 +111,12 @@ impl App<Initialized> {
                             }
                         }
                     },
-                    WakuEvent::RelayTopicHealthChange(_evt) => {} // do nothing
+                    WakuEvent::RelayTopicHealthChange(_evt) => {
+                        // dbg!("Relay topic change evt", evt);
+                    },
+                    WakuEvent::ConnectionChange(_evt) => {
+                        // dbg!("Conn change evt", evt);
+                    },
                     WakuEvent::Unrecognized(err) => eprintln!("Unrecognized waku event: {:?}", err),
                     _ => eprintln!("event case not expected"),
                 };
@@ -119,9 +124,6 @@ impl App<Initialized> {
         })?;
 
         let waku = self.waku.start().await?;
-
-        let pubsub_topic = PubsubTopic::new(DEFAULT_PUBSUB_TOPIC);
-        waku.relay_subscribe(&pubsub_topic).await?;
 
         Ok(App {
             input: self.input,
