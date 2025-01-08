@@ -52,6 +52,12 @@ async fn test_echo_messages(
                         *msg_lock = evt.waku_message;
                     }
                 }
+                WakuEvent::RelayTopicHealthChange(_evt) => {
+                    // dbg!("Relay topic change evt", evt);
+                }
+                WakuEvent::ConnectionChange(_evt) => {
+                    // dbg!("Conn change evt", evt);
+                }
                 WakuEvent::Unrecognized(err) => panic!("Unrecognized waku event: {:?}", err),
                 _ => panic!("event case not expected"),
             };
