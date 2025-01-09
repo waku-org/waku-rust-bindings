@@ -109,7 +109,7 @@ impl StoreQueryRequest {
 #[serde(rename_all = "camelCase")]
 pub struct StoreWakuMessageResponse {
     pub message_hash: MessageHash,
-    pub message: WakuStoreRespMessage,
+    pub message: Option<WakuStoreRespMessage>, // None if include_data == false
     pub pubsub_topic: String,
 }
 

@@ -152,13 +152,16 @@ impl App<Running> {
                             Some(time_start),
                             None,
                             None).await.unwrap();
-        let messages:Vec<_> = messages
-            .iter()
-            .map(|store_resp_msg| {
-                <Chat2Message as Message>::decode(store_resp_msg.message.payload())
-                    .expect("Toy chat messages should be decodeable")
-            })
-            .collect();
+
+        let messages: Vec<_> = messages
+                            .into_iter()
+                            // we expect messages because the query was passed with include_data == true
+                            .filter(|item| item.message.is_some())
+                            .map(|store_resp_msg| {
+                                <Chat2Message as Message>::decode(store_resp_msg.message.unwrap().payload())
+                                    .expect("Toy chat messages should be decodeable")
+                            })
+                            .collect();
 
         if !messages.is_empty() {
             *self.messages.write().unwrap() = messages;
