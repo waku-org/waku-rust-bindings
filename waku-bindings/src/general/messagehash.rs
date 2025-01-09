@@ -1,6 +1,6 @@
 use crate::general::waku_decode::WakuDecode;
 use hex::FromHex;
-use serde::{Deserialize, Deserializer, Serialize};
+use serde::{Deserialize, Serialize};
 use std::convert::TryInto;
 use std::fmt;
 use std::fmt::Write;
@@ -8,7 +8,7 @@ use std::hash::Hash;
 use std::str::FromStr;
 
 /// Waku message hash, hex encoded sha256 digest of the message
-#[derive(Debug, Serialize, PartialEq, Eq, Clone, Hash)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Hash)]
 pub struct MessageHash([u8; 32]);
 
 impl MessageHash {
@@ -35,23 +35,6 @@ impl FromStr for MessageHash {
             .map_err(|_| "Hex string must represent exactly 32 bytes".to_string())?;
 
         Ok(MessageHash(res))
-    }
-}
-
-impl<'de> Deserialize<'de> for MessageHash {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        // Deserialize the input as a vector of u8
-        let vec: Vec<u8> = Deserialize::deserialize(deserializer)?;
-
-        // Ensure the vector has exactly 32 elements
-        let array: [u8; 32] = vec
-            .try_into()
-            .map_err(|_| serde::de::Error::custom("Expected an array of length 32"))?;
-
-        Ok(MessageHash(array))
     }
 }
 
