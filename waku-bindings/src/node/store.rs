@@ -3,6 +3,8 @@
 // std
 use std::ffi::CString;
 use uuid::Uuid;
+// crates
+use tokio::time::Duration;
 // internal
 use crate::general::libwaku_response::{handle_response, LibwakuResponse};
 use crate::general::time::get_now_in_nanosecs;
@@ -145,7 +147,7 @@ pub async fn waku_store_query(
     ctx: &WakuNodeContext,
     query: StoreQueryRequest,
     peer_addr: &str,
-    timeout_millis: Option<i32>,
+    timeout_millis: Option<Duration>,
 ) -> Result<StoreResponse> {
     let json_query = CString::new(
         serde_json::to_string(&query).expect("StoreQuery should always be able to be serialized"),
@@ -157,12 +159,14 @@ pub async fn waku_store_query(
         .expect("correct multiaddress in store query");
     let peer_addr = CString::new(peer_addr).expect("peer_addr CString should be created");
 
+    let timeout_millis = timeout_millis.unwrap_or(Duration::from_secs(10));
+
     handle_ffi_call!(
         waku_sys::waku_store_query,
         handle_response,
         ctx.get_ptr(),
         json_query.as_ptr(),
         peer_addr.as_ptr(),
-        timeout_millis.unwrap_or(10000i32)
+        timeout_millis.as_millis() as i32
     )
 }

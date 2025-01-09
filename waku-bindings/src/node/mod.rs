@@ -179,7 +179,7 @@ impl WakuNodeHandle<Running> {
         include_data: bool, // is true, resp contains payload, etc. Only msg_hashes otherwise
         time_start: Option<u64>, // unix time nanoseconds
         time_end: Option<u64>, // unix time nanoseconds
-        timeout_millis: Option<i32>,
+        timeout_millis: Option<Duration>,
     ) -> Result<Vec<StoreWakuMessageResponse>> {
         let mut cursor: Option<MessageHash> = None;
 
