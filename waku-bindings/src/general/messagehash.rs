@@ -4,11 +4,11 @@ use serde::{Deserialize, Deserializer, Serialize};
 use std::convert::TryInto;
 use std::fmt;
 use std::fmt::Write;
-use std::hash::{Hash, Hasher};
+use std::hash::Hash;
 use std::str::FromStr;
 
 /// Waku message hash, hex encoded sha256 digest of the message
-#[derive(Debug, Serialize, PartialEq, Eq, Clone)]
+#[derive(Debug, Serialize, PartialEq, Eq, Clone, Hash)]
 pub struct MessageHash([u8; 32]);
 
 impl MessageHash {
@@ -17,13 +17,6 @@ impl MessageHash {
             let _ = write!(output, "{b:02X}");
             output
         })
-    }
-}
-
-impl Hash for MessageHash {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        // Use the inner array to contribute to the hash
-        self.0.hash(state);
     }
 }
 
