@@ -2,11 +2,11 @@
 //!
 //! Implementation on top of [`waku-bindings`](https://rfc.vac.dev/spec/36/)
 pub mod general;
+mod macros;
 pub mod node;
-pub mod utils;
 
 // Re-export the LibwakuResponse type to make it accessible outside this module
-pub use utils::LibwakuResponse;
+pub use general::libwaku_response::LibwakuResponse;
 
 // Required so functions inside libwaku can call RLN functions even if we
 // use it within the bindings functions
@@ -15,9 +15,9 @@ pub use utils::LibwakuResponse;
 use rln;
 
 pub use node::{
-    waku_create_content_topic, waku_new, Event, Initialized, Key, Multiaddr, PublicKey, RLNConfig,
-    Running, SecretKey, WakuMessageEvent, WakuNodeConfig, WakuNodeHandle,
+    waku_create_content_topic, waku_new, Initialized, Key, Multiaddr, PublicKey, RLNConfig,
+    Running, SecretKey, WakuEvent, WakuMessageEvent, WakuNodeConfig, WakuNodeHandle,
 };
 
 pub use general::contenttopic::{Encoding, WakuContentTopic};
-pub use general::{MessageHash, Result, WakuMessage, WakuMessageVersion};
+pub use general::{messagehash::MessageHash, Result, WakuMessage, WakuMessageVersion};

@@ -1,17 +1,20 @@
 //! Waku [general](https://rfc.vac.dev/spec/36/#general) types
 
 pub mod contenttopic;
+pub mod libwaku_response;
+pub mod messagehash;
 pub mod pubsubtopic;
+pub mod time;
+pub mod waku_decode;
 
 // crates
+use crate::general::time::get_now_in_nanosecs;
 use contenttopic::WakuContentTopic;
 use serde::{Deserialize, Serialize};
 use serde_aux::prelude::*;
 
 /// Waku message version
 pub type WakuMessageVersion = usize;
-/// Waku message hash, hex encoded sha256 digest of the message
-pub type MessageHash = String;
 
 pub type Result<T> = std::result::Result<T, String>;
 
@@ -30,7 +33,7 @@ pub struct WakuMessage {
     pub version: WakuMessageVersion,
     /// Unix timestamp in nanoseconds
     #[serde(deserialize_with = "deserialize_number_from_string")]
-    pub timestamp: usize,
+    pub timestamp: u64,
     #[serde(with = "base64_serde", default = "Vec::new")]
     pub meta: Vec<u8>,
     #[serde(default)]
@@ -40,12 +43,31 @@ pub struct WakuMessage {
     _extras: serde_json::Value,
 }
 
+#[derive(Clone, Serialize, Deserialize, Debug, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct WakuStoreRespMessage {
+    // #[serde(with = "base64_serde", default = "Vec::new")]
+    pub payload: Vec<u8>,
+    /// The content topic to be set on the message
+    // #[serde(rename = "contentTopic")]
+    pub content_topic: String,
+    // #[serde(with = "base64_serde", default = "Vec::new")]
+    pub meta: Vec<u8>,
+    /// The Waku Message version number
+    #[serde(default)]
+    pub version: WakuMessageVersion,
+    /// Unix timestamp in nanoseconds
+    pub timestamp: usize,
+    #[serde(default)]
+    pub ephemeral: bool,
+    pub proof: Vec<u8>,
+}
+
 impl WakuMessage {
     pub fn new<PAYLOAD: AsRef<[u8]>, META: AsRef<[u8]>>(
         payload: PAYLOAD,
         content_topic: WakuContentTopic,
         version: WakuMessageVersion,
-        timestamp: usize,
         meta: META,
         ephemeral: bool,
     ) -> Self {
@@ -56,11 +78,21 @@ impl WakuMessage {
             payload,
             content_topic,
             version,
-            timestamp,
+            timestamp: get_now_in_nanosecs(),
             meta,
             ephemeral,
             _extras: Default::default(),
         }
+    }
+
+    pub fn payload(&self) -> &[u8] {
+        &self.payload
+    }
+}
+
+impl WakuStoreRespMessage {
+    pub fn payload(&self) -> &[u8] {
+        &self.payload
     }
 }
 

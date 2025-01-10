@@ -2,11 +2,12 @@ use eframe::egui;
 use serde::{Deserialize, Serialize};
 use std::str::from_utf8;
 use std::sync::{Arc, Mutex};
-use std::time::{SystemTime, Duration};
+use std::time::Duration;
+use tokio::task;
 
 use tokio::sync::mpsc;
 use waku::{
-    waku_new, Encoding, Event, LibwakuResponse, WakuContentTopic,
+    waku_new, Encoding, WakuEvent, LibwakuResponse, WakuContentTopic,
     WakuMessage, WakuNodeConfig, WakuNodeHandle, Initialized, Running,
     general::pubsubtopic::PubsubTopic,
 };
@@ -48,16 +49,16 @@ impl TicTacToeApp<Initialized> {
         }
     }
 
-    fn start(self) -> TicTacToeApp<Running> {
+    async fn start(self) -> TicTacToeApp<Running> {
         let tx_clone = self.tx.clone();
 
         let my_closure = move |response| {
             if let LibwakuResponse::Success(v) = response {
-                let event: Event =
+                let event: WakuEvent =
                     serde_json::from_str(v.unwrap().as_str()).expect("Parsing event to succeed");
 
                 match event {
-                    Event::WakuMessage(evt) => {
+                    WakuEvent::WakuMessage(evt) => {
                         // println!("WakuMessage event received: {:?}", evt.waku_message);
                         let message = evt.waku_message;
                         let payload = message.payload.to_vec();
@@ -73,8 +74,14 @@ impl TicTacToeApp<Initialized> {
                                 // Handle the error as needed, or just log and skip
                             }
                         }
-                    }
-                    Event::Unrecognized(err) => panic!("Unrecognized waku event: {:?}", err),
+                    },
+                    WakuEvent::RelayTopicHealthChange(_evt) => {
+                        // dbg!("Relay topic change evt", evt);
+                    },
+                    WakuEvent::ConnectionChange(_evt) => {
+                        // dbg!("Conn change evt", evt);
+                    },
+                    WakuEvent::Unrecognized(err) => panic!("Unrecognized waku event: {:?}", err),
                     _ => panic!("event case not expected"),
                 };
             }
@@ -83,17 +90,22 @@ impl TicTacToeApp<Initialized> {
         // Establish a closure that handles the incoming messages
         self.waku.set_event_callback(my_closure).expect("set event call back working");
 
-        let _ = self.waku.version();
-
         // Start the waku node
-        let waku = self.waku.start().expect("waku should start");
+        let waku = self.waku.start().await.expect("waku should start");
 
         // Subscribe to desired topic using the relay protocol
-        // self.waku.relay_subscribe(&self.game_topic.to_string()).expect("waku should subscribe");
+        waku.relay_subscribe(&self.game_topic).await.expect("waku should subscribe");
 
-        let ctopic = WakuContentTopic::new("waku", "2", "tictactoegame", Encoding::Proto);
-        let content_topics = vec![ctopic];
-        waku.filter_subscribe(&self.game_topic, content_topics).expect("waku should subscribe");
+        // Example filter subscription. This is needed in edge nodes (resource-restricted devices)
+        // Nodes usually use either relay or lightpush/filter protocols
+
+        // let ctopic = WakuContentTopic::new("waku", "2", "tictactoegame", Encoding::Proto);
+        // let content_topics = vec![ctopic];
+        // waku.filter_subscribe(&self.game_topic, content_topics).await.expect("waku should subscribe");
+
+        // End filter example ----------------------------------------
+
+        // Example to establish direct connection to a well-known node
 
         // Connect to hard-coded node
         // let target_node_multi_addr =
@@ -105,9 +117,11 @@ impl TicTacToeApp<Initialized> {
         // self.waku.connect(&target_node_multi_addr, None)
         //      .expect("waku should connect to other node");
 
+        // End example direct connection
+
         TicTacToeApp {
             game_state: self.game_state,
-            waku: waku,
+            waku,
             game_topic: self.game_topic,
             tx: self.tx,
             player_role: self.player_role,
@@ -116,7 +130,7 @@ impl TicTacToeApp<Initialized> {
 }
 
 impl TicTacToeApp<Running> {
-    fn send_game_state(&self, game_state: &GameState) {
+    async fn send_game_state(&self, game_state: &GameState) {
         let serialized_game_state = serde_json::to_string(game_state).unwrap();
         let content_topic = WakuContentTopic::new("waku", "2", "tictactoegame", Encoding::Proto);
 
@@ -124,44 +138,58 @@ impl TicTacToeApp<Running> {
             &serialized_game_state,
             content_topic,
             0,
-            SystemTime::now()
-                .duration_since(SystemTime::UNIX_EPOCH)
-                .unwrap()
-                .as_millis()
-                .try_into()
-                .unwrap(),
             Vec::new(),
             false,
         );
 
-        // self.waku.relay_publish_message(&message, &self.game_topic.to_string(), None)
-        //     .expect("Failed to send message");
-        self.waku.lightpush_publish_message(&message, &self.game_topic).expect("Failed to send message");
+        if let Ok(msg_hash) = self.waku.relay_publish_message(&message, &self.game_topic, None).await {
+            dbg!(format!("message hash published: {}", msg_hash));
+        }
+
+        // Example lightpush publish message. This is needed in edge nodes (resource-restricted devices)
+        // Nodes usually use either relay or lightpush/filter protocols
+        //
+        // let msg_hash_ret = self.waku.lightpush_publish_message(&message, &self.game_topic).await;
+        // match msg_hash_ret {
+        //     Ok(msg_hash) => println!("Published message hash {:?}", msg_hash.to_string()),
+        //     Err(error) => println!("Failed to publish with lightpush: {}", error)
+        // }
+        // End example lightpush publish message
     }
 
     fn make_move(&mut self, row: usize, col: usize) {
         if let Ok(mut game_state) = self.game_state.try_lock() {
 
             if let Some(my_role) = self.player_role {
-                if (*game_state).current_turn != my_role {
+                if game_state.current_turn != my_role {
                     return; // skip click if not my turn
                 }
             }
 
-            if (*game_state).board[row][col].is_none() && (*game_state).moves_left > 0 {
-                (*game_state).board[row][col] = Some((*game_state).current_turn);
-                (*game_state).moves_left -= 1;
+            if game_state.board[row][col].is_none() && game_state.moves_left > 0 {
+                game_state.board[row][col] = Some(game_state.current_turn);
+                game_state.moves_left -= 1;
 
                 if let Some(winner) = self.check_winner(&game_state) {
-                    (*game_state).current_turn = winner;
+                    game_state.current_turn = winner;
                 } else {
-                    (*game_state).current_turn = match (*game_state).current_turn {
+                    game_state.current_turn = match game_state.current_turn {
                         Player::X => Player::O,
                         Player::O => Player::X,
                     };
                 }
 
-                self.send_game_state(&game_state); // Send updated state after a move
+                // Call the async function in a blocking context
+                task::block_in_place(|| {
+                    // Obtain the current runtime handle
+                    let handle = tokio::runtime::Handle::current();
+
+                    // Block on the async function
+                    handle.block_on(async {
+                        // Assuming `self` is available in the current context
+                        self.send_game_state(&game_state).await;
+                    });
+                });
             }
         }
     }
@@ -227,7 +255,7 @@ impl eframe::App for TicTacToeApp<Running> {
                 if ui.button("Play as O").clicked() {
                     self.player_role = Some(Player::O);
                     if let Ok(mut game_state) = self.game_state.try_lock() {
-                      (*game_state).current_turn = Player::X; // player X should start
+                      game_state.current_turn = Player::X; // player X should start
                     }
                 }
 
@@ -301,6 +329,10 @@ impl eframe::App for TicTacToeApp<Running> {
             }
         });
     }
+
+    fn on_exit(&mut self, _gl: Option<&eframe::glow::Context>) {
+        // TODO: implement the cleanup an proper stop of waku node
+    }
 }
 
 #[tokio::main]
@@ -316,7 +348,7 @@ async fn main() -> eframe::Result<()> {
         // node_key: Some(SecretKey::from_str("2fc0515879e52b7b73297cfd6ab3abf7c344ef84b7a90ff6f4cc19e05a198027").unwrap()),
         max_message_size: Some("1024KiB".to_string()),
         relay_topics: vec![String::from(&game_topic)],
-        log_level: Some("DEBUG"), // Supported: TRACE, DEBUG, INFO, NOTICE, WARN, ERROR or FATAL
+        log_level: Some("FATAL"), // Supported: TRACE, DEBUG, INFO, NOTICE, WARN, ERROR or FATAL
 
         keep_alive: Some(true),
 
@@ -328,7 +360,7 @@ async fn main() -> eframe::Result<()> {
         // discv5_enr_auto_update: Some(false),
 
         ..Default::default()
-    }))
+    })).await
     .expect("should instantiate");
 
     let game_state = GameState {
@@ -341,7 +373,7 @@ async fn main() -> eframe::Result<()> {
     let clone = shared_state.clone();
     let app = TicTacToeApp::new(waku, game_topic, clone, tx);
 
-    let app = app.start();
+    let app = app.start().await;
 
     let clone = shared_state.clone();
     // Listen for messages in the main thread
