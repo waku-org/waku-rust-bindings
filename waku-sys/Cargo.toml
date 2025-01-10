@@ -1,10 +1,11 @@
 [package]
 name = "waku-sys"
-version = "0.5.0"
-edition = "2021"
+version = "1.0.0"
+edition = "2025"
 authors = [
     "Daniel Sanchez Quiros <danielsq@status.im>",
-    "Richard Ramos <richard@waku.org>"
+    "Richard Ramos <richard@waku.org>",
+    "Ivan Folgueira Bande <ivansete@status.im>"
 ]
 description = "Waku networking library generated bindings"
 license = "MIT OR Apache-2.0"
