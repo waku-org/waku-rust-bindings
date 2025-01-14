@@ -13,18 +13,16 @@ repository = "https://github.com/waku-org/waku-rust-bindings"
 keywords = ["waku", "peer-to-peer", "libp2p", "networking"]
 categories = ["network-programming"]
 
-exclude = [
-    "vendor/examples/*",
-    "vendor/docs/*",
-    "vendor/coverage/*",
-    "vendor/pkg/*",
-    "vendor/tests/*",
-    "vendor/ci/*",
-    "vendor/cmd/*",
-    "**/*.md",
-    "**/*.lock",
-    "**/*.nix",
-    "**/Dockerfile",
+include = [
+    "build.rs",
+    "src/cmd.c",
+    "src/lib.rs",
+    "libwaku/libwaku.a",
+    "libwaku/libwaku.h",
+    "libwaku/libbacktrace_wrapper.o",
+    "libwaku/libbacktrace.a",
+    "libwaku/libminiupnpc.a",
+    "libwaku/libnatpmp.a",
 ]
 
 [lib]

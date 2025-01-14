@@ -5,7 +5,7 @@
 [<img alt="docs.rs" src="https://img.shields.io/badge/doc/waku-bindings-66c2a5?style=for-the-badge&labelColor=555555&logo=docs.rs" height="20">](https://docs.rs/waku-sys)
 [<img alt="build status" src="https://img.shields.io/github/actions/workflow/status/waku-org/waku-rust-bindings/main.yml?branch=master" height="20">](https://github.com/waku-org/waku-rust-bindings/actions/workflows/main.yml?query=branch%3Amaster)
 
-Rust layer on top of [`go-waku`](https://github.com/status-im/go-waku) [c ffi bindings](https://github.com/status-im/go-waku/blob/v0.2.2/library/README.md).
+Rust layer on top of [`nwaku`](https://github.com/status-im/go-waku) [c ffi bindings](https://github.com/waku-org/nwaku/blob/master/library/libwaku.h).
 
 ## Usage
 
@@ -17,7 +17,6 @@ Add this to your `Cargo.toml`:
 [dependencies]
 waku-sys = "0.1.0"
 ```
-
 
 ## About [Waku](https://waku.org/)
 
@@ -46,6 +45,24 @@ The first version of Waku had its origins in the Whisper protocol, with optimiza
 
 This makes it ideal for running a p2p protocol on mobile, or in other similarly resource-restricted environments.
 
-
-
 Read the [Waku docs](https://docs.wakuconnect.dev/)
+
+## Compile waku-sys crate
+
+The waku-sys crate is a wrapper on top of [nwaku](https://github.com/waku-org/nwaku).
+This has nwaku a submodule within the vendor folder and, we need to manually compile the
+libwaku.a file. The build.rs file assumes the libwaku.a
+already exists.
+
+### Compile libwaku.a
+
+In Linux, do:
+
+```code
+bash build-libwaku.sh
+```
+and that should create the needed files in waku-sys/libwaku folder. Notice that these files should
+be committed in order to create a waku-sys package.
+
+
+

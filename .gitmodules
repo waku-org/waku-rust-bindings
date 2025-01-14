@@ -1,3 +1,3 @@
-[submodule "waku-sys/vendor"]
-	path = waku-sys/vendor
-	url = https://github.com/waku-org/nwaku
+[submodule "waku-sys/vendor/nwaku"]
+	path = waku-sys/vendor/nwaku
+	url = https://github.com/waku-org/nwaku.git
