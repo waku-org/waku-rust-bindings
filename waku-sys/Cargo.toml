@@ -18,14 +18,12 @@ exclude = [
     "vendor/docs/*",
     "vendor/coverage/*",
     "vendor/pkg/*",
-    "vendor/scripts/*",
     "vendor/tests/*",
     "vendor/ci/*",
     "vendor/cmd/*",
     "**/*.md",
     "**/*.lock",
     "**/*.nix",
-    "**/Makefile",
     "**/Dockerfile",
 ]
 
