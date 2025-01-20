@@ -19,6 +19,6 @@ From within the `examples/tic-tac-toe/` foder run:
 cargo run
 ```
 
-Another player can start his/her instance in either another
+Another player can start their instance in either another
 terminal or another machine.
 
