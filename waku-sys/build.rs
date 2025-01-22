@@ -5,9 +5,51 @@ use std::process::Command;
 
 extern crate cc;
 
+fn submodules_init(project_dir: &Path) {
+    let mark_file_path = ".submodules-initialized";
+
+    // Check if the mark file exists
+    if !Path::new(&mark_file_path).exists() {
+        // If mark file doesn't exist, initialize submodule
+        if Command::new("git")
+            .args(["submodule", "init"])
+            .status()
+            .expect("Failed to execute 'git submodule init'")
+            .success()
+            && Command::new("git")
+                .args(["submodule", "update", "--recursive"])
+                .status()
+                .expect("Failed to execute 'git submodule update --recursive'")
+                .success()
+        {
+            // Now, inside nwaku folder, run 'make update' to get nwaku's vendors
+            let vendor_path = project_dir.join("vendor");
+            set_current_dir(vendor_path).expect("Moving to vendor dir");
+
+            if Command::new("make")
+                .args(["update"])
+                .status()
+                .expect("Failed to execute 'make update'")
+                .success()
+            {
+                std::fs::File::create(&mark_file_path).expect("Failed to create mark file");
+            } else {
+                panic!("Failed to run 'make update' within nwaku folder.");
+            }
+
+            set_current_dir(project_dir).expect("Going back to project dir");
+
+            println!("Git submodules initialized and updated successfully.");
+        } else {
+            panic!("Failed to initialize or update git submodules.");
+        }
+    } else {
+        println!("Mark file '{mark_file_path}' exists. Skipping git submodule initialization.");
+    }
+}
+
 fn build_nwaku_lib(project_dir: &Path) {
     let vendor_path = project_dir.join("vendor");
-
     set_current_dir(vendor_path).expect("Moving to vendor dir");
 
     let mut cmd = Command::new("make");
@@ -95,6 +137,7 @@ fn generate_bindgen_code(project_dir: &Path) {
 fn main() {
     let project_dir = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap());
 
+    submodules_init(&project_dir);
     build_nwaku_lib(&project_dir);
     generate_bindgen_code(&project_dir);
 }
