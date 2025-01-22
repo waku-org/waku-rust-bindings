@@ -69,7 +69,7 @@ mod tests {
 
     #[test]
     fn deserialize_message_event() {
-        let s = "{\"eventType\":\"message\",\"messageHash\":[91, 70, 26, 8, 141, 232, 150, 200, 26, 206, 224, 175, 249, 74, 61, 140, 231, 126, 224, 160, 91, 80, 162, 65, 250, 171, 84, 149, 133, 110, 214, 101],\"pubsubTopic\":\"/waku/2/default-waku/proto\",\"wakuMessage\":{\"payload\":\"SGkgZnJvbSDwn6aAIQ==\",\"contentTopic\":\"/toychat/2/huilong/proto\",\"timestamp\":1665580926660}}";
+        let s = "{\"eventType\":\"message\",\"messageHash\":\"0xd40aa51bbb4867fe40329a255575cfc9ef4000358cc7321b2668b008cba94b30\",\"pubsubTopic\":\"/waku/2/default-waku/proto\",\"wakuMessage\":{\"payload\":\"SGkgZnJvbSDwn6aAIQ==\",\"contentTopic\":\"/toychat/2/huilong/proto\",\"timestamp\":1665580926660}}";
         let evt: WakuEvent = serde_json::from_str(s).unwrap();
         assert!(matches!(evt, WakuEvent::WakuMessage(_)));
     }
