@@ -47,6 +47,11 @@ pub struct WakuNodeConfig {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub dns_discovery_url: Option<&'static str>,
 
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        rename = "discV5BootstrapNodes"
+    )]
+    pub discv5_bootstrap_nodes: Option<Vec<String>>,
     #[default(Some(false))]
     pub discv5_discovery: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none")]
