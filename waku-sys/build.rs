@@ -53,7 +53,7 @@ fn build_nwaku_lib(project_dir: &Path) {
     set_current_dir(vendor_path).expect("Moving to vendor dir");
 
     let mut cmd = Command::new("make");
-    cmd.arg("libwaku").arg("STATIC=true");
+    cmd.arg("libwaku").arg("STATIC=1");
     cmd.status()
         .map_err(|e| println!("cargo:warning=make build failed due to: {e}"))
         .unwrap();
