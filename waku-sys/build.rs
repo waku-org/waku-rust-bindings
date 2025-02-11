@@ -9,7 +9,7 @@ fn submodules_init(project_dir: &Path) {
     let mark_file_path = ".submodules-initialized";
 
     // Check if the mark file exists
-    if !Path::new(&mark_file_path).exists() {
+    if !Path::new(mark_file_path).exists() {
         // If mark file doesn't exist, initialize submodule
         if Command::new("git")
             .args(["submodule", "init"])
@@ -32,7 +32,7 @@ fn submodules_init(project_dir: &Path) {
                 .expect("Failed to execute 'make update'")
                 .success()
             {
-                std::fs::File::create(&mark_file_path).expect("Failed to create mark file");
+                std::fs::File::create(mark_file_path).expect("Failed to create mark file");
             } else {
                 panic!("Failed to run 'make update' within nwaku folder.");
             }
