@@ -23,8 +23,8 @@ fn submodules_init(project_dir: &Path) {
                 .success()
         {
             // Now, inside nwaku folder, run 'make update' to get nwaku's vendors
-            let vendor_path = project_dir.join("vendor");
-            set_current_dir(vendor_path).expect("Moving to vendor dir");
+            let nwaku_path = project_dir.join("vendor");
+            set_current_dir(nwaku_path).expect("Moving to vendor dir");
 
             if Command::new("make")
                 .args(["update"])
@@ -49,8 +49,8 @@ fn submodules_init(project_dir: &Path) {
 }
 
 fn build_nwaku_lib(project_dir: &Path) {
-    let vendor_path = project_dir.join("vendor");
-    set_current_dir(vendor_path).expect("Moving to vendor dir");
+    let nwaku_path = project_dir.join("vendor");
+    set_current_dir(nwaku_path).expect("Moving to vendor dir");
 
     let mut cmd = Command::new("make");
     cmd.arg("libwaku").arg("STATIC=1");
@@ -62,12 +62,12 @@ fn build_nwaku_lib(project_dir: &Path) {
 }
 
 fn generate_bindgen_code(project_dir: &Path) {
-    let vendor_path = project_dir.join("vendor");
-    let header_path = vendor_path.join("library/libwaku.h");
+    let nwaku_path = project_dir.join("vendor");
+    let header_path = nwaku_path.join("library/libwaku.h");
 
     cc::Build::new()
         .object(
-            vendor_path
+            nwaku_path
                 .join("vendor/nim-libbacktrace/libbacktrace_wrapper.o")
                 .display()
                 .to_string(),
@@ -77,13 +77,13 @@ fn generate_bindgen_code(project_dir: &Path) {
     println!("cargo:rerun-if-changed={}", header_path.display());
     println!(
         "cargo:rustc-link-search={}",
-        vendor_path.join("build").display()
+        nwaku_path.join("build").display()
     );
     println!("cargo:rustc-link-lib=static=waku");
 
     println!(
         "cargo:rustc-link-search={}",
-        vendor_path
+        nwaku_path
             .join("vendor/nim-nat-traversal/vendor/miniupnp/miniupnpc/build")
             .display()
     );
@@ -91,7 +91,7 @@ fn generate_bindgen_code(project_dir: &Path) {
 
     println!(
         "cargo:rustc-link-search={}",
-        vendor_path
+        nwaku_path
             .join("vendor/nim-nat-traversal/vendor/libnatpmp-upstream")
             .display()
     );
@@ -102,7 +102,7 @@ fn generate_bindgen_code(project_dir: &Path) {
 
     println!(
         "cargo:rustc-link-search=native={}",
-        vendor_path
+        nwaku_path
             .join("vendor/nim-libbacktrace/install/usr/lib")
             .display()
     );
