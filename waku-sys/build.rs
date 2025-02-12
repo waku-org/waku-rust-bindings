@@ -5,13 +5,55 @@ use std::process::Command;
 
 extern crate cc;
 
-fn build_nwaku_lib(project_dir: &Path) {
-    let vendor_path = project_dir.join("vendor");
+fn submodules_init(project_dir: &Path) {
+    let mark_file_path = ".submodules-initialized";
 
-    set_current_dir(vendor_path).expect("Moving to vendor dir");
+    // Check if the mark file exists
+    if !Path::new(mark_file_path).exists() {
+        // If mark file doesn't exist, initialize submodule
+        if Command::new("git")
+            .args(["submodule", "init"])
+            .status()
+            .expect("Failed to execute 'git submodule init'")
+            .success()
+            && Command::new("git")
+                .args(["submodule", "update", "--recursive"])
+                .status()
+                .expect("Failed to execute 'git submodule update --recursive'")
+                .success()
+        {
+            // Now, inside nwaku folder, run 'make update' to get nwaku's vendors
+            let nwaku_path = project_dir.join("vendor");
+            set_current_dir(nwaku_path).expect("Moving to vendor dir");
+
+            if Command::new("make")
+                .args(["update"])
+                .status()
+                .expect("Failed to execute 'make update'")
+                .success()
+            {
+                std::fs::File::create(mark_file_path).expect("Failed to create mark file");
+            } else {
+                panic!("Failed to run 'make update' within nwaku folder.");
+            }
+
+            set_current_dir(project_dir).expect("Going back to project dir");
+
+            println!("Git submodules initialized and updated successfully.");
+        } else {
+            panic!("Failed to initialize or update git submodules.");
+        }
+    } else {
+        println!("Mark file '{mark_file_path}' exists. Skipping git submodule initialization.");
+    }
+}
+
+fn build_nwaku_lib(project_dir: &Path) {
+    let nwaku_path = project_dir.join("vendor");
+    set_current_dir(nwaku_path).expect("Moving to vendor dir");
 
     let mut cmd = Command::new("make");
-    cmd.arg("libwaku").arg("STATIC=true");
+    cmd.arg("libwaku").arg("STATIC=1");
     cmd.status()
         .map_err(|e| println!("cargo:warning=make build failed due to: {e}"))
         .unwrap();
@@ -20,12 +62,12 @@ fn build_nwaku_lib(project_dir: &Path) {
 }
 
 fn generate_bindgen_code(project_dir: &Path) {
-    let vendor_path = project_dir.join("vendor");
-    let header_path = vendor_path.join("library/libwaku.h");
+    let nwaku_path = project_dir.join("vendor");
+    let header_path = nwaku_path.join("library/libwaku.h");
 
     cc::Build::new()
         .object(
-            vendor_path
+            nwaku_path
                 .join("vendor/nim-libbacktrace/libbacktrace_wrapper.o")
                 .display()
                 .to_string(),
@@ -35,13 +77,13 @@ fn generate_bindgen_code(project_dir: &Path) {
     println!("cargo:rerun-if-changed={}", header_path.display());
     println!(
         "cargo:rustc-link-search={}",
-        vendor_path.join("build").display()
+        nwaku_path.join("build").display()
     );
     println!("cargo:rustc-link-lib=static=waku");
 
     println!(
         "cargo:rustc-link-search={}",
-        vendor_path
+        nwaku_path
             .join("vendor/nim-nat-traversal/vendor/miniupnp/miniupnpc/build")
             .display()
     );
@@ -49,7 +91,7 @@ fn generate_bindgen_code(project_dir: &Path) {
 
     println!(
         "cargo:rustc-link-search={}",
-        vendor_path
+        nwaku_path
             .join("vendor/nim-nat-traversal/vendor/libnatpmp-upstream")
             .display()
     );
@@ -60,7 +102,7 @@ fn generate_bindgen_code(project_dir: &Path) {
 
     println!(
         "cargo:rustc-link-search=native={}",
-        vendor_path
+        nwaku_path
             .join("vendor/nim-libbacktrace/install/usr/lib")
             .display()
     );
@@ -95,6 +137,7 @@ fn generate_bindgen_code(project_dir: &Path) {
 fn main() {
     let project_dir = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap());
 
+    submodules_init(&project_dir);
     build_nwaku_lib(&project_dir);
     generate_bindgen_code(&project_dir);
 }
