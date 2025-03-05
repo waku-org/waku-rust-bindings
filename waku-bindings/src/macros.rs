@@ -52,9 +52,9 @@ macro_rules! handle_ffi_call {
             notify_clone.notify_one();
         };
 
+        let mut closure = result_cb;
         // Create trampoline and invoke the `waku_sys` function
         let code = unsafe {
-            let mut closure = result_cb;
             let cb = get_trampoline(&closure);
             $waku_fn(
                 $ctx,           // Pass the context

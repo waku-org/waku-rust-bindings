@@ -33,8 +33,8 @@ pub async fn waku_new(config: Option<WakuNodeConfig>) -> Result<WakuNodeContext>
         result = r;
         notify_clone.notify_one(); // Notify that the value has been updated
     };
+    let mut closure = result_cb;
     let obj_ptr = unsafe {
-        let mut closure = result_cb;
         let cb = get_trampoline(&closure);
         waku_sys::waku_new(config_ptr, cb, &mut closure as *mut _ as *mut c_void)
     };
