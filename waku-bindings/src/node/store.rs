@@ -31,21 +31,25 @@ pub struct PagingOptions {
 pub struct StoreQueryRequest {
     /// if true, the store-response will include the full message content. If false,
     /// the store-response will only include a list of message hashes.
+    #[serde(rename = "requestId")]
     request_id: String,
+    #[serde(rename = "includeData")]
     include_data: bool,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "pubsubTopic", skip_serializing_if = "Option::is_none")]
     pubsub_topic: Option<PubsubTopic>,
+    #[serde(rename = "contentTopics")]
     content_topics: Vec<WakuContentTopic>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "timeStart", skip_serializing_if = "Option::is_none")]
     time_start: Option<u64>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "timeEnd", skip_serializing_if = "Option::is_none")]
     time_end: Option<u64>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "messageHashes", skip_serializing_if = "Option::is_none")]
     message_hashes: Option<Vec<MessageHash>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "paginationCursor", skip_serializing_if = "Option::is_none")]
     pagination_cursor: Option<MessageHash>, // Message hash (key) from where to start query (exclusive)
+    #[serde(rename = "paginationForward")]
     pagination_forward: bool,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "paginationLimit", skip_serializing_if = "Option::is_none")]
     pagination_limit: Option<u64>,
 }
 
