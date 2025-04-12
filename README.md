@@ -16,6 +16,17 @@
 
 Rust layer on top of [`nwaku`](https://github.com/waku-org/nwaku) [C FFI bindings](https://github.com/waku-org/nwaku/blob/master/library/libwaku.h).
 
+# How to build and run the toy-chat example
+
+1. After cloning the repo run `git submodule update --init --recursive` to init all submodules.
+3. Run the command `cargo build` to build the bindings
+4. To run the toy-chat example
+
+  ```
+  cd examples/toy-chat
+  cargo run <name>
+  ```
+
 
 ## About Waku
 
