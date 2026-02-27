@@ -100,6 +100,13 @@ fn generate_bindgen_code(project_dir: &Path) {
     println!("cargo:rustc-link-lib=dl");
     println!("cargo:rustc-link-lib=m");
 
+    // libwaku.a bundles C++ objects (nim-lsquic / BoringSSL); link the C++ runtime.
+    if cfg!(target_os = "macos") {
+        println!("cargo:rustc-link-lib=c++");
+    } else {
+        println!("cargo:rustc-link-lib=stdc++");
+    }
+
     println!(
         "cargo:rustc-link-search=native={}",
         nwaku_path
