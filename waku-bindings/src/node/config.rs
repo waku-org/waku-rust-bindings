@@ -30,6 +30,12 @@ pub struct WakuNodeConfig {
     pub relay_topics: Vec<String>,
     #[default(vec![0])]
     pub shards: Vec<usize>,
+    /// Number of shards in the cluster for auto-sharding. Set to `0` to use
+    /// static sharding (required when subscribing to explicit RS shard indices
+    /// such as those used by the Status.im production network).
+    /// Defaults to `None` (Nim will use its own default of 1).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub num_shards_in_network: Option<u16>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub max_message_size: Option<String>,
 

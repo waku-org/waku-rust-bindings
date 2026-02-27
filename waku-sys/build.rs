@@ -120,6 +120,22 @@ fn generate_bindgen_code(project_dir: &Path) {
         .compile("cmditems"); // Compile it as a library
     println!("cargo:rustc-link-lib=static=cmditems");
 
+    // Link librln.a (built from vendored zerokit by the Nim Makefile).
+    // The Rust `rln` crate is not used as a dependency because its older
+    // versions (0.3.x) pulled in wasmer 2.x which references __rust_probestack,
+    // a symbol removed in Rust 1.86. Instead, we link the prebuilt librln_*.a
+    // directly, which is the same artifact that libwaku.a was compiled against.
+    if let Ok(entries) = std::fs::read_dir(&nwaku_path) {
+        for entry in entries.flatten() {
+            let name = entry.file_name();
+            let name = name.to_string_lossy();
+            if name.starts_with("librln_") && name.ends_with(".a") {
+                println!("cargo:rustc-link-arg={}", entry.path().display());
+                break;
+            }
+        }
+    }
+
     // Generate waku bindings with bindgen
     let bindings = bindgen::Builder::default()
         // The input header we would like to generate

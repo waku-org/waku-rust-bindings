@@ -55,6 +55,7 @@ impl App<Initialized> {
             tcp_port: Some(60010),
             cluster_id: Some(16),
             shards: vec![1, 32, 64, 128, 256],
+            num_shards_in_network: Some(0), // static sharding for explicit RS shard indices
             // node_key: Some(SecretKey::from_str("2fc0515879e52b7b73297cfd6ab3abf7c344ef84b7a90ff6f4cc19e05a198027").unwrap()),
             max_message_size: Some("1024KiB".to_string()),
             relay_topics: vec![String::from(&pubsub_topic)],
@@ -116,6 +117,9 @@ impl App<Initialized> {
                     },
                     WakuEvent::ConnectionChange(_evt) => {
                         // dbg!("Conn change evt", evt);
+                    },
+                    WakuEvent::NodeHealthChange(_evt) => {
+                        // dbg!("Node health change evt", evt);
                     },
                     WakuEvent::Unrecognized(err) => eprintln!("Unrecognized waku event: {:?}", err),
                     _ => eprintln!("event case not expected"),
