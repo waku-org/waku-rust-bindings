@@ -8,6 +8,12 @@ pub mod node;
 // Re-export the LibwakuResponse type to make it accessible outside this module
 pub use general::libwaku_response::LibwakuResponse;
 
+// Required so functions inside libwaku can call RLN functions even if we
+// use it within the bindings functions
+#[allow(clippy::single_component_path_imports)]
+#[allow(unused)]
+use rln;
+
 pub use node::{
     waku_create_content_topic, waku_new, Initialized, Key, Multiaddr, PublicKey, RLNConfig,
     Running, SecretKey, WakuEvent, WakuMessageEvent, WakuNodeConfig, WakuNodeHandle,
