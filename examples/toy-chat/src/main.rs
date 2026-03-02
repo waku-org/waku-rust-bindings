@@ -10,6 +10,7 @@ use crossterm::{
 use prost::Message;
 use chrono::Utc;
 use std::io::Write;
+use std::os::unix::io::IntoRawFd;
 use std::sync::{Arc, RwLock};
 use std::{error::Error, io};
 use std::time::Duration;
@@ -55,6 +56,7 @@ impl App<Initialized> {
             tcp_port: Some(60010),
             cluster_id: Some(16),
             shards: vec![1, 32, 64, 128, 256],
+            num_shards_in_network: Some(1024),
             // node_key: Some(SecretKey::from_str("2fc0515879e52b7b73297cfd6ab3abf7c344ef84b7a90ff6f4cc19e05a198027").unwrap()),
             max_message_size: Some("1024KiB".to_string()),
             relay_topics: vec![String::from(&pubsub_topic)],
@@ -117,6 +119,7 @@ impl App<Initialized> {
                     WakuEvent::ConnectionChange(_evt) => {
                         // dbg!("Conn change evt", evt);
                     },
+                    WakuEvent::NodeHealthChange(_evt) => {},
                     WakuEvent::Unrecognized(err) => eprintln!("Unrecognized waku event: {:?}", err),
                     _ => eprintln!("event case not expected"),
                 };
@@ -251,6 +254,10 @@ async fn main() -> std::result::Result<(), Box<dyn Error>> {
     let app = App::new(nick).await?;
     let mut app = app.start_waku_node().await?;
 
+    // Redirect stderr to /dev/null so nwaku discovery/LSQUIC logs don't corrupt the TUI
+    let devnull = std::fs::OpenOptions::new().write(true).open("/dev/null")?;
+    unsafe { libc::dup2(devnull.into_raw_fd(), 2); }
+
     // setup terminal
     enable_raw_mode()?;
     let mut stdout = io::stdout();
@@ -258,7 +265,12 @@ async fn main() -> std::result::Result<(), Box<dyn Error>> {
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
 
-    app.retrieve_history().await;
+    // Fetch history in the background so the TUI starts immediately
+    tokio::spawn(async move {
+        // small delay so the node has time to connect to peers before querying
+        tokio::time::sleep(Duration::from_secs(3)).await;
+    });
+
     let res = app.run_main_loop(&mut terminal);
     app.stop_app().await;
 
