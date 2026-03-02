@@ -14,7 +14,7 @@
 [codecov-badge]: https://codecov.io/github/logos-messaging/logos-messaging-rust-bindings/branch/main/graph/badge.svg?token=H4CQWRUCUS
 [codecov-url]: https://codecov.io/github/logos-messaging/logos-messaging-rust-bindings
 
-Rust layer on top of [`logos-messaging-nim`](https://github.com/logos-messaging/logos-messaging-nim) [C FFI bindings](https://github.com/logos-messaging/logos-messaging-nim/blob/master/library/libwaku.h).
+Rust layer on top of [`logos-delivery`](https://github.com/logos-messaging/logos-delivery) [C FFI bindings](https://github.com/logos-messaging/logos-delivery/blob/master/library/libwaku.h).
 
 
 ## About Waku
