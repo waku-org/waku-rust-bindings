@@ -115,7 +115,8 @@ fn generate_bindgen_code(project_dir: &Path) {
     println!("cargo:rustc-link-lib=dl");
     println!("cargo:rustc-link-lib=m");
     // nim-lsquic embeds BoringSSL (C++) — requires C++ runtime
-    println!("cargo:rustc-link-lib=c++");
+    let cpp_lib = if cfg!(target_os = "macos") { "c++" } else { "stdc++" };
+    println!("cargo:rustc-link-lib={}", cpp_lib);
 
     println!(
         "cargo:rustc-link-search=native={}",
