@@ -3,3 +3,7 @@
 /.idea
 /.fleet
 nimcache/
+
+# SDS state written by nodes at runtime (e.g. the channels tests)
+data/
+.submodules-initialized

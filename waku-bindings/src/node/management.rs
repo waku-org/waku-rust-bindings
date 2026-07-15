@@ -36,7 +36,7 @@ pub async fn waku_new(config: Option<WakuNodeConfig>) -> Result<WakuNodeContext>
     let mut closure = result_cb;
     let obj_ptr = unsafe {
         let cb = get_trampoline(&closure);
-        waku_sys::waku_new(config_ptr, cb, &mut closure as *mut _ as *mut c_void)
+        waku_sys::logosdelivery_create_node(config_ptr, cb, &mut closure as *mut _ as *mut c_void)
     };
 
     notify.notified().await; // Wait until a result is received
@@ -49,19 +49,31 @@ pub async fn waku_new(config: Option<WakuNodeConfig>) -> Result<WakuNodeContext>
 }
 
 pub async fn waku_destroy(ctx: &WakuNodeContext) -> Result<()> {
-    handle_ffi_call!(waku_sys::waku_destroy, handle_no_response, ctx.get_ptr())
+    handle_ffi_call!(
+        waku_sys::logosdelivery_destroy,
+        handle_no_response,
+        ctx.get_ptr()
+    )
 }
 
 /// Start a Waku node mounting all the protocols that were enabled during the Waku node instantiation.
 /// as per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_start)
 pub async fn waku_start(ctx: &WakuNodeContext) -> Result<()> {
-    handle_ffi_call!(waku_sys::waku_start, handle_no_response, ctx.get_ptr())
+    handle_ffi_call!(
+        waku_sys::logosdelivery_start_node,
+        handle_no_response,
+        ctx.get_ptr()
+    )
 }
 
 /// Stops a Waku node
 /// as per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_stop)
 pub async fn waku_stop(ctx: &WakuNodeContext) -> Result<()> {
-    handle_ffi_call!(waku_sys::waku_stop, handle_no_response, ctx.get_ptr())
+    handle_ffi_call!(
+        waku_sys::logosdelivery_stop_node,
+        handle_no_response,
+        ctx.get_ptr()
+    )
 }
 
 /// nwaku version

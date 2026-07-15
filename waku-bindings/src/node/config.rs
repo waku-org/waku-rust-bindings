@@ -12,13 +12,18 @@ use smart_default::SmartDefault;
 #[serde(rename_all = "camelCase")]
 pub struct WakuNodeConfig {
     /// Listening IP address. Default `0.0.0.0`
+    #[serde(skip_serializing_if = "Option::is_none", rename = "listen-address")]
     #[default(Some(std::net::IpAddr::V4(std::net::Ipv4Addr::new(0, 0, 0, 0))))]
     pub host: Option<std::net::IpAddr>,
     /// Libp2p TCP listening port. Default `60000`. Use `0` for **random**
     #[default(Some(60000))]
     pub tcp_port: Option<usize>,
     /// Secp256k1 private key in Hex format (`0x123...abc`). Default random
-    #[serde(with = "secret_key_serde", rename = "key")]
+    #[serde(
+        with = "secret_key_serde",
+        skip_serializing_if = "Option::is_none",
+        rename = "nodekey"
+    )]
     pub node_key: Option<SecretKey>,
     /// Cluster id that the node is running in
     #[default(Some(0))]
@@ -27,6 +32,7 @@ pub struct WakuNodeConfig {
     /// Relay protocol
     #[default(Some(true))]
     pub relay: Option<bool>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
     pub relay_topics: Vec<String>,
     #[default(vec![1])]
     pub shards: Vec<usize>,

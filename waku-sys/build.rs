@@ -53,60 +53,114 @@ fn build_nwaku_lib(project_dir: &Path) {
     set_current_dir(nwaku_path).expect("Moving to vendor dir");
 
     let mut cmd = Command::new("make");
-    cmd.arg("libwaku").arg("STATIC=1");
-    cmd.status()
-        .map_err(|e| println!("cargo:warning=make build failed due to: {e}"))
-        .unwrap();
+    cmd.arg("liblogosdelivery").arg("STATIC=1");
+    let status = cmd
+        .status()
+        .unwrap_or_else(|e| panic!("Failed to run 'make liblogosdelivery': {e}"));
+
+    // The exit status has to be checked, not just the spawn: a failed make would
+    // otherwise pass silently and the crate would link a stale library from a
+    // previous build.
+    if !status.success() {
+        panic!("'make liblogosdelivery STATIC=1' failed with {status}");
+    }
 
     set_current_dir(project_dir).expect("Going back to project dir");
 }
 
+/// Resolves a package directory under the vendor's `nimbledeps/pkgs2`, whose
+/// names carry a version and hash (e.g. `nat_traversal-0.0.1-1a376d3e...`) that
+/// change whenever `nimble.lock` moves.
+fn nimble_pkg_dir(nwaku_path: &Path, pkg_name: &str) -> PathBuf {
+    let pkgs_dir = nwaku_path.join("nimbledeps/pkgs2");
+    let prefix = format!("{pkg_name}-");
+    std::fs::read_dir(&pkgs_dir)
+        .unwrap_or_else(|e| panic!("Cannot read {}: {e}", pkgs_dir.display()))
+        .filter_map(|entry| entry.ok())
+        .map(|entry| entry.path())
+        .find(|path| {
+            path.file_name()
+                .and_then(|name| name.to_str())
+                .is_some_and(|name| name.starts_with(&prefix))
+        })
+        .unwrap_or_else(|| {
+            panic!(
+                "No '{pkg_name}' package under {}. Was 'make liblogosdelivery' run?",
+                pkgs_dir.display()
+            )
+        })
+}
+
+/// Finds the vendor's `librln_<version>.a` and returns the name to link it by
+/// (the file stem without the `lib` prefix).
+fn find_librln(nwaku_path: &Path) -> String {
+    std::fs::read_dir(nwaku_path)
+        .unwrap_or_else(|e| panic!("Cannot read {}: {e}", nwaku_path.display()))
+        .filter_map(|entry| entry.ok())
+        .filter_map(|entry| entry.file_name().into_string().ok())
+        .find_map(|name| {
+            name.strip_prefix("lib")
+                .and_then(|name| name.strip_suffix(".a"))
+                .filter(|name| name.starts_with("rln"))
+                .map(str::to_owned)
+        })
+        .unwrap_or_else(|| {
+            panic!(
+                "No 'librln_*.a' in {}. Was 'make librln' run?",
+                nwaku_path.display()
+            )
+        })
+}
+
 fn generate_bindgen_code(project_dir: &Path) {
     let nwaku_path = project_dir.join("vendor");
-    let header_path = nwaku_path.join("library/libwaku.h");
-
-    cc::Build::new()
-        .object(
-            nwaku_path
-                .join("vendor/nim-libbacktrace/libbacktrace_wrapper.o")
-                .display()
-                .to_string(),
-        )
-        .compile("libbacktrace_wrapper");
+    // The kernel header includes the stable one, so this single entry point
+    // yields both the low-level waku_* tier and the logosdelivery_* messaging
+    // and reliable-channel surface.
+    let header_path = nwaku_path.join("library/liblogosdelivery_kernel.h");
 
     println!("cargo:rerun-if-changed={}", header_path.display());
     println!(
         "cargo:rustc-link-search={}",
         nwaku_path.join("build").display()
     );
-    println!("cargo:rustc-link-lib=static=waku");
+    println!("cargo:rustc-link-lib=static=logosdelivery");
+
+    // nat_traversal moved from a git submodule under vendor/ to a nimble
+    // dependency, and builds its NAT archives inside its own package dir.
+    let nat_traversal = nimble_pkg_dir(&nwaku_path, "nat_traversal");
 
     println!(
         "cargo:rustc-link-search={}",
-        nwaku_path
-            .join("vendor/nim-nat-traversal/vendor/miniupnp/miniupnpc/build")
+        nat_traversal
+            .join("vendor/miniupnp/miniupnpc/build")
             .display()
     );
     println!("cargo:rustc-link-lib=static=miniupnpc");
 
     println!(
         "cargo:rustc-link-search={}",
-        nwaku_path
-            .join("vendor/nim-nat-traversal/vendor/libnatpmp-upstream")
-            .display()
+        nat_traversal.join("vendor/libnatpmp-upstream").display()
     );
     println!("cargo:rustc-link-lib=static=natpmp");
 
     println!("cargo:rustc-link-lib=dl");
     println!("cargo:rustc-link-lib=m");
 
-    println!(
-        "cargo:rustc-link-search=native={}",
-        nwaku_path
-            .join("vendor/nim-libbacktrace/install/usr/lib")
-            .display()
-    );
-    println!("cargo:rustc-link-lib=static=backtrace");
+    // boringssl (pulled in by libp2p) is C++, so its runtime has to be linked.
+    if cfg!(target_os = "macos") {
+        println!("cargo:rustc-link-lib=c++");
+    } else {
+        println!("cargo:rustc-link-lib=stdc++");
+    }
+
+    // The vendor's Makefile fetches librln into its root, naming it after the
+    // RLN version it pins, so the archive is discovered rather than hardcoded.
+    let librln = find_librln(&nwaku_path);
+    println!("cargo:rustc-link-search={}", nwaku_path.display());
+    println!("cargo:rustc-link-lib=static={librln}");
+
+    // libbacktrace is not linked: the vendor builds with -d:disable_libbacktrace.
 
     cc::Build::new()
         .file("src/cmd.c") // Compile the C file

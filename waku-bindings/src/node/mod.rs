@@ -1,5 +1,6 @@
 //! Waku node implementation
 
+mod channels;
 mod config;
 mod context;
 mod events;
@@ -26,7 +27,11 @@ use crate::general::{messagehash::MessageHash, Result, WakuMessage};
 use crate::node::context::WakuNodeContext;
 pub use config::RLNConfig;
 pub use config::WakuNodeConfig;
-pub use events::{WakuEvent, WakuMessageEvent};
+pub use events::{
+    ChannelMessageErrorEvent, ChannelMessageReceivedEvent, ChannelMessageSentEvent,
+    ConnectionStatusChangeEvent, MessageErrorEvent, MessagePropagatedEvent, MessageReceivedEvent,
+    MessageSentEvent, WakuEvent, WakuMessageEvent,
+};
 pub use relay::waku_create_content_topic;
 
 // Define state marker types
@@ -111,6 +116,41 @@ impl WakuNodeHandle<Running> {
     /// As per the [specification](https://rfc.vac.dev/spec/36/#extern-char-waku_connect_peerchar-address-int-timeoutms)
     pub async fn connect(&self, address: &Multiaddr, timeout: Option<Duration>) -> Result<()> {
         peers::waku_connect(&self.ctx, address, timeout).await
+    }
+
+    /// Create (or restore) a reliable channel on `content_topic`, returning its id.
+    ///
+    /// `sender_id` identifies this participant within the channel. Messages
+    /// arrive through the `onChannelMessageReceived` event, so register an event
+    /// callback before creating the channel to avoid missing any.
+    pub async fn channel_create(
+        &self,
+        channel_id: &str,
+        content_topic: &str,
+        sender_id: &str,
+    ) -> Result<String> {
+        channels::logosdelivery_channel_create(&self.ctx, channel_id, content_topic, sender_id)
+            .await
+    }
+
+    /// Send `payload` over a reliable channel, returning the send request's id.
+    ///
+    /// The id correlates this call with the `onChannelMessageSent` /
+    /// `onChannelMessageError` events that report the message's fate. An
+    /// `ephemeral` message is not persisted and is not retransmitted.
+    pub async fn channel_send(
+        &self,
+        channel_id: &str,
+        payload: &[u8],
+        ephemeral: bool,
+    ) -> Result<String> {
+        channels::logosdelivery_channel_send(&self.ctx, channel_id, payload, ephemeral).await
+    }
+
+    /// Close a reliable channel. Persisted state survives, so re-creating the
+    /// channel restores it.
+    pub async fn channel_close(&self, channel_id: &str) -> Result<()> {
+        channels::logosdelivery_channel_close(&self.ctx, channel_id).await
     }
 
     pub async fn relay_publish_txt(
