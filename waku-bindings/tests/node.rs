@@ -127,12 +127,14 @@ async fn default_echo() -> Result<(), String> {
     tokio::pin!(sleep);
 
     // Send and receive messages. Waits until all messages received.
+    // The echo's Result decides the outcome: completing is not the same as
+    // having received the message.
     let got_all = tokio::select! {
-        _ = sleep => false,
-        _ = test_echo_messages(node1, node2, ECHO_MESSAGE, content_topic) => true,
+        _ = sleep => Err("timed out waiting for the echo".to_string()),
+        result = test_echo_messages(node1, node2, ECHO_MESSAGE, content_topic) => result,
     };
 
-    assert!(got_all);
+    got_all?;
 
     Ok(())
 }
