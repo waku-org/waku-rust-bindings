@@ -20,6 +20,7 @@ pub use waku_sys::*;
 use rln;
 
 pub use general::contenttopic::{Encoding, WakuContentTopic};
+pub use general::store::{StoreQueryRequest, StoreResponse, StoreWakuMessageResponse};
 pub use general::{messagehash::MessageHash, Result, WakuMessage, WakuMessageVersion};
 pub use node::{
     Key, Multiaddr, PublicKey, PubsubTopic, RLNConfig, SecretKey, WakuNodeConfig,

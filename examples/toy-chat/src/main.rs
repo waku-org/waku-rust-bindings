@@ -22,9 +22,10 @@ use tui::{
     Frame, Terminal,
 };
 use unicode_width::UnicodeWidthStr;
+use base64::Engine;
 use waku::{
-    general::pubsubtopic::PubsubTopic, general::Result, waku_new, Initialized, LibwakuResponse, Running, WakuEvent,
-    WakuMessage, WakuNodeConfig, WakuNodeHandle,
+    general::pubsubtopic::PubsubTopic, general::Result, LogosDeliveryCtx, StoreQueryRequest,
+    StoreResponse, WakuMessage, WakuNodeConfig,
 };
 
 enum InputMode {
@@ -36,8 +37,12 @@ const STORE_NODE: &str = "/dns4/store-01.do-ams3.status.staging.status.im/tcp/30
 
 const DEFAULT_PUBSUB_TOPIC: &str = "/waku/2/rs/16/32";
 
+const NODE_TIMEOUT: Duration = Duration::from_secs(30);
+const STORE_TIMEOUT_MS: i32 = 10_000;
+const PUBLISH_TIMEOUT_MS: u32 = 10_000;
+
 /// App holds the state of the application
-struct App<State> {
+struct App {
     /// Current value of the input box
     input: String,
     nick: String,
@@ -45,13 +50,13 @@ struct App<State> {
     input_mode: InputMode,
     /// History of recorded messages
     messages: Arc<RwLock<Vec<Chat2Message>>>,
-    waku: WakuNodeHandle<State>,
+    waku: LogosDeliveryCtx,
 }
 
-impl App<Initialized> {
-    async fn new(nick: String) -> Result<App<Initialized>> {
+impl App {
+    async fn new(nick: String) -> Result<App> {
         let pubsub_topic = PubsubTopic::new(DEFAULT_PUBSUB_TOPIC);
-        let waku = waku_new(Some(WakuNodeConfig {
+        let config = serde_json::to_string(&WakuNodeConfig {
             tcp_port: Some(60010),
             cluster_id: Some(16),
             shards: vec![1, 32, 64, 128, 256],
@@ -70,8 +75,11 @@ impl App<Initialized> {
             // discv5_enr_auto_update: Some(false),
     
             ..Default::default()
-        })).await?;
-        
+        })
+        .map_err(|e| e.to_string())?;
+
+        let waku = LogosDeliveryCtx::new_async(config, NODE_TIMEOUT).await?;
+
         Ok(App {
             input: String::new(),
             input_mode: InputMode::Normal,
@@ -81,61 +89,46 @@ impl App<Initialized> {
         })
     }
 
-    async fn start_waku_node(self) -> Result<App<Running>> {
-
+    async fn start_waku_node(self) -> Result<App> {
         let shared_messages = Arc::clone(&self.messages);
+        let toy_chat_topic = TOY_CHAT_CONTENT_TOPIC.to_string();
 
-        self.waku.set_event_callback(move|response| {
-            if let LibwakuResponse::Success(v) = response {
-                let event: WakuEvent =
-                    serde_json::from_str(v.unwrap().as_str()).expect("failed parsing event in set_event_callback");
-
-                match event {
-                    WakuEvent::WakuMessage(evt) => {
-
-                        if evt.waku_message.content_topic != TOY_CHAT_CONTENT_TOPIC {
-                            return; // skip the messages that don't belong to the toy chat
-                        }
-
-                        match <Chat2Message as Message>::decode(evt.waku_message.payload()) {
-                            Ok(chat_message) => {
-                                // Add the new message to the front
-                                {
-                                    let mut messages_lock = shared_messages.write().unwrap();
-                                    messages_lock.insert(0, chat_message); // Insert at the front (index 0)
-                                }
-                            }
-                            Err(e) => {
-                                let mut out = std::io::stderr();
-                                write!(out, "{e:?}").unwrap();
-                            }
-                        }
-                    },
-                    WakuEvent::RelayTopicHealthChange(_evt) => {
-                        // dbg!("Relay topic change evt", evt);
-                    },
-                    WakuEvent::ConnectionChange(_evt) => {
-                        // dbg!("Conn change evt", evt);
-                    },
-                    WakuEvent::Unrecognized(err) => eprintln!("Unrecognized waku event: {:?}", err),
-                    _ => eprintln!("event case not expected"),
-                };
+        self.waku.add_on_received_message_listener(move |event| {
+            if event.waku_message.content_topic != toy_chat_topic {
+                return; // skip the messages that don't belong to the toy chat
             }
-        })?;
 
-        let waku = self.waku.start().await?;
+            let payload = match base64::engine::general_purpose::STANDARD
+                .decode(&event.waku_message.payload)
+            {
+                Ok(payload) => payload,
+                Err(e) => {
+                    let mut out = std::io::stderr();
+                    write!(out, "{e:?}").unwrap();
+                    return;
+                }
+            };
 
-        Ok(App {
-            input: self.input,
-            nick: self.nick,
-            input_mode: self.input_mode,
-            messages: self.messages,
-            waku,
-        })
+            match <Chat2Message as Message>::decode(payload.as_slice()) {
+                Ok(chat_message) => {
+                    // Add the new message to the front
+                    {
+                        let mut messages_lock = shared_messages.write().unwrap();
+                        messages_lock.insert(0, chat_message); // Insert at the front (index 0)
+                    }
+                }
+                Err(e) => {
+                    let mut out = std::io::stderr();
+                    write!(out, "{e:?}").unwrap();
+                }
+            }
+        });
+
+        self.waku.start_node_async().await?;
+
+        Ok(self)
     }
-}
 
-impl App<Running> {
 
     async fn retrieve_history(&mut self) {
         let one_day_in_secs = 60 * 60 * 24;
@@ -143,22 +136,29 @@ impl App<Running> {
             - Duration::from_secs(one_day_in_secs))
             .as_nanos() as u64;
 
-        let include_data = true;
+        let query = StoreQueryRequest::new()
+            .with_include_data(true)
+            .with_content_topics(vec![TOY_CHAT_CONTENT_TOPIC.clone()])
+            .with_time_start(Some(time_start));
+        let query = serde_json::to_string(&query).expect("store query should serialise");
 
-        let messages = self.waku.store_query(None,
-                            vec![TOY_CHAT_CONTENT_TOPIC.clone()],
-                            STORE_NODE,
-                            include_data,
-                            Some(time_start),
-                            None,
-                            None).await.unwrap();
+        let response = self
+            .waku
+            .waku_store_query_async(query, STORE_NODE.to_string(), STORE_TIMEOUT_MS)
+            .await
+            .unwrap();
+        let response: StoreResponse =
+            serde_json::from_str(&response).expect("could not parse store resp");
 
-        let messages: Vec<_> = messages
+        let messages: Vec<_> = response
+                            .messages
                             .into_iter()
                             // we expect messages because the query was passed with include_data == true
                             .filter(|item| item.message.is_some())
                             .map(|store_resp_msg| {
-                                <Chat2Message as Message>::decode(store_resp_msg.message.unwrap().payload())
+                                <Chat2Message as Message>::decode(
+                                    store_resp_msg.message.unwrap().payload.as_slice(),
+                                )
                                     .expect("Toy chat messages should be decodeable")
                             })
                             .collect();
@@ -211,10 +211,12 @@ impl App<Running> {
                                     handle.block_on(async {
                                         // Assuming `self` is available in the current context
                                         let pubsub_topic = PubsubTopic::new(DEFAULT_PUBSUB_TOPIC);
-                                                if let Err(e) = self.waku.relay_publish_message(
-                                                    &waku_message,
-                                                    &pubsub_topic,
-                                                    None,
+                                        let waku_message = serde_json::to_string(&waku_message)
+                                            .expect("message should serialise");
+                                                if let Err(e) = self.waku.waku_relay_publish_async(
+                                                    String::from(&pubsub_topic),
+                                                    waku_message,
+                                                    PUBLISH_TIMEOUT_MS,
                                                 ).await {
                                                     let mut out = std::io::stderr();
                                                     write!(out, "{e:?}").unwrap();
@@ -240,7 +242,10 @@ impl App<Running> {
     }
 
     async fn stop_app(self) {
-        self.waku.stop().await.expect("the node should stop properly");
+        self.waku
+            .stop_node_async()
+            .await
+            .expect("the node should stop properly");
     }
 }
 
@@ -277,7 +282,7 @@ async fn main() -> std::result::Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn ui<B: Backend, State>(f: &mut Frame<B>, app: &App<State>) {
+fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .margin(2)

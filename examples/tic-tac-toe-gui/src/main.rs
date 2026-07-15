@@ -6,11 +6,15 @@ use std::time::Duration;
 use tokio::task;
 
 use tokio::sync::mpsc;
+use base64::Engine;
 use waku::{
-    waku_new, Encoding, WakuEvent, LibwakuResponse, WakuContentTopic,
-    WakuMessage, WakuNodeConfig, WakuNodeHandle, Initialized, Running,
+    Encoding, LogosDeliveryCtx, WakuContentTopic,
+    WakuMessage, WakuNodeConfig,
     general::pubsubtopic::PubsubTopic,
 };
+
+const NODE_TIMEOUT: Duration = Duration::from_secs(30);
+const PUBLISH_TIMEOUT_MS: u32 = 10_000;
 
 #[derive(Serialize, Deserialize, PartialEq, Debug, Copy, Clone)]
 enum Player {
@@ -25,17 +29,17 @@ struct GameState {
     moves_left: usize,
 }
 
-struct TicTacToeApp<State> {
+struct TicTacToeApp {
     game_state: Arc<Mutex<GameState>>,
-    waku: WakuNodeHandle<State>,
+    waku: LogosDeliveryCtx,
     game_topic: PubsubTopic,
     tx: mpsc::Sender<String>, // Sender to send `msg` to main thread
     player_role: Option<Player>, // Store the player's role (X or O)
 }
 
-impl TicTacToeApp<Initialized> {
+impl TicTacToeApp {
     fn new(
-        waku: WakuNodeHandle<Initialized>,
+        waku: LogosDeliveryCtx,
         game_topic: PubsubTopic,
         game_state: Arc<Mutex<GameState>>,
         tx: mpsc::Sender<String>,
@@ -49,56 +53,48 @@ impl TicTacToeApp<Initialized> {
         }
     }
 
-    async fn start(self) -> TicTacToeApp<Running> {
+    async fn start(self) -> TicTacToeApp {
         let tx_clone = self.tx.clone();
-        let game_content_topic = WakuContentTopic::new("waku", "2", "tictactoegame", Encoding::Proto);
+        let game_content_topic =
+            WakuContentTopic::new("waku", "2", "tictactoegame", Encoding::Proto).to_string();
 
-        let my_closure = move |response| {
-            if let LibwakuResponse::Success(v) = response {
-                let event: WakuEvent =
-                    serde_json::from_str(v.unwrap().as_str()).expect("Parsing event to succeed");
-
-                match event {
-                    WakuEvent::WakuMessage(evt) => {
-                        let message = evt.waku_message;
-                        // Filter: only process messages for our game content topic
-                        if message.content_topic != game_content_topic {
-                            return; // Skip messages from other apps
-                        }
-                        let payload = message.payload.to_vec();
-                        match from_utf8(&payload) {
-                            Ok(msg) => {
-                                //  Lock succeeded, proceed to send the message
-                                if tx_clone.blocking_send(msg.to_string()).is_err() {
-                                    eprintln!("Failed to send message to async task");
-                                }
-                            }
-                            Err(e) => {
-                                eprintln!("Failed to decode payload as UTF-8: {}", e);
-                                // Handle the error as needed, or just log and skip
-                            }
-                        }
-                    },
-                    WakuEvent::RelayTopicHealthChange(_evt) => {
-                        // dbg!("Relay topic change evt", evt);
-                    },
-                    WakuEvent::ConnectionChange(_evt) => {
-                        // dbg!("Conn change evt", evt);
-                    },
-                    WakuEvent::Unrecognized(err) => panic!("Unrecognized waku event: {:?}", err),
-                    _ => panic!("event case not expected"),
-                };
+        // Establish a listener that handles the incoming messages
+        self.waku.add_on_received_message_listener(move |event| {
+            // Filter: only process messages for our game content topic
+            if event.waku_message.content_topic != game_content_topic {
+                return; // Skip messages from other apps
             }
-        };
-
-        // Establish a closure that handles the incoming messages
-        self.waku.set_event_callback(my_closure).expect("set event call back working");
+            let payload = match base64::engine::general_purpose::STANDARD
+                .decode(&event.waku_message.payload)
+            {
+                Ok(payload) => payload,
+                Err(e) => {
+                    eprintln!("Failed to decode payload as base64: {}", e);
+                    return;
+                }
+            };
+            match from_utf8(&payload) {
+                Ok(msg) => {
+                    //  Lock succeeded, proceed to send the message
+                    if tx_clone.blocking_send(msg.to_string()).is_err() {
+                        eprintln!("Failed to send message to async task");
+                    }
+                }
+                Err(e) => {
+                    eprintln!("Failed to decode payload as UTF-8: {}", e);
+                    // Handle the error as needed, or just log and skip
+                }
+            }
+        });
 
         // Start the waku node
-        let waku = self.waku.start().await.expect("waku should start");
+        self.waku.start_node_async().await.expect("waku should start");
 
         // Subscribe to desired topic using the relay protocol
-        waku.relay_subscribe(&self.game_topic).await.expect("waku should subscribe");
+        self.waku
+            .waku_relay_subscribe_async(String::from(&self.game_topic))
+            .await
+            .expect("waku should subscribe");
 
         // Example filter subscription. This is needed in edge nodes (resource-restricted devices)
         // Nodes usually use either relay or lightpush/filter protocols
@@ -125,7 +121,7 @@ impl TicTacToeApp<Initialized> {
 
         TicTacToeApp {
             game_state: self.game_state,
-            waku,
+            waku: self.waku,
             game_topic: self.game_topic,
             tx: self.tx,
             player_role: self.player_role,
@@ -133,7 +129,7 @@ impl TicTacToeApp<Initialized> {
     }
 }
 
-impl TicTacToeApp<Running> {
+impl TicTacToeApp {
     async fn send_game_state(&self, game_state: &GameState) {
         let serialized_game_state = serde_json::to_string(game_state).unwrap();
         let content_topic = WakuContentTopic::new("waku", "2", "tictactoegame", Encoding::Proto);
@@ -146,7 +142,16 @@ impl TicTacToeApp<Running> {
             false,
         );
 
-        if let Ok(msg_hash) = self.waku.relay_publish_message(&message, &self.game_topic, None).await {
+        let message = serde_json::to_string(&message).expect("message should serialise");
+        if let Ok(msg_hash) = self
+            .waku
+            .waku_relay_publish_async(
+                String::from(&self.game_topic),
+                message,
+                PUBLISH_TIMEOUT_MS,
+            )
+            .await
+        {
             dbg!(format!("message hash published: {}", msg_hash));
         }
 
@@ -239,7 +244,7 @@ impl TicTacToeApp<Running> {
     }
 }
 
-impl eframe::App for TicTacToeApp<Running> {
+impl eframe::App for TicTacToeApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
 
         // Request a repaint every second
@@ -344,7 +349,7 @@ async fn main() -> eframe::Result<()> {
 
     let game_topic = PubsubTopic::new("/waku/2/rs/16/32");
     // Create a Waku instance
-    let waku = waku_new(Some(WakuNodeConfig {
+    let config = serde_json::to_string(&WakuNodeConfig {
         tcp_port: Some(60010),
         cluster_id: Some(16),
         shards: vec![1, 32, 64, 128, 256],
@@ -363,8 +368,12 @@ async fn main() -> eframe::Result<()> {
         // discv5_enr_auto_update: Some(false),
 
         ..Default::default()
-    })).await
-    .expect("should instantiate");
+    })
+    .expect("config should serialise");
+
+    let waku = LogosDeliveryCtx::new_async(config, NODE_TIMEOUT)
+        .await
+        .expect("should instantiate");
 
     let game_state = GameState {
         board: [[None; 3]; 3],

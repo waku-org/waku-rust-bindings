@@ -3,6 +3,7 @@
 pub mod contenttopic;
 pub mod messagehash;
 pub mod pubsubtopic;
+pub mod store;
 pub mod time;
 pub mod waku_decode;
 

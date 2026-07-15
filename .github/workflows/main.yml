@@ -38,6 +38,14 @@ jobs:
         continue-on-error: false
         with:
           command: check
+      # examples/ is its own workspace and only examples/basic is a member of
+      # the root one, so a plain `cargo check` here never sees toy-chat or
+      # tic-tac-toe-gui. They break silently on any API change without this.
+      - uses: actions-rs/cargo@v1
+        continue-on-error: false
+        with:
+          command: check
+          args: --manifest-path examples/Cargo.toml --workspace
 
   test:
     name: Test
