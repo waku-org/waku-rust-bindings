@@ -1,12 +1,17 @@
 //! # Waku
 //!
-//! Implementation on top of [`waku-bindings`](https://rfc.vac.dev/spec/36/)
+//! The FFI surface is generated from the Nim source by nim-ffi and re-exported
+//! here wholesale: drive a node through `LogosDeliveryCtx`, and observe it
+//! through its typed `add_on_*_listener` methods. What this crate adds on top is
+//! the domain layer — [`WakuMessage`], [`WakuContentTopic`], [`MessageHash`] and
+//! friends — plus [`WakuNodeConfig`], which serialises to the JSON that
+//! `LogosDeliveryCtx::create` expects.
 pub mod general;
-mod macros;
 pub mod node;
 
-// Re-export the LibwakuResponse type to make it accessible outside this module
-pub use general::libwaku_response::LibwakuResponse;
+// The generated bindings: LogosDeliveryCtx, ListenerHandle, and one payload type
+// per event.
+pub use waku_sys::*;
 
 // Required so functions inside libwaku can call RLN functions even if we
 // use it within the bindings functions
@@ -14,12 +19,8 @@ pub use general::libwaku_response::LibwakuResponse;
 #[allow(unused)]
 use rln;
 
-pub use node::{
-    waku_create_content_topic, waku_new, ChannelMessageErrorEvent, ChannelMessageReceivedEvent,
-    ChannelMessageSentEvent, ConnectionStatusChangeEvent, Initialized, Key, MessageErrorEvent,
-    MessagePropagatedEvent, MessageReceivedEvent, MessageSentEvent, Multiaddr, PublicKey,
-    RLNConfig, Running, SecretKey, WakuEvent, WakuMessageEvent, WakuNodeConfig, WakuNodeHandle,
-};
-
 pub use general::contenttopic::{Encoding, WakuContentTopic};
 pub use general::{messagehash::MessageHash, Result, WakuMessage, WakuMessageVersion};
+pub use node::{
+    Key, Multiaddr, PublicKey, PubsubTopic, RLNConfig, SecretKey, WakuNodeConfig,
+};

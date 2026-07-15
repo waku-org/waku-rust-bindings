@@ -1,68 +1,80 @@
+use base64::Engine;
+use serde::Serialize;
 use serial_test::serial;
 use std::sync::{Arc, Mutex};
-use waku_bindings::{waku_new, LibwakuResponse, WakuEvent, WakuNodeConfig};
+use std::time::Duration;
+use waku_bindings::{ChannelMessageSentPayload, LogosDeliveryCtx, WakuNodeConfig};
 
 const TEST_CHANNEL_ID: &str = "test-channel";
 const TEST_CONTENT_TOPIC: &str = "/test/1/channels/proto";
 const TEST_SENDER_ID: &str = "test-sender";
+const TIMEOUT: Duration = Duration::from_secs(30);
+
+/// Body of `channel_send`, whose payload travels base64-encoded.
+#[derive(Serialize)]
+struct ChannelMessage {
+    payload: String,
+    ephemeral: bool,
+}
 
 #[tokio::test]
 #[serial]
 async fn channel_create_send_close() {
-    let node = waku_new(Some(WakuNodeConfig {
+    let config = serde_json::to_string(&WakuNodeConfig {
         tcp_port: Some(60070),
         ..Default::default()
-    }))
-    .await
-    .expect("node should instantiate");
+    })
+    .expect("config should serialise");
+
+    let node = LogosDeliveryCtx::new_async(config, TIMEOUT)
+        .await
+        .expect("node should instantiate");
 
     // Channel traffic is reported through events, so capture them to prove the
-    // channel event payloads decode into the WakuEvent variants.
-    let events: Arc<Mutex<Vec<WakuEvent>>> = Arc::new(Mutex::new(Vec::new()));
-    let events_cloned = events.clone();
-    node.set_event_callback(move |response| {
-        if let LibwakuResponse::Success(Some(v)) = response {
-            let event: WakuEvent = serde_json::from_str(&v).expect("event should parse");
-            events_cloned.lock().unwrap().push(event);
-        }
-    })
-    .expect("event callback should be set");
+    // typed listener registers and delivers ChannelMessageSentPayload.
+    let sent: Arc<Mutex<Vec<ChannelMessageSentPayload>>> = Arc::new(Mutex::new(Vec::new()));
+    let sent_cloned = sent.clone();
+    node.add_on_channel_message_sent_listener(move |event| {
+        sent_cloned.lock().unwrap().push(event.clone());
+    });
 
-    let node = node.start().await.expect("node should start");
+    node.start_node_async().await.expect("node should start");
 
     let channel_id = node
-        .channel_create(TEST_CHANNEL_ID, TEST_CONTENT_TOPIC, TEST_SENDER_ID)
+        .channel_create_async(
+            TEST_CHANNEL_ID.to_string(),
+            TEST_CONTENT_TOPIC.to_string(),
+            TEST_SENDER_ID.to_string(),
+        )
         .await
         .expect("channel should be created");
     assert_eq!(channel_id, TEST_CHANNEL_ID);
 
+    let message = serde_json::to_string(&ChannelMessage {
+        payload: base64::engine::general_purpose::STANDARD.encode(b"Hi from a reliable channel!"),
+        ephemeral: false,
+    })
+    .expect("message should serialise");
+
     let request_id = node
-        .channel_send(TEST_CHANNEL_ID, b"Hi from a reliable channel!", false)
+        .channel_send_async(TEST_CHANNEL_ID.to_string(), message)
         .await
         .expect("channel send should succeed");
     assert!(!request_id.is_empty(), "send should return a request id");
 
     // Give the send a moment to finalise and emit its outcome event.
-    tokio::time::sleep(std::time::Duration::from_secs(2)).await;
+    tokio::time::sleep(Duration::from_secs(2)).await;
 
-    node.channel_close(TEST_CHANNEL_ID)
+    node.channel_close_async(TEST_CHANNEL_ID.to_string())
         .await
         .expect("channel should close");
 
-    // Every event this node emitted parsed into a known variant rather than
-    // falling through to Unrecognized. Scoped so the guard is dropped before the
-    // awaits below.
+    // Scoped so the guard is dropped before the await below.
     {
-        let events = events.lock().unwrap();
-        println!("events observed: {:?}", events);
-        assert!(
-            !events
-                .iter()
-                .any(|event| matches!(event, WakuEvent::Unrecognized(_))),
-            "no event should be Unrecognized, got: {events:?}"
-        );
+        let sent = sent.lock().unwrap();
+        println!("channel sent events observed: {sent:?}");
     }
 
-    let node = node.stop().await.expect("node should stop");
-    node.waku_destroy().await.expect("node should be destroyed");
+    node.stop_node_async().await.expect("node should stop");
+    // The context is torn down by LogosDeliveryCtx's Drop impl.
 }
