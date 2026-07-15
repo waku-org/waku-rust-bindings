@@ -31,8 +31,12 @@ exclude = [
 crate-type = ["rlib"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+# Mirrors the Cargo.toml the vendor's genBindings() emits alongside the sources.
 [dependencies]
+serde = { version = "1", features = ["derive"] }
+ciborium = "0.2"
+flume = { version = "0.11", default-features = false, features = ["async"] }
+tokio = { version = "1", features = ["sync", "time"] }
 
 [build-dependencies]
-bindgen = "0.64"
 cc = "1.0.73"
