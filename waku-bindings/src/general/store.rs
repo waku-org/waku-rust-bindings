@@ -127,10 +127,10 @@ pub struct StoreResponse {
     #[allow(unused)]
     pub status_desc: String,
 
-    /// Array of retrieved historical messages in [`WakuMessage`] format
+    /// Array of retrieved historical messages in `WakuMessage` format
     // #[serde(default)]
     pub messages: Vec<StoreWakuMessageResponse>,
-    /// Paging information in [`PagingOptions`] format from which to resume further historical queries
+    /// Paging information in `PagingOptions` format from which to resume further historical queries
     #[serde(skip_serializing_if = "Option::is_none")]
     pub pagination_cursor: Option<MessageHash>,
 }

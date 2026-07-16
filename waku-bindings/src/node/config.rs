@@ -94,7 +94,7 @@ pub struct RLNConfig {
     /// On-chain dynamic group management
     #[serde(skip_serializing_if = "Option::is_none")]
     pub dynamic: Option<bool>,
-    /// Path to the RLN merkle tree sled db (https://github.com/spacejam/sled)
+    /// Path to the RLN merkle tree sled db (<https://github.com/spacejam/sled>)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tree_path: Option<String>,
     /// Message rate in bytes/sec after which verification of proofs should happen
