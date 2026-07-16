@@ -73,6 +73,14 @@ async fn channel_create_send_close() {
 
     node.start_node_async().await.expect("node should start");
 
+    assert!(
+        !node
+            .channel_exists_async(TEST_CHANNEL_ID.to_string())
+            .await
+            .expect("exists should answer for an unknown channel"),
+        "channel should not exist before it is created"
+    );
+
     let channel_id = node
         .channel_create_async(
             TEST_CHANNEL_ID.to_string(),
@@ -83,6 +91,13 @@ async fn channel_create_send_close() {
         .await
         .expect("channel should be created");
     assert_eq!(channel_id, TEST_CHANNEL_ID);
+
+    assert!(
+        node.channel_exists_async(TEST_CHANNEL_ID.to_string())
+            .await
+            .expect("exists should answer after create"),
+        "channel should exist once created"
+    );
 
     let request_id = node
         .channel_send_async(TEST_CHANNEL_ID.to_string(), channel_message(CHANNEL_PAYLOAD))
@@ -96,6 +111,16 @@ async fn channel_create_send_close() {
     node.channel_close_async(TEST_CHANNEL_ID.to_string())
         .await
         .expect("channel should close");
+
+    // Closing drops the channel from the manager even though its SDS state is
+    // persisted, so this is a liveness check rather than "was it ever created".
+    assert!(
+        !node
+            .channel_exists_async(TEST_CHANNEL_ID.to_string())
+            .await
+            .expect("exists should answer after close"),
+        "channel should not exist once closed"
+    );
 
     // Scoped so the guard is dropped before the await below. Nothing is asserted
     // about arrival: a lone node has no peer to confirm delivery with, so
