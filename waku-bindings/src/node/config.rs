@@ -28,6 +28,11 @@ pub struct WakuNodeConfig {
     /// Cluster id that the node is running in
     #[default(Some(0))]
     pub cluster_id: Option<usize>,
+    /// Number of shards in the cluster. Enables autosharding, which content
+    /// topics need to resolve to a shard; `0` (the default) means static
+    /// sharding, and an explicit shard on every send.
+    #[serde(skip_serializing_if = "Option::is_none", rename = "num-shards-in-network")]
+    pub num_shards_in_network: Option<u16>,
 
     /// Relay protocol
     #[default(Some(true))]
