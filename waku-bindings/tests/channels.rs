@@ -116,21 +116,34 @@ async fn channel_create_send_close() {
 /// Two nodes sharing a channel: a channel message should cross the wire and
 /// surface through the typed onChannelMessageReceived listener.
 ///
-/// Ignored: it does not, and the cause is below this binding layer. The message
-/// reaches the receiver's messaging layer with the right content topic and the
-/// `RELIABLE-CHANNEL-API/1` marker -- both of the channel ingress filters pass --
-/// and is then consumed silently by SDS `handleIncoming` (empty result means
-/// parked or duplicate), so no event and no error is ever raised. logos-delivery
-/// has no two-node channel test of its own; its suite fabricates the wire by
-/// emitting a MessageReceivedEvent locally with a stand-in peer's SDS envelope,
-/// so this path looks unexercised rather than regressed.
+/// Ignored: this cannot work in-process, and the channels API is not at fault.
+/// Persistency is a process-wide singleton keyed on its root dir, and it refuses
+/// to be re-targeted, so both nodes share one SDS persistence job whose rows are
+/// keyed by channel id alone. The receiver's ensureChannel therefore loads the
+/// *sender's* history before the duplicate check, and SDS correctly rejects the
+/// message as a replay -- silently, since a duplicate is not an error.
 ///
-/// Un-ignore once the SDS ingress question is settled upstream: everything on
-/// this side (autosharding, per-channel encryption, send, connectivity) works.
+/// Everything either side of that works: autosharding, per-channel encryption,
+/// the send, connectivity, the channel's ingress listener, and the typed event
+/// path (proven by default_echo over the same route). Verified by instrumenting
+/// the vendor: the listener fires, both filters pass, and SDS reports
+/// `duplicate`.
+///
+/// Un-ignore by driving the two nodes as separate processes, or once SDS
+/// persistence is keyed by participant as well as channel.
 #[tokio::test]
 #[serial]
-#[ignore = "channel ingress is dropped inside SDS; see the doc comment"]
+#[ignore = "needs two processes: in-process nodes share SDS persistence; see the doc comment"]
 async fn channel_message_reaches_peer() -> Result<(), String> {
+    // SDS state is persisted per channel id, so a fresh id keeps a previous
+    // run's causal history from parking this run's message.
+    let channel_id = format!(
+        "test-channel-{}",
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_nanos()
+    );
     let sender = new_node(60080);
     let receiver = new_node(60090);
 
@@ -142,10 +155,14 @@ async fn channel_message_reaches_peer() -> Result<(), String> {
 
     // The raw message is observed too: it proves delivery reaches the messaging
     // layer, which is what localises the failure to channel ingress.
-    let raw: Arc<Mutex<usize>> = Arc::new(Mutex::new(0));
+    let raw: Arc<Mutex<Vec<usize>>> = Arc::new(Mutex::new(Vec::new()));
     let raw_cloned = raw.clone();
-    receiver.add_on_message_received_listener(move |_| {
-        *raw_cloned.lock().unwrap() += 1;
+    receiver.add_on_message_received_listener(move |e| {
+        let len = base64::engine::general_purpose::STANDARD
+            .decode(&e.message.payload)
+            .map(|p| p.len())
+            .unwrap_or(0);
+        raw_cloned.lock().unwrap().push(len);
     });
 
     // A failed send reports itself here; without this the test could only time
@@ -169,7 +186,7 @@ async fn channel_message_reaches_peer() -> Result<(), String> {
     // participant ids.
     sender
         .channel_create_async(
-            TEST_CHANNEL_ID.to_string(),
+            channel_id.clone(),
             TEST_CONTENT_TOPIC.to_string(),
             TEST_SENDER_ID.to_string(),
             NOOP_ENCRYPTION.to_string(),
@@ -177,7 +194,7 @@ async fn channel_message_reaches_peer() -> Result<(), String> {
         .await?;
     receiver
         .channel_create_async(
-            TEST_CHANNEL_ID.to_string(),
+            channel_id.clone(),
             TEST_CONTENT_TOPIC.to_string(),
             OTHER_SENDER_ID.to_string(),
             NOOP_ENCRYPTION.to_string(),
@@ -197,7 +214,7 @@ async fn channel_message_reaches_peer() -> Result<(), String> {
     tokio::time::sleep(Duration::from_secs(5)).await;
 
     sender
-        .channel_send_async(TEST_CHANNEL_ID.to_string(), channel_message(CHANNEL_PAYLOAD))
+        .channel_send_async(channel_id.clone(), channel_message(CHANNEL_PAYLOAD))
         .await?;
 
     let mut delivered = None;
@@ -214,21 +231,19 @@ async fn channel_message_reaches_peer() -> Result<(), String> {
         let msg_errors = msg_errors.lock().unwrap();
         let raw = raw.lock().unwrap();
         format!(
-            "never reached the peer; raw messages seen by receiver: {raw}; \
+            "never reached the peer; raw payload sizes seen by receiver: {raw:?}; \
              channel errors: {errors:?}; messaging errors: {msg_errors:?}"
         )
     })?;
-    assert_eq!(event.channel_id, TEST_CHANNEL_ID);
+    assert_eq!(event.channel_id, channel_id);
     assert_eq!(event.sender_id, TEST_SENDER_ID);
     let payload = base64::engine::general_purpose::STANDARD
         .decode(&event.payload)
         .map_err(|e| e.to_string())?;
     assert_eq!(payload, CHANNEL_PAYLOAD);
 
-    sender.channel_close_async(TEST_CHANNEL_ID.to_string()).await?;
-    receiver
-        .channel_close_async(TEST_CHANNEL_ID.to_string())
-        .await?;
+    sender.channel_close_async(channel_id.clone()).await?;
+    receiver.channel_close_async(channel_id).await?;
 
     sender.stop_node_async().await?;
     receiver.stop_node_async().await?;

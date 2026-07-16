@@ -121,6 +121,17 @@ fn emit_link_flags(project_dir: &Path) {
         "cargo:rerun-if-changed={}",
         nwaku_path.join("library/rust_bindings/src").display()
     );
+    // The Nim sources the library is built from have to invalidate it too, or
+    // editing them leaves the linked archive stale and the tests silently run
+    // against the previous build.
+    println!(
+        "cargo:rerun-if-changed={}",
+        nwaku_path.join("library").display()
+    );
+    println!(
+        "cargo:rerun-if-changed={}",
+        nwaku_path.join("logos_delivery").display()
+    );
     println!(
         "cargo:rustc-link-search={}",
         nwaku_path.join("build").display()
