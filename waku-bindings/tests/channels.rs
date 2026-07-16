@@ -1,11 +1,11 @@
 use base64::Engine;
 use regex::Regex;
-use serde::Serialize;
 use serial_test::serial;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use waku_bindings::{
-    ChannelMessageReceivedPayload, ChannelMessageSentPayload, LogosDeliveryCtx, WakuNodeConfig,
+    ChannelMessageReceivedPayload, ChannelMessageSentPayload, ChannelSendRequest,
+    LogosDeliveryCtx, WakuNodeConfig,
 };
 
 const TEST_CHANNEL_ID: &str = "test-channel";
@@ -20,13 +20,6 @@ const SHARDS_IN_NETWORK: usize = 8;
 /// one, so each binary needs its own persistency root. Every node in a binary
 /// must share it: the singleton refuses to be re-targeted.
 const STORAGE_PATH: &str = "./data-channels-test";
-
-/// Body of `channel_send`, whose payload travels base64-encoded.
-#[derive(Serialize)]
-struct ChannelMessage {
-    payload: String,
-    ephemeral: bool,
-}
 
 fn new_node(tcp_port: usize) -> LogosDeliveryCtx {
     // A channel's shard is derived from its content topic, so the node needs
@@ -43,12 +36,11 @@ fn new_node(tcp_port: usize) -> LogosDeliveryCtx {
     LogosDeliveryCtx::create(config, TIMEOUT).expect("node should instantiate")
 }
 
-fn channel_message(payload: &[u8]) -> String {
-    serde_json::to_string(&ChannelMessage {
+fn channel_message(payload: &[u8]) -> ChannelSendRequest {
+    ChannelSendRequest {
         payload: base64::engine::general_purpose::STANDARD.encode(payload),
         ephemeral: false,
-    })
-    .expect("message should serialise")
+    }
 }
 
 /// Dials `to` from `from`, rewriting the advertised address to loopback so NAT
