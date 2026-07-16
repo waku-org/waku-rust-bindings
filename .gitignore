@@ -6,4 +6,5 @@ nimcache/
 
 # SDS state written by nodes at runtime (e.g. the channels tests)
 data/
+data-*-test/
 .submodules-initialized

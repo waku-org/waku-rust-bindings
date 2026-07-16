@@ -16,6 +16,10 @@ const OTHER_SENDER_ID: &str = "other-sender";
 const CHANNEL_PAYLOAD: &[u8] = b"Hi from a reliable channel!";
 const TIMEOUT: Duration = Duration::from_secs(30);
 const SHARDS_IN_NETWORK: usize = 8;
+/// Cargo runs test binaries in parallel and serial_test only serialises within
+/// one, so each binary needs its own persistency root. Every node in a binary
+/// must share it: the singleton refuses to be re-targeted.
+const STORAGE_PATH: &str = "./data-channels-test";
 
 /// Body of `channel_send`, whose payload travels base64-encoded.
 #[derive(Serialize)]
@@ -31,6 +35,7 @@ fn new_node(tcp_port: usize) -> LogosDeliveryCtx {
         tcp_port: Some(tcp_port),
         num_shards_in_network: Some(SHARDS_IN_NETWORK as u16),
         shards: (0..SHARDS_IN_NETWORK).collect(),
+        local_storage_path: Some(STORAGE_PATH.to_string()),
         ..Default::default()
     })
     .expect("config should serialise");

@@ -18,7 +18,16 @@ const ECHO_MESSAGE: &str = "Hi from 🦀!";
 const TEST_PUBSUBTOPIC: &str = "test";
 const TIMEOUT: Duration = Duration::from_secs(30);
 
+/// Cargo runs test binaries in parallel and serial_test only serialises within
+/// one, so each binary needs its own persistency root. Every node in a binary
+/// must share it: the singleton refuses to be re-targeted.
+const STORAGE_PATH: &str = "./data-node-test";
+
 fn new_node(config: WakuNodeConfig) -> Result<LogosDeliveryCtx, String> {
+    let config = WakuNodeConfig {
+        local_storage_path: Some(STORAGE_PATH.to_string()),
+        ..config
+    };
     let config_json = serde_json::to_string(&config).map_err(|e| e.to_string())?;
     LogosDeliveryCtx::create(config_json, TIMEOUT)
 }

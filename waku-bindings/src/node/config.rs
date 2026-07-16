@@ -33,6 +33,11 @@ pub struct WakuNodeConfig {
     /// sharding, and an explicit shard on every send.
     #[serde(skip_serializing_if = "Option::is_none", rename = "num-shards-in-network")]
     pub num_shards_in_network: Option<u16>,
+    /// Where the node keeps local data. Note the persistency layer is a
+    /// process-wide singleton: a second node in the same process must use the
+    /// same path, or it fails to start.
+    #[serde(skip_serializing_if = "Option::is_none", rename = "local-storage-path")]
+    pub local_storage_path: Option<String>,
 
     /// Relay protocol
     #[default(Some(true))]
