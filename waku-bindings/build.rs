@@ -182,11 +182,6 @@ fn emit_link_flags(nwaku_path: &Path) {
     println!("cargo:rustc-link-lib=static={librln}");
 
     // libbacktrace is not linked: the vendor builds with -d:disable_libbacktrace.
-
-    cc::Build::new()
-        .file("src/cmd.c") // Compile the C file
-        .compile("cmditems"); // Compile it as a library
-    println!("cargo:rustc-link-lib=static=cmditems");
 }
 
 #[cfg(not(doc))]
