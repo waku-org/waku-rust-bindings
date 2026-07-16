@@ -74,13 +74,21 @@ pub mod node;
 // regenerating it flows through directly. `api` resolves its siblings through
 // `super::`, so the three stay crate-root sibling modules. build.rs compiles
 // and links the underlying Nim library.
+//
+// `rustfmt::skip` because `#[path]` makes rustfmt treat these as crate source
+// and rewrite them in the submodule; the next regen would revert it anyway, so
+// `cargo fmt` would just churn the vendor. (rustfmt.toml `ignore` would be the
+// natural fix, but it is nightly-only.)
 #[allow(clippy::all)]
+#[rustfmt::skip]
 #[path = "../../vendor/library/rust_bindings/src/ffi.rs"]
 mod ffi;
 #[allow(clippy::all)]
+#[rustfmt::skip]
 #[path = "../../vendor/library/rust_bindings/src/types.rs"]
 mod types;
 #[allow(clippy::all)]
+#[rustfmt::skip]
 #[path = "../../vendor/library/rust_bindings/src/api.rs"]
 mod api;
 
@@ -101,6 +109,4 @@ use rln;
 pub use general::contenttopic::{Encoding, WakuContentTopic};
 pub use general::store::{StoreQueryRequest, StoreResponse, StoreWakuMessageResponse};
 pub use general::{messagehash::MessageHash, Result, WakuMessage, WakuMessageVersion};
-pub use node::{
-    Key, Multiaddr, PublicKey, PubsubTopic, RLNConfig, SecretKey, WakuNodeConfig,
-};
+pub use node::{Key, Multiaddr, PublicKey, PubsubTopic, RLNConfig, SecretKey, WakuNodeConfig};
