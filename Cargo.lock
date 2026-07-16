@@ -3047,8 +3047,11 @@ version = "1.0.0"
 dependencies = [
  "aes-gcm",
  "base64 0.21.0",
+ "cc",
  "chrono",
+ "ciborium",
  "enr",
+ "flume",
  "futures",
  "hex",
  "libc",
@@ -3067,18 +3070,6 @@ dependencies = [
  "tokio",
  "url",
  "uuid",
- "waku-sys",
-]
-
-[[package]]
-name = "waku-sys"
-version = "1.0.0"
-dependencies = [
- "cc",
- "ciborium",
- "flume",
- "serde",
- "tokio",
 ]
 
 [[package]]

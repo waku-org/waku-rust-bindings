@@ -70,11 +70,26 @@
 pub mod general;
 pub mod node;
 
+// The generated FFI surface, consumed in place from the vendor submodule so
+// regenerating it flows through directly. `api` resolves its siblings through
+// `super::`, so the three stay crate-root sibling modules. build.rs compiles
+// and links the underlying Nim library.
+#[allow(clippy::all)]
+#[path = "../../vendor/library/rust_bindings/src/ffi.rs"]
+mod ffi;
+#[allow(clippy::all)]
+#[path = "../../vendor/library/rust_bindings/src/types.rs"]
+mod types;
+#[allow(clippy::all)]
+#[path = "../../vendor/library/rust_bindings/src/api.rs"]
+mod api;
+
 // The full generated FFI surface: LogosDeliveryCtx and its methods, the request
 // types (SendRequest, ChannelSendRequest), and one payload type per event. See
 // the Operations section above for the map; browse `LogosDeliveryCtx` in the
 // docs for the complete method list.
-pub use waku_sys::*;
+pub use api::*;
+pub use types::*;
 
 // Required so functions inside libwaku can call RLN functions even if we
 // use it within the bindings functions

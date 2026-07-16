@@ -28,7 +28,6 @@ serde_json = "1.0"
 sscanf = "0.4"
 smart-default = "0.6"
 url = "2.3"
-waku-sys = { version = "1.0.0", path = "../waku-sys" }
 libc = "0.2"
 serde-aux = "4.3.1"
 rln = "0.3.4"
@@ -36,6 +35,13 @@ tokio = { version = "1", features = ["full"] }
 regex = "1"
 chrono = "0.4"
 uuid = { version = "1.3", features = ["v4"] }
+# Runtime deps of the generated FFI bindings (formerly waku-sys), now consumed
+# directly from the vendor submodule.
+ciborium = "0.2"
+flume = { version = "0.11", default-features = false, features = ["async"] }
+
+[build-dependencies]
+cc = "1.0.73"
 
 [dev-dependencies]
 futures = "0.3.25"
