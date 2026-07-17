@@ -30,7 +30,7 @@ smart-default = "0.6"
 url = "2.3"
 libc = "0.2"
 serde-aux = "4.3.1"
-rln = "0.3.4"
+rln = "2.0.2"
 tokio = { version = "1", features = ["full"] }
 regex = "1"
 chrono = "0.4"
