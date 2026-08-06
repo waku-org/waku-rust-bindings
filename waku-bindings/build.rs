@@ -68,15 +68,17 @@ fn build_nwaku_lib(vendor_dir: &Path) {
     // kind, so a stray liblogosdelivery.dylib in build/ (left by a non-STATIC
     // `make liblogosdelivery`) would be linked dynamically over the static .a we
     // want. Remove it so the static archive is the only candidate.
-    for stale in ["build/liblogosdelivery.dylib", "build/liblogosdelivery.dylib.dSYM"] {
+    for stale in [
+        "build/liblogosdelivery.dylib",
+        "build/liblogosdelivery.dylib.dSYM",
+    ] {
         let path = vendor_dir.join(stale);
         if path.exists() {
             let _ = std::fs::remove_dir_all(&path).or_else(|_| std::fs::remove_file(&path));
         }
     }
 
-    set_current_dir(env::var("CARGO_MANIFEST_DIR").unwrap())
-        .expect("Going back to manifest dir");
+    set_current_dir(env::var("CARGO_MANIFEST_DIR").unwrap()).expect("Going back to manifest dir");
 }
 
 /// Resolves a package directory under the vendor's `nimbledeps/pkgs2`, whose
@@ -98,27 +100,6 @@ fn nimble_pkg_dir(nwaku_path: &Path, pkg_name: &str) -> PathBuf {
             panic!(
                 "No '{pkg_name}' package under {}. Was 'make liblogosdelivery' run?",
                 pkgs_dir.display()
-            )
-        })
-}
-
-/// Finds the vendor's `librln_<version>.a` and returns the name to link it by
-/// (the file stem without the `lib` prefix).
-fn find_librln(nwaku_path: &Path) -> String {
-    std::fs::read_dir(nwaku_path)
-        .unwrap_or_else(|e| panic!("Cannot read {}: {e}", nwaku_path.display()))
-        .filter_map(|entry| entry.ok())
-        .filter_map(|entry| entry.file_name().into_string().ok())
-        .find_map(|name| {
-            name.strip_prefix("lib")
-                .and_then(|name| name.strip_suffix(".a"))
-                .filter(|name| name.starts_with("rln"))
-                .map(str::to_owned)
-        })
-        .unwrap_or_else(|| {
-            panic!(
-                "No 'librln_*.a' in {}. Was 'make librln' run?",
-                nwaku_path.display()
             )
         })
 }
@@ -174,12 +155,6 @@ fn emit_link_flags(nwaku_path: &Path) {
     } else {
         println!("cargo:rustc-link-lib=stdc++");
     }
-
-    // The vendor's Makefile fetches librln into its root, naming it after the
-    // RLN version it pins, so the archive is discovered rather than hardcoded.
-    let librln = find_librln(nwaku_path);
-    println!("cargo:rustc-link-search={}", nwaku_path.display());
-    println!("cargo:rustc-link-lib=static={librln}");
 
     // libbacktrace is not linked: the vendor builds with -d:disable_libbacktrace.
 }
